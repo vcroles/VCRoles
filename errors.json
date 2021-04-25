@@ -1,0 +1,14 @@
+{
+    "100": "Please pass in all required information in commands",
+    "117": "Bot Missing permissions - If you're tryng to use the private channels, make sure the bot has the manage_channel permission",
+    "101": "You do not have the required permissions.",
+    "102": "Channel not found",
+    "103": "Role not found",
+    "110": "Command Disabled",
+    "111": "Too Many Arguments Given",
+    "114": "Message not found",
+    "118": "Please wait for the current TTS message to finish",
+    "119": "The Message is too long",
+    "120": "You need to be in a voice channel to use this command",
+    "121": "TTS has been disabled in this server"
+}
