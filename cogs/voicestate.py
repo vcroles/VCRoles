@@ -18,15 +18,25 @@ class voicestate(commands.Cog):
         AllRoleLinked = None
         ChannelRoleLinked = None
         ChannelRoleLinked2 = None
+        CategoryRoleLinked = None
+        CategoryRoleLinked2 = None
         RoleAddSuccess = None
+        RoleAddSuccess2 = None
         AllRoleAddSuccess = None
-        embed_value = None
-        embed_value2 = None
-        #joining channel
+        CatRoleAddSuccess = None
+        CatRoleAddSuccess2 = None
+        embed_value = ''
+        embed_value2 = ''
+        embed_value3 = ''
+        embed_value4 = ''
         if member.bot == False:
+
+            #joining channel
             if not before.channel and after.channel:
+
                 vcs = dis.jopen(member.guild.id)
                 channel = after.channel
+                
                 #if channel has a role associated
                 if str(channel.id) in vcs:
                     rolename = vcs[str(channel.id)]
@@ -39,9 +49,8 @@ class voicestate(commands.Cog):
                         discord_error_terminal = self.client.get_channel(786307729630298157)
                         await discord_error_terminal.send(f'Error 106: \nBot does not have required permissions to add role in server: {member.guild.name} ({member.guild.id})')
                         RoleAddSuccess = False
-                #no associated role
-                else:
-                    pass
+                
+                
                 #if 'all' has been linked
                 if 'all' in vcs:
                     rolename = vcs['all']
@@ -54,9 +63,23 @@ class voicestate(commands.Cog):
                         discord_error_terminal = self.client.get_channel(786307729630298157)
                         await discord_error_terminal.send(f'Error 106: \nBot does not have required permissions to add role in server: {member.guild.name} ({member.guild.id})')
                         AllRoleAddSuccess = False
-                #no 'all' role
-                else:
-                    pass
+                
+                
+                # Category Linked Role
+                data = dis.jopen(f'category\\cat{member.guild.id}')
+                if str(after.channel.category.id) in data:
+                    category = after.channel.category.id
+                    role = member.guild.get_role(int(data[str(category)]))
+                    CategoryRoleLinked = role
+                    try:
+                        await member.add_roles(role)
+                        CatRoleAddSuccess = True
+                    except:
+                        discord_error_terminal = self.client.get_channel(786307729630298157)
+                        await discord_error_terminal.send(f'Error 106: \nBot does not have required permissions to add role in server: {member.guild.name} ({member.guild.id})')
+                        CatRoleAddSuccess = False
+                
+                
                 #Logging
                 if str(after.channel.guild.id) in logging_channels:
                     logging_channel = logging_channels[str(after.channel.guild.id)]
@@ -67,33 +90,40 @@ class voicestate(commands.Cog):
 
                     if AllRoleLinked != None:
                         if AllRoleAddSuccess == True:
-                            embed_value = f'All Channels Role: {AllRoleLinked.mention} added'
+                            embed_value = f'All Channels Role: {AllRoleLinked.mention} added\n'
                         elif AllRoleAddSuccess == False:
-                            embed_value = f'Unable to add role: {AllRoleLinked.mention} - Check my permissions'
+                            embed_value = f'Unable to add role: {AllRoleLinked.mention} - Check my permissions\n'
                     if ChannelRoleLinked != None:
                         if RoleAddSuccess == True:
-                            embed_value2 = f'Role: {ChannelRoleLinked.mention} added'
+                            embed_value2 = f'Role: {ChannelRoleLinked.mention} added\n'
                         elif RoleAddSuccess == False:
-                            embed_value2 = f'Unable to add role: {ChannelRoleLinked.mention} - Check my permissions'
+                            embed_value2 = f'Unable to add role: {ChannelRoleLinked.mention} - Check my permissions\n'
+                    if CatRoleAddSuccess != None:
+                        if CatRoleAddSuccess == True:
+                            embed_value3 = f'Category Role: {CategoryRoleLinked.mention} added\n'
+                        elif CatRoleAddSuccess == False:
+                            embed_value3 = f'Unable to add role {CategoryRoleLinked.mention} - Check my permissions\n'
 
-                    if embed_value != None:
-                        if embed_value2 != None:
-                            logging_embed.add_field(name='__**Roles**__', value=f'{embed_value2}\n{embed_value}')
-                        else:
-                            logging_embed.add_field(name='__**Roles**__', value=f'{embed_value}')
-                    else:
-                        if embed_value2 != None:
-                            logging_embed.add_field(name='__**Roles**__', value=f'{embed_value2}')
-                        else:
-                            pass
+                    # if embed_value != None:
+                    #     if embed_value2 != None:
+                    #         logging_embed.add_field(name='__**Roles**__', value=f'{embed_value2}\n{embed_value}')
+                    #     else:
+                    #         logging_embed.add_field(name='__**Roles**__', value=f'{embed_value}')
+                    # else:
+                    #     if embed_value2 != None:
+                    #         logging_embed.add_field(name='__**Roles**__', value=f'{embed_value2}')
+                    #     else:
+                    #         pass
+                    if embed_value != '' or embed_value2 != '' or embed_value3 != '':
+                        logging_embed.add_field(name='__**Roles**__', value=f'{embed_value2}{embed_value}{embed_value3}')
                     await logging_channel.send(embed=logging_embed)
-                else:
-                    pass
 
             #leaving channels
             elif before.channel and not after.channel:
+
                 vcs = dis.jopen(member.guild.id)
                 channel = before.channel
+                
                 #if channel has a role associated
                 if str(channel.id) in vcs:
                     rolename = vcs[str(channel.id)]
@@ -106,9 +136,10 @@ class voicestate(commands.Cog):
                         discord_error_terminal = self.client.get_channel(786307729630298157)
                         await discord_error_terminal.send(f'Error 107: \nBot does not have required permissions to remove role in server: {member.guild.name} ({member.guild.id})')
                         RoleAddSuccess = False
-                #no associated role
-                else:
+
                     pass
+                
+                
                 #if 'all' has been linked
                 if 'all' in vcs:
                     rolename = vcs['all']
@@ -121,9 +152,23 @@ class voicestate(commands.Cog):
                         discord_error_terminal = self.client.get_channel(786307729630298157)
                         await discord_error_terminal.send(f'Error 107: \nBot does not have required permissions to remove role in server: {member.guild.name} ({member.guild.id})')
                         AllRoleAddSuccess = False
-                #no 'all' role
-                else:
-                    pass
+                
+
+                # Category Linked Role
+                data = dis.jopen(f'category\\cat{member.guild.id}')
+                if str(before.channel.category.id) in data:
+                    category = before.channel.category.id
+                    role = member.guild.get_role(int(data[str(category)]))
+                    CategoryRoleLinked = role
+                    try:
+                        await member.remove_roles(role)
+                        CatRoleAddSuccess = True
+                    except:
+                        discord_error_terminal = self.client.get_channel(786307729630298157)
+                        await discord_error_terminal.send(f'Error 107: \nBot does not have required permissions to remove role in server: {member.guild.name} ({member.guild.id})')
+                        CatRoleAddSuccess = False
+
+                
                 #Logging
                 if str(before.channel.guild.id) in logging_channels:
                     logging_channel = logging_channels[str(before.channel.guild.id)]
@@ -134,34 +179,31 @@ class voicestate(commands.Cog):
 
                     if AllRoleLinked != None:
                         if AllRoleAddSuccess == True:
-                            embed_value = f'All Channels Role: {AllRoleLinked.mention} removed'
+                            embed_value = f'All Channels Role: {AllRoleLinked.mention} removed\n'
                         elif AllRoleAddSuccess == False:
-                            embed_value = f'Unable to remove role: {AllRoleLinked.mention} - Check my permissions'
+                            embed_value = f'Unable to remove role: {AllRoleLinked.mention} - Check my permissions\n'
                     if ChannelRoleLinked != None:
                         if RoleAddSuccess == True:
-                            embed_value2 = f'Role: {ChannelRoleLinked.mention} removed'
+                            embed_value2 = f'Role: {ChannelRoleLinked.mention} removed\n'
                         elif RoleAddSuccess == False:
-                            embed_value2 = f'Unable to remove role: {ChannelRoleLinked.mention} - Check my permissions'
+                            embed_value2 = f'Unable to remove role: {ChannelRoleLinked.mention} - Check my permissions\n'
+                    if CatRoleAddSuccess != None:
+                        if CatRoleAddSuccess == True:
+                            embed_value3 = f'Category Role: {CategoryRoleLinked.mention} removed\n'
+                        elif CatRoleAddSuccess == False:
+                            embed_value3 = f'Unable to remove role {CategoryRoleLinked.mention} - Check my permissions\n'
 
-                    if embed_value != None:
-                        if embed_value2 != None:
-                            logging_embed.add_field(name='__**Roles**__', value=f'{embed_value2}\n{embed_value}')
-                        else:
-                            logging_embed.add_field(name='__**Roles**__', value=f'{embed_value}')
-                    else:
-                        if embed_value2 != None:
-                            logging_embed.add_field(name='__**Roles**__', value=f'{embed_value2}')
-                        else:
-                            pass
+                    if embed_value != '' or embed_value2 != '' or embed_value3 != '':
+                        logging_embed.add_field(name='__**Roles**__', value=f'{embed_value2}{embed_value}{embed_value3}')
                     await logging_channel.send(embed=logging_embed)
-                else:
-                    pass
 
             #changing channels
             elif before.channel != after.channel:
+
                 #removing old role
                 vcs = dis.jopen(member.guild.id)
                 channel = before.channel
+                
                 #if channel has a role associated
                 if str(channel.id) in vcs:
                     rolename = vcs[str(channel.id)]
@@ -174,12 +216,28 @@ class voicestate(commands.Cog):
                         discord_error_terminal = self.client.get_channel(786307729630298157)
                         await discord_error_terminal.send(f'Error 107: \nBot does not have required permissions to remove role in server: {member.guild.name} ({member.guild.id})')
                         RoleAddSuccess = False
-                #no associated role
-                else:
-                    pass
+                
+
+                # Category Linked Role
+                data = dis.jopen(f'category\\cat{member.guild.id}')
+                if str(before.channel.category.id) in data:
+                    #Removing old role
+                    category = before.channel.category.id
+                    role = member.guild.get_role(int(data[str(category)]))
+                    CategoryRoleLinked = role
+                    try:
+                        await member.remove_roles(role)
+                        CatRoleAddSuccess = True
+                    except:
+                        discord_error_terminal = self.client.get_channel(786307729630298157)
+                        await discord_error_terminal.send(f'Error 107: \nBot does not have required permissions to remove role in server: {member.guild.name} ({member.guild.id})')
+                        CatRoleAddSuccess = False
+
+                
                 #adding new role
                 vcs = dis.jopen(member.guild.id)
                 channel = after.channel
+                
                 #if channel has a role associated
                 if str(channel.id) in vcs:
                     rolename = vcs[str(channel.id)]
@@ -192,9 +250,23 @@ class voicestate(commands.Cog):
                         discord_error_terminal = self.client.get_channel(786307729630298157)
                         await discord_error_terminal.send(f'Error 106/107: \nBot does not have required permissions to add role in server: {member.guild.name} ({member.guild.id})')
                         RoleAddSuccess2 = False
-                #no associated role
-                else:
-                    pass
+                
+
+                # Category Linked Role
+                data = dis.jopen(f'category\\cat{member.guild.id}')
+                if str(after.channel.category.id) in data:
+                    #Adding new role
+                    category = after.channel.category.id
+                    role = member.guild.get_role(int(data[str(category)]))
+                    CategoryRoleLinked2 = role
+                    try:
+                        await member.add_roles(role)
+                        CatRoleAddSuccess2 = True
+                    except:
+                        discord_error_terminal = self.client.get_channel(786307729630298157)
+                        await discord_error_terminal.send(f'Error 106: \nBot does not have required permissions to add role in server: {member.guild.name} ({member.guild.id})')
+                        CatRoleAddSuccess2 = False
+                
                 #Logging
                 if str(before.channel.guild.id) in logging_channels:
                     logging_channel = logging_channels[str(before.channel.guild.id)]
@@ -205,41 +277,31 @@ class voicestate(commands.Cog):
 
                     if ChannelRoleLinked != None:
                         if RoleAddSuccess == True:
-                            try:
-                                embed_value = f'Role: {ChannelRoleLinked.mention} removed'
-                            except:
-                                pass
+                            embed_value = f'Role: {ChannelRoleLinked.mention} removed\n'
                         elif RoleAddSuccess == False:
-                            try:
-                                embed_value = f'Unable to remove role: {ChannelRoleLinked.mention} - Check my permissions'
-                            except:
-                                pass
+                            embed_value = f'Unable to remove role: {ChannelRoleLinked.mention} - Check my permissions\n'
+
                     if ChannelRoleLinked2 != None:
                         if RoleAddSuccess2 == True:
-                            try:
-                                embed_value2 = f'Role: {ChannelRoleLinked2.mention} added'
-                            except:
-                                pass
+                            embed_value2 = f'Role: {ChannelRoleLinked2.mention} added\n'
                         elif RoleAddSuccess2 == False:
-                            try:
-                                embed_value2 = f'Unable to add role: {ChannelRoleLinked2.mention} - Check my permissions'
-                            except:
-                                pass
+                            embed_value2 = f'Unable to add role: {ChannelRoleLinked2.mention} - Check my permissions\n'
 
-                    if embed_value != None:
-                        if embed_value2 != None:
-                            logging_embed.add_field(name='__**Roles**__', value=f'{embed_value}\n{embed_value2}')
-                        else:
-                            logging_embed.add_field(name='__**Roles**__', value=f'{embed_value}')
-                    else:
-                        if embed_value2 != None:
-                            logging_embed.add_field(name='__**Roles**__', value=f'{embed_value2}')
-                        else:
-                            pass
+                    if CatRoleAddSuccess != None:
+                        if CatRoleAddSuccess == True:
+                            embed_value3 = f'Category Role: {CategoryRoleLinked.mention} removed\n'
+                        elif CatRoleAddSuccess == False:
+                            embed_value3 = f'Unable to remove role {CategoryRoleLinked.mention} - Check my permissions\n'
 
+                    if CatRoleAddSuccess2 != None:
+                        if CatRoleAddSuccess2 == True:
+                            embed_value4 = f'Category Role: {CategoryRoleLinked2.mention} added\n'
+                        elif CatRoleAddSuccess2 == False:
+                            embed_value4 = f'Unable to add role {CategoryRoleLinked2.mention} - Check my permissions\n'
+
+                    if embed_value != '' or embed_value2 != '' or embed_value3 != '' or embed_value4 != '':
+                        logging_embed.add_field(name='__**Roles**__', value=f'{embed_value}{embed_value2}{embed_value3}{embed_value4}')
                     await logging_channel.send(embed=logging_embed)
-                else:
-                    pass
 
 
             # Private Channel Management
@@ -332,6 +394,115 @@ class voicestate(commands.Cog):
                 dis.jdump('private', data)
             except:
                 pass
+
+            # Voice Generator Management
+
+            data = dis.jopen('generator')
+            
+            try:
+                guild_data = data[str(member.guild.id)]
+
+                # Joining Generator
+                if after.channel and after.channel.id == guild_data['lobby_id']:
+                    # Code for making the Voice Channel
+                    # Save the IDs of the channels made
+
+                    generator = guild_data['category']
+                    generator = discord.utils.get(member.guild.categories, id=generator)
+
+                    vcname = f'{member.display_name}'
+
+                    generatorchannel = await member.guild.create_voice_channel(name=vcname, category=generator)
+
+                    await member.move_to(generatorchannel)
+
+                    open_rooms = guild_data['open_rooms']
+                    open_rooms[str(generatorchannel.id)] = str(member.id)
+                    guild_data['open_rooms'] = open_rooms
+
+                    data[str(member.guild.id)] = guild_data
+
+                    dis.jdump('generator', data)
+
+                # Leaving Generated Voice Channel
+                if before.channel and str(before.channel.id) in guild_data['open_rooms']:
+                    # Closing if empty
+                    if len(before.channel.members) == 0:
+                        await before.channel.delete()
+
+                        open_rooms = guild_data['open_rooms']
+                        open_rooms.pop(str(before.channel.id))
+                        guild_data['open_rooms'] = open_rooms
+
+                        data[str(member.guild.id)] = guild_data
+
+                        dis.jdump('generator', data)
+
+
+            except:
+                pass
+        
+
+            # # Category Linked Channels
+            # data = dis.jopen(f'category\\cat{member.guild.id}')
+            # # Category: Role
+
+            # # Joining AND category has a role linked
+            # if not before.channel and after.channel and str(after.channel.category.id) in data:
+            #     category = after.channel.category.id
+            #     role = member.guild.get_role(int(data[str(category)]))
+            #     CategoryRoleLinked = role
+            #     try:
+            #         await member.add_roles(role)
+            #         RoleAddSuccess = True
+            #     except:
+            #         discord_error_terminal = self.client.get_channel(786307729630298157)
+            #         await discord_error_terminal.send(f'Error 106: \nBot does not have required permissions to add role in server: {member.guild.name} ({member.guild.id})')
+            #         RoleAddSuccess = False
+            
+            # # Leaving AND category has a role linked
+            # elif before.channel and not after.channel and str(before.channel.category.id) in data:
+            #     category = before.channel.category.id
+            #     role = member.guild.get_role(int(data[str(category)]))
+            #     CategoryRoleLinked = role
+            #     try:
+            #         await member.remove_roles(role)
+            #         RoleAddSuccess = True
+            #     except:
+            #         discord_error_terminal = self.client.get_channel(786307729630298157)
+            #         await discord_error_terminal.send(f'Error 107: \nBot does not have required permissions to remove role in server: {member.guild.name} ({member.guild.id})')
+            #         RoleAddSuccess = False
+
+            # # Changing AND category has a role linked
+            # elif before.channel != after.channel:
+            #     if str(before.channel.category.id) in data:
+            #         #Removing old role
+            #         category = before.channel.category.id
+            #         role = member.guild.get_role(int(data[str(category)]))
+            #         CategoryRoleLinked = role
+            #         try:
+            #             await member.remove_roles(role)
+            #             RoleAddSuccess = True
+            #         except:
+            #             discord_error_terminal = self.client.get_channel(786307729630298157)
+            #             await discord_error_terminal.send(f'Error 107: \nBot does not have required permissions to remove role in server: {member.guild.name} ({member.guild.id})')
+            #             RoleAddSuccess = False
+                
+            #     if str(after.channel.category.id) in data:
+            #         #Adding new role
+            #         category = after.channel.category.id
+            #         role = member.guild.get_role(int(data[str(category)]))
+            #         CategoryRoleLinked = role
+            #         try:
+            #             await member.add_roles(role)
+            #             RoleAddSuccess = True
+            #         except:
+            #             discord_error_terminal = self.client.get_channel(786307729630298157)
+            #             await discord_error_terminal.send(f'Error 106: \nBot does not have required permissions to add role in server: {member.guild.name} ({member.guild.id})')
+            #             RoleAddSuccess = False
+                
+
+
 
 def setup(client):
     client.add_cog(voicestate(client))
