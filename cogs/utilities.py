@@ -32,16 +32,18 @@ class utilities(commands.Cog):
             description = 'Commands and how to use them:\nYou do not need to include \'[]\' in any commands\nFor a more detailed overview of the commands, visit our [website](https://sites.google.com/view/vc-discord-bot/commands)'
         )
 
-        utility_alias = ['changeprefix', 'prefix', 'Changeprefix', 'Prefix','Logging','logging','audits','Audits','Utility','utility','logs','Logs']
+        utility_alias = ['changeprefix', 'prefix', 'Changeprefix', 'Prefix','Logging','logging','audits','Audits','Utility','utility','logs','Logs', 'linked', 'Linked', 'list']
         link_alias = ['vclink', 'vcunlink', 'link', 'unlink', 'Vclink', 'Vcunlink', 'Link', 'Unlink','linkall','unlinkall','Linking','linking','Unlinking','unlinking']
         mute_alias = ['mute', 'vcmute', 'unmute', 'vcunmute', 'Mute', 'Unmute', 'Vcmute', 'Vcunmute']
         deafen_alias = ['deafen', 'vcdeafen', 'undeafen', 'vcundeafen', 'Deafen', 'Vcdeafen', 'Undeafen', 'Vcundeafen']
         private_alias = ['Private','private','Room','room','Privateroom','privateroom']
         tts_alias = ['tts','TTS','Tts','ttsetup','Ttssetup']
+        generator_alias = ['generator', 'generatorsetup', 'Generator', 'voicegen']
+        category_alias = ['catlink', 'Catlink', 'catunlink', 'Catunlink', 'category', 'Category']
         
 
         if commands == 'general':
-            embed.add_field(name=f'**{prefix}help**', value=f'Brings up this message, and information about other commands\nUsage: **{prefix}help [topic]**\n**Topics:** link, utility, vcmute, vcdeafen, privateroom, tts', inline=False)
+            embed.add_field(name=f'**{prefix}help**', value=f'Brings up this message, and information about other commands\nUsage: **{prefix}help [topic]**\n**Topics:** link, utility, vcmute, vcdeafen, privateroom, tts, linked, generator, category', inline=False)
             embed.add_field(name=f'**{prefix}ping**', value=f'The bot responds with its ping, can be used to see if the bot is online', inline=False)
             embed.add_field(name=f'**{prefix}info**', value=f'Gives the link to the support server, the bot\'s website, and invite link', inline=False)
             embed.add_field(name=f'**{prefix}stats**', value=f'Will give you some stats about the bot',inline=False)
@@ -57,6 +59,7 @@ class utilities(commands.Cog):
         elif commands in utility_alias:
             embed.add_field(name=f'**{prefix}changeprefix**', value=f'Allows you to change the bot prefix to anything\nUsage: **{prefix}changeprefix [prefix]**', inline=False)
             embed.add_field(name=f'**{prefix}logging**', value=f'Use this command to set the channel for voice channel logs to go to\nUsage: \n**{prefix}logging set #channel** - Used to set the logging channel \n**{prefix}logging remove #channel-mention** - Used to remove the logging channel', inline=False)
+            embed.add_field(name=f'**{prefix}linked**', value=f'Lists all the linked channels, and their roles', inline=False)
 
         elif commands in link_alias:
             embed.add_field(name=f'**{prefix}vclink**', value=f'Links a voice channel and a role, so when you join the VC you get the role\nUsage:**{prefix}vclink @role-mention**\nThe command will send an embed message with instructions', inline=False)
@@ -83,6 +86,13 @@ class utilities(commands.Cog):
             embed.add_field(name=f'**{prefix}ttssetup**', value=f'Use this to setup TTS and enable it\nUsage: **{prefix}ttssetup** - brings up the help message', inline=False)
             embed.add_field(name=f'**{prefix}tts**', value=f'Use this command to speak a message.\nUsage: **{prefix}tts [message]**', inline=False)
             embed.add_field(name=f'**{prefix}stop**', value=f'Use this command to stop the current tts message.', inline=False)
+        
+        elif commands in generator_alias:
+            embed.add_field(name=f'**{prefix}generator**', value=f'Creates a voice channel generator & category\nUsage: **{prefix}generator [optional-name]**', inline=False)
+        
+        elif commands in category_alias:
+            embed.add_field(name=f'**{prefix}catlink**', value=f'Links all channels in a category to a role\nUsage: **{prefix}catlink @role-mention**', inline=False)
+            embed.add_field(name=f'**{prefix}catunlink**', value=f'Unlinks a category from a role\nUsage: **{prefix}catunlink**', inline=False)
 
         else:
             commands = ('general')
@@ -91,7 +101,7 @@ class utilities(commands.Cog):
                 title = f'__VC Roles Help - {commands}__',
                 description = 'Commands and how to use them:'
             )
-            embed.add_field(name=f'**{prefix}help**', value=f'Brings up this message, and information about other commands\nUsage: **{prefix}help [topic]**\n**Topics:** link, utility, vcmute, vcdeafen, privateroom, tts', inline=False)
+            embed.add_field(name=f'**{prefix}help**', value=f'Brings up this message, and information about other commands\nUsage: **{prefix}help [topic]**\n**Topics:** link, utility, vcmute, vcdeafen, privateroom, tts, linked, generator, category', inline=False)
             embed.add_field(name=f'**{prefix}ping**', value=f'The bot responds with its ping, can be used to see if the bot is online', inline=False)
             embed.add_field(name=f'**{prefix}info**', value=f'Gives the link to the support server, the bot\'s website, and invite link', inline=False)
             embed.add_field(name=f'**{prefix}stats**', value=f'Will give you some stats about the bot',inline=False)
@@ -168,6 +178,41 @@ class utilities(commands.Cog):
         await discord_terminal.send(f'Command prefix on server {ctx.guild.name} ({ctx.guild.id}) changed to **{prefix}**')
 
         dis.counter('prefix')
+
+    @commands.command(aliases=['Linked', 'list', 'List'])
+    @commands.has_permissions(administrator=True)
+    async def linked(self, ctx):
+        data = dis.jopen(ctx.guild.id)
+        link_embed = discord.Embed(colour=discord.Color.blue(),title=f'The linked Voice Channels in {ctx.guild.name}:')
+        # Voice Channels
+        voice_channel_list, values = zip(*data.items())
+        voice_channel_list = list(voice_channel_list)
+        if 'all' in voice_channel_list:
+            role_ = data["all"]
+            role_ = ctx.guild.get_role(int(role_))
+            link_embed.add_field(name=f'  All Linked Role', value=f'Role - {role_.mention}', inline=False)
+        try:
+            for name_ in voice_channel_list:
+                role_ = data[name_]
+                name_ = self.client.get_channel(int(name_))
+                role_ = ctx.guild.get_role(int(role_))
+                link_embed.add_field(name=f'  {name_.name}', value=f'Role - {role_.mention}', inline=True)
+        except:
+            pass
+        #Categories
+        data = dis.jopen(f'category/cat{ctx.guild.id}')
+        voice_channel_list, values = zip(*data.items())
+        voice_channel_list = list(voice_channel_list)
+        link_embed.add_field(name='__Linked Categories__',value= '** **',inline=False)
+        for name_ in voice_channel_list:
+                role_ = data[name_]
+                name_ = self.client.get_channel(int(name_))
+                role_ = ctx.guild.get_role(int(role_))
+                link_embed.add_field(name=f'  {name_.name}', value=f'Role - {role_.mention}', inline=True)
+
+
+        await ctx.send(embed=link_embed)
+        
 
 def setup(client):
     client.add_cog(utilities(client))
