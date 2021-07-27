@@ -46,7 +46,9 @@ class voicestate(commands.Cog):
                         await member.add_roles(role)
                         RoleAddSuccess = True
                     except:
-                        discord_error_terminal = self.client.get_channel(786307729630298157)
+                        discord_error_terminal = self.client.get_channel(869353526546038784)
+                        dev_error_terminal = self.client.get_channel(786307729630298157)
+                        await dev_error_terminal.send(f'Error 106: \nBot does not have required permissions to add role in server: {member.guild.name} ({member.guild.id})')
                         await discord_error_terminal.send(f'Error 106: \nBot does not have required permissions to add role in server: {member.guild.name} ({member.guild.id})')
                         RoleAddSuccess = False
                 
@@ -61,6 +63,8 @@ class voicestate(commands.Cog):
                         AllRoleAddSuccess = True
                     except:
                         discord_error_terminal = self.client.get_channel(786307729630298157)
+                        dev_error_terminal = self.client.get_channel(786307729630298157)
+                        await dev_error_terminal.send(f'Error 106: \nBot does not have required permissions to add role in server: {member.guild.name} ({member.guild.id})')
                         await discord_error_terminal.send(f'Error 106: \nBot does not have required permissions to add role in server: {member.guild.name} ({member.guild.id})')
                         AllRoleAddSuccess = False
                 
@@ -76,6 +80,8 @@ class voicestate(commands.Cog):
                         CatRoleAddSuccess = True
                     except:
                         discord_error_terminal = self.client.get_channel(786307729630298157)
+                        dev_error_terminal = self.client.get_channel(786307729630298157)
+                        await dev_error_terminal.send(f'Error 106: \nBot does not have required permissions to add role in server: {member.guild.name} ({member.guild.id})')
                         await discord_error_terminal.send(f'Error 106: \nBot does not have required permissions to add role in server: {member.guild.name} ({member.guild.id})')
                         CatRoleAddSuccess = False
                 
@@ -134,6 +140,8 @@ class voicestate(commands.Cog):
                         RoleAddSuccess = True
                     except:
                         discord_error_terminal = self.client.get_channel(786307729630298157)
+                        dev_error_terminal = self.client.get_channel(786307729630298157)
+                        await dev_error_terminal.send(f'Error 106: \nBot does not have required permissions to add role in server: {member.guild.name} ({member.guild.id})')
                         await discord_error_terminal.send(f'Error 107: \nBot does not have required permissions to remove role in server: {member.guild.name} ({member.guild.id})')
                         RoleAddSuccess = False
 
@@ -150,6 +158,8 @@ class voicestate(commands.Cog):
                         AllRoleAddSuccess = True
                     except:
                         discord_error_terminal = self.client.get_channel(786307729630298157)
+                        dev_error_terminal = self.client.get_channel(786307729630298157)
+                        await dev_error_terminal.send(f'Error 106: \nBot does not have required permissions to add role in server: {member.guild.name} ({member.guild.id})')
                         await discord_error_terminal.send(f'Error 107: \nBot does not have required permissions to remove role in server: {member.guild.name} ({member.guild.id})')
                         AllRoleAddSuccess = False
                 
@@ -165,6 +175,8 @@ class voicestate(commands.Cog):
                         CatRoleAddSuccess = True
                     except:
                         discord_error_terminal = self.client.get_channel(786307729630298157)
+                        dev_error_terminal = self.client.get_channel(786307729630298157)
+                        await dev_error_terminal.send(f'Error 106: \nBot does not have required permissions to add role in server: {member.guild.name} ({member.guild.id})')
                         await discord_error_terminal.send(f'Error 107: \nBot does not have required permissions to remove role in server: {member.guild.name} ({member.guild.id})')
                         CatRoleAddSuccess = False
 
@@ -214,6 +226,8 @@ class voicestate(commands.Cog):
                         RoleAddSuccess = True
                     except:
                         discord_error_terminal = self.client.get_channel(786307729630298157)
+                        dev_error_terminal = self.client.get_channel(786307729630298157)
+                        await dev_error_terminal.send(f'Error 106: \nBot does not have required permissions to add role in server: {member.guild.name} ({member.guild.id})')
                         await discord_error_terminal.send(f'Error 107: \nBot does not have required permissions to remove role in server: {member.guild.name} ({member.guild.id})')
                         RoleAddSuccess = False
                 
@@ -231,6 +245,8 @@ class voicestate(commands.Cog):
                         RoleAddSuccess2 = True
                     except:
                         discord_error_terminal = self.client.get_channel(786307729630298157)
+                        dev_error_terminal = self.client.get_channel(786307729630298157)
+                        await dev_error_terminal.send(f'Error 106: \nBot does not have required permissions to add role in server: {member.guild.name} ({member.guild.id})')
                         await discord_error_terminal.send(f'Error 106/107: \nBot does not have required permissions to add role in server: {member.guild.name} ({member.guild.id})')
                         RoleAddSuccess2 = False
 
@@ -247,6 +263,8 @@ class voicestate(commands.Cog):
                         CatRoleAddSuccess = True
                     except:
                         discord_error_terminal = self.client.get_channel(786307729630298157)
+                        dev_error_terminal = self.client.get_channel(786307729630298157)
+                        await dev_error_terminal.send(f'Error 106: \nBot does not have required permissions to add role in server: {member.guild.name} ({member.guild.id})')
                         await discord_error_terminal.send(f'Error 107: \nBot does not have required permissions to remove role in server: {member.guild.name} ({member.guild.id})')
                         CatRoleAddSuccess = False
 
@@ -262,6 +280,8 @@ class voicestate(commands.Cog):
                         CatRoleAddSuccess2 = True
                     except:
                         discord_error_terminal = self.client.get_channel(786307729630298157)
+                        dev_error_terminal = self.client.get_channel(786307729630298157)
+                        await dev_error_terminal.send(f'Error 106: \nBot does not have required permissions to add role in server: {member.guild.name} ({member.guild.id})')
                         await discord_error_terminal.send(f'Error 106: \nBot does not have required permissions to add role in server: {member.guild.name} ({member.guild.id})')
                         CatRoleAddSuccess2 = False
                 
