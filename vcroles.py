@@ -65,6 +65,9 @@ async def on_guild_join(guild):
     dev_terminal = client.get_channel(869354307328307230)
     await dev_terminal.send(f'Joined server: {guild.name}\nVC list created, name: {guild.id}')
 
+    server_count = client.get_channel(869587186318716959)
+    await server_count.edit(name=f'{len(client.guilds)} - Servers')
+
 @client.event
 async def on_guild_remove(guild):
     prefixes = dis.jopen('prefixes')
@@ -82,6 +85,9 @@ async def on_guild_remove(guild):
     dev_terminal = client.get_channel(869354307328307230)
     await dev_terminal.send(f'Bot left server {guild.name}, {guild.id}\nVC list reset')
 
+    server_count = client.get_channel(869587186318716959)
+    await server_count.edit(name=f'{len(client.guilds)} - Servers')
+
 @client.event
 async def on_ready():
     await client.change_presence(status=discord.Status.online)
@@ -95,6 +101,9 @@ async def on_ready():
     await discord_terminal.send(f'Bot is ready\nI am in {serverss} servers')
     dev_terminal = client.get_channel(869354307328307230) 
     await dev_terminal.send(f'Bot is ready\nI am in {serverss} servers')
+
+    server_count = client.get_channel(869587186318716959)
+    await server_count.edit(name=f'{len(client.guilds)} - Servers')
 
     # dbd.openDash(client)
 
