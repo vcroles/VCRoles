@@ -58,6 +58,7 @@ async def on_guild_join(guild):
     dis.jdump(guild.id, {})
 
     dis.jdump(f'category\\cat{guild.id}', {})
+    dis.jdump(f'stage\\stage{guild.id}', {})
 
     print(f'VC lists for {guild.id} created. Server name: {guild.name}')
     discord_terminal = client.get_channel(776117712074047539)
