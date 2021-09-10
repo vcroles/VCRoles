@@ -1,4 +1,5 @@
 import discord
+from discord.channel import StageChannel
 from discord.ext import commands
 from ds import ds
 dis = ds()
@@ -9,6 +10,111 @@ class voicestate(commands.Cog):
 
     def __init__(self, client):
         self.client = client
+
+    async def stage(self, member, before, after):
+        data = dis.jopen(f'stage\\stage{member.guild.id}')
+
+        stage_added = None
+        stage_removed = None
+        stage_change_added = None
+        stage_change_removed = None
+        type = None
+
+        # ** JOIN ** 
+        if not before.channel and after.channel:
+            channel = after.channel
+            type = 'join'
+
+            try:
+                if str(channel.id) in data:
+                    role_id = data[str(channel.id)]
+
+                    role = member.guild.get_role(int(role_id))
+
+                    await member.add_roles(role)
+
+                    stage_added = role
+            except:
+                pass
+
+        # ** LEAVE ** 
+        elif before.channel and not after.channel:
+            channel = before.channel
+            type = 'leave'
+
+            try:
+                if str(channel.id) in data:
+                    role_id = data[str(channel.id)]
+
+                    role = member.guild.get_role(int(role_id))
+
+                    await member.remove_roles(role)
+
+                    stage_removed = role
+            except:
+                pass
+
+        # ** CHANGE ** 
+        elif before.channel != after.channel:
+            type = 'change'
+
+            try:
+                if str(before.channel.id) in data:
+                    role_id = data[str(before.channel.id)]
+
+                    role = member.guild.get_role(int(role_id))
+
+                    await member.remove_roles(role)
+
+                    stage_change_removed = role
+            except:
+                pass
+
+            try:
+                if str(after.channel.id) in data:
+                    role_id = data[str(after.channel.id)]
+
+                    role = member.guild.get_role(int(role_id))
+
+                    await member.add_roles(role)
+
+                    stage_change_added = role
+            except:
+                pass
+
+        logging_channels = dis.jopen('logging')
+
+        if str(member.guild.id) in logging_channels:
+            logging_channel = logging_channels[str(member.guild.id)]
+            logging_channel = self.client.get_channel(int(logging_channel))
+            if stage_added or type == 'join':
+                logging_embed = discord.Embed(colour=discord.Colour.green(),title='Member Joined stage channel',description=f'{member.name}#{member.discriminator} joined {after.channel.mention}')
+            elif stage_removed or type == 'leave':
+                logging_embed = discord.Embed(colour=discord.Colour.red(),title='Member Left stage channel',description=f'{member.name}#{member.discriminator} left {before.channel.mention}')
+            elif stage_change_added or stage_change_removed or type == 'change':
+                logging_embed = discord.Embed(colour=discord.Colour.blue(),title='Member Changed stage channel',description=f'**Before:** {before.channel.mention}\n **+After:** {after.channel.mention}')
+
+            logging_embed.set_footer(text=f'User ID - {member.id} • {time.strftime("%a %H:%M", localtime())}')
+            logging_embed.set_author(name=f'{member.name}#{member.discriminator}',icon_url=member.avatar_url)
+
+            embed_value = ''
+            if stage_added != None:
+                embed_value += f'Role: {stage_added.mention} added'
+            elif stage_removed != None:
+                embed_value += f'Role: {stage_removed.mention} removed'
+            elif stage_change_added != None or stage_change_removed != None:
+                if stage_change_added != None and stage_change_removed != None:
+                    embed_value += f'Role: {stage_change_removed.mention} removed\nRole: {stage_change_added.mention} added'
+                elif stage_change_removed != None and stage_change_added == None:
+                    embed_value += f'Role: {stage_change_removed.mention} removed'
+                elif stage_change_added != None and stage_change_removed == None:
+                    embed_value += f'Role: {stage_change_added.mention} added'
+
+            if embed_value != '':
+                logging_embed.add_field(name='__**Roles**__', value=embed_value)
+            await logging_channel.send(embed=logging_embed)
+
+
 
     # event
     @commands.Cog.listener()
@@ -87,7 +193,7 @@ class voicestate(commands.Cog):
                 
                 
                 #Logging
-                if str(after.channel.guild.id) in logging_channels:
+                if str(after.channel.guild.id) in logging_channels and str(after.channel.type) != 'stage_voice':
                     logging_channel = logging_channels[str(after.channel.guild.id)]
                     logging_channel = self.client.get_channel(int(logging_channel))
                     logging_embed = discord.Embed(colour=discord.Colour.green(),title='Member Joined voice channel',description=f'{member.name}#{member.discriminator} joined {after.channel.mention}')
@@ -182,7 +288,7 @@ class voicestate(commands.Cog):
 
                 
                 #Logging
-                if str(before.channel.guild.id) in logging_channels:
+                if str(before.channel.guild.id) in logging_channels and str(before.channel.type) != 'stage_voice':
                     logging_channel = logging_channels[str(before.channel.guild.id)]
                     logging_channel = self.client.get_channel(int(logging_channel))
                     logging_embed = discord.Embed(colour=discord.Colour.red(),title='Member Left voice channel',description=f'{member.name}#{member.discriminator} left {before.channel.mention}')
@@ -286,7 +392,7 @@ class voicestate(commands.Cog):
                         CatRoleAddSuccess2 = False
                 
                 #Logging
-                if str(before.channel.guild.id) in logging_channels:
+                if str(before.channel.guild.id) in logging_channels and str(after.channel.type) != 'stage_voice' and str(before.channel.type) != 'stage_voice':
                     logging_channel = logging_channels[str(before.channel.guild.id)]
                     logging_channel = self.client.get_channel(int(logging_channel))
                     logging_embed = discord.Embed(colour=discord.Colour.blue(),title='Member Changed voice channel',description=f'**Before:** {before.channel.mention}\n**+After:** {after.channel.mention}')
@@ -461,63 +567,7 @@ class voicestate(commands.Cog):
                 pass
         
 
-            # # Category Linked Channels
-            # data = dis.jopen(f'category\\cat{member.guild.id}')
-            # # Category: Role
-
-            # # Joining AND category has a role linked
-            # if not before.channel and after.channel and str(after.channel.category.id) in data:
-            #     category = after.channel.category.id
-            #     role = member.guild.get_role(int(data[str(category)]))
-            #     CategoryRoleLinked = role
-            #     try:
-            #         await member.add_roles(role)
-            #         RoleAddSuccess = True
-            #     except:
-            #         discord_error_terminal = self.client.get_channel(786307729630298157)
-            #         await discord_error_terminal.send(f'Error 106: \nBot does not have required permissions to add role in server: {member.guild.name} ({member.guild.id})')
-            #         RoleAddSuccess = False
-            
-            # # Leaving AND category has a role linked
-            # elif before.channel and not after.channel and str(before.channel.category.id) in data:
-            #     category = before.channel.category.id
-            #     role = member.guild.get_role(int(data[str(category)]))
-            #     CategoryRoleLinked = role
-            #     try:
-            #         await member.remove_roles(role)
-            #         RoleAddSuccess = True
-            #     except:
-            #         discord_error_terminal = self.client.get_channel(786307729630298157)
-            #         await discord_error_terminal.send(f'Error 107: \nBot does not have required permissions to remove role in server: {member.guild.name} ({member.guild.id})')
-            #         RoleAddSuccess = False
-
-            # # Changing AND category has a role linked
-            # elif before.channel != after.channel:
-            #     if str(before.channel.category.id) in data:
-            #         #Removing old role
-            #         category = before.channel.category.id
-            #         role = member.guild.get_role(int(data[str(category)]))
-            #         CategoryRoleLinked = role
-            #         try:
-            #             await member.remove_roles(role)
-            #             RoleAddSuccess = True
-            #         except:
-            #             discord_error_terminal = self.client.get_channel(786307729630298157)
-            #             await discord_error_terminal.send(f'Error 107: \nBot does not have required permissions to remove role in server: {member.guild.name} ({member.guild.id})')
-            #             RoleAddSuccess = False
-                
-            #     if str(after.channel.category.id) in data:
-            #         #Adding new role
-            #         category = after.channel.category.id
-            #         role = member.guild.get_role(int(data[str(category)]))
-            #         CategoryRoleLinked = role
-            #         try:
-            #             await member.add_roles(role)
-            #             RoleAddSuccess = True
-            #         except:
-            #             discord_error_terminal = self.client.get_channel(786307729630298157)
-            #             await discord_error_terminal.send(f'Error 106: \nBot does not have required permissions to add role in server: {member.guild.name} ({member.guild.id})')
-            #             RoleAddSuccess = False
+        await self.stage(member, before, after)
                 
 
 

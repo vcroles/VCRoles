@@ -112,6 +112,35 @@ class dev(commands.Cog):
     async def coglist(self, ctx):
         cog_list = ['dev','linkall','logging','privateroom','tts','utilites','vccontrol','vclink','voicestate']
         await ctx.send(f'The Cogs used in VC Roles are:\n{cog_list}')
+    
+    @commands.command()
+    @commands.check(dis.is_it_dev)
+    async def catfix(self, ctx):
+        await ctx.send('Started')
+        st = time.time()
+        for i in self.client.guilds:
+            try:
+                data = dis.jopen(f'category\\cat{i.id}')
+            except:
+                dis.jdump(f'category\\cat{i.id}', {})
+                print(f'{i.name} - Done')
+                time.sleep(0.01)
+        await ctx.send(f'Done. {time.time()-st}')
+
+    @commands.command()
+    @commands.check(dis.is_it_dev)
+    async def stagefix(self, ctx):
+        await ctx.send('Started')
+        st = time.time()
+        for i in self.client.guilds:
+            try:
+                data = dis.jopen(f'stage\\stage{i.id}')
+            except:
+                dis.jdump(f'stage\\stage{i.id}', {})
+                print(f'{i.name} - Done')
+                time.sleep(0.01)
+        await ctx.send(f'Done. {time.time()-st}')
+
         
     
 
