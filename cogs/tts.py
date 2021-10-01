@@ -87,6 +87,15 @@ class tts(commands.Cog):
 
     @commands.command()
     @commands.has_permissions(administrator=True)
+    async def ttsreset(self, ctx):
+        try:
+            self.tts_.reset_cooldown(ctx)
+            await ctx.send(f'Successfully reset the TTS cooldown.')
+        except:
+            await ctx.send('Error while resetting cooldown.')
+
+    @commands.command()
+    @commands.has_permissions(administrator=True)
     async def ttssetup(self, ctx, enabled = None, role:discord.Role = None):
         true_aliases = ['y', 'true', 'Y']
         false_aliases = ['n', 'false', 'N']
