@@ -1,4 +1,4 @@
-import discord, json
+import discord, json, os
 
 with open('Data/config.json', 'r') as f:
     config = json.load(f)
@@ -47,6 +47,7 @@ client = MyClient(intents=intents)
 
 # COMMANDS
 
+# Cog Commands
 @client.slash_command(guild_ids=[758392649979265024])
 async def load(ctx, extension:str):
     try:
@@ -64,7 +65,26 @@ async def unload(ctx, extension:str):
         await ctx.send(f'Failed while unloading {extension}')
 
 @client.slash_command(guild_ids=[758392649979265024])
-async def ping(ctx):
-    await ctx.send(f'Pong! {round(client.latency*1000,2)} ms')
+async def reload(ctx, extension: str):
+    try:
+        client.unload_extension(f'cogs.{extension}')
+        await ctx.send(f'Successfully unloaded {extension}')
+    except:
+        await ctx.send(f'Failed while unloading {extension}')
+    try:
+        client.load_extension(f'cogs.{extension}')
+        await ctx.send(f'Successfully loaded {extension}')
+    except:
+        await ctx.send(f'Failed while loading {extension}')
+
+# Adding Extensions
+
+#FIND A WAY TO MAKE IT RECURSIVE e.g. CHECK IN ALL DIRS AND SUBDIRS.
+for filename in os.listdir('cogs'):
+    if filename.endswith('.py'):
+        print(filename)
+        # client.load_extension(f'cogs.{filename[:-3]}')
+
+# Running the bot.
 
 client.run(config['TESTING_TOKEN'])
