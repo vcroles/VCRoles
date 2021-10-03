@@ -1,0 +1,10 @@
+{
+    "id":{
+        "prefix": "?",
+        "tts": {
+            "enabled": true,
+            "role": "id/null"
+        },
+        "logging": "channel_id"
+    }
+}
