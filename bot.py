@@ -7,7 +7,7 @@ class MyClient(discord.AutoShardedBot):
     
     async def on_ready(self):
         print(f'Logged in as {self.user}')
-        print(f'Bot is in {len(self.guilds)}')
+        print(f'Bot is in {len(self.guilds)} guilds.')
         print('------')
 
         await client.change_presence(status=discord.Status.online)
@@ -63,5 +63,8 @@ async def unload(ctx, extension:str):
     except:
         await ctx.send(f'Failed while unloading {extension}')
 
+@client.slash_command(guild_ids=[758392649979265024])
+async def ping(ctx):
+    await ctx.send(f'Pong! {round(client.latency*1000,2)} ms')
 
 client.run(config['TESTING_TOKEN'])
