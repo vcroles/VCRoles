@@ -1,9 +1,10 @@
 import discord, json, os
+from discord.ext import commands
 
 with open('Data/config.json', 'r') as f:
     config = json.load(f)
 
-class MyClient(discord.AutoShardedBot):
+class MyClient(commands.AutoShardedBot):
     
     async def on_ready(self):
         print(f'Logged in as {self.user}')
@@ -41,8 +42,7 @@ class MyClient(discord.AutoShardedBot):
 
 intents = discord.Intents(messages = True, guilds = True, reactions = True, voice_states = True)
 
-client = MyClient(intents=intents)
-
+client = MyClient('!', intents=intents)
 
 
 # COMMANDS
@@ -73,17 +73,16 @@ async def reload(ctx, extension: str):
         await ctx.send(f'Failed while unloading {extension}')
     try:
         client.load_extension(f'cogs.{extension}')
-        await ctx.send(f'Successfully loaded {extension}')
+        await ctx.channel.send(f'Successfully loaded {extension}')
     except:
-        await ctx.send(f'Failed while loading {extension}')
+        await ctx.channel.send(f'Failed while loading {extension}')
 
 # Adding Extensions
 
-#FIND A WAY TO MAKE IT RECURSIVE e.g. CHECK IN ALL DIRS AND SUBDIRS.
 for filename in os.listdir('cogs'):
     if filename.endswith('.py'):
-        print(filename)
-        # client.load_extension(f'cogs.{filename[:-3]}')
+        client.load_extension(f'cogs.{filename[:-3]}')
+        print(f'Loaded extension: {filename[:-3]}')
 
 # Running the bot.
 
