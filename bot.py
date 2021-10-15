@@ -52,25 +52,25 @@ client = MyClient('!', intents=intents)
 async def load(ctx, extension:str):
     try:
         client.load_extension(f'cogs.{extension}')
-        await ctx.send(f'Successfully loaded {extension}')
+        await ctx.respond(f'Successfully loaded {extension}')
     except:
-        await ctx.send(f'Failed while loading {extension}')
+        await ctx.respond(f'Failed while loading {extension}')
 
 @client.slash_command(guild_ids=[758392649979265024])
 async def unload(ctx, extension:str):
     try:
         client.unload_extension(f'cogs.{extension}')
-        await ctx.send(f'Successfully unloaded {extension}')
+        await ctx.respond(f'Successfully unloaded {extension}')
     except:
-        await ctx.send(f'Failed while unloading {extension}')
+        await ctx.respond(f'Failed while unloading {extension}')
 
 @client.slash_command(guild_ids=[758392649979265024])
 async def reload(ctx, extension: str):
     try:
         client.unload_extension(f'cogs.{extension}')
-        await ctx.send(f'Successfully unloaded {extension}')
+        await ctx.respond(f'Successfully unloaded {extension}')
     except:
-        await ctx.send(f'Failed while unloading {extension}')
+        await ctx.respond(f'Failed while unloading {extension}')
     try:
         client.load_extension(f'cogs.{extension}')
         await ctx.channel.send(f'Successfully loaded {extension}')
