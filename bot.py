@@ -1,10 +1,20 @@
 import discord, json, os
 from discord.ext import commands
 
+from voicestate import all, category, logging, stage, voice
+
 with open('Data/config.json', 'r') as f:
     config = json.load(f)
 
 class MyClient(commands.AutoShardedBot):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.all = all.all(self)
+        self.category = category.category(self)
+        self.logging = logging.logging(self)
+        self.stage = stage.stage(self)
+        self.voice = voice.voice(self)
     
     async def on_ready(self):
         print(f'Logged in as {self.user}')
@@ -26,7 +36,7 @@ class MyClient(commands.AutoShardedBot):
         with open('Data/guild_data.json', 'r') as f:
             data = json.load(f)
         
-        data[str(guild.id)] = {'prefix': '?', 'tts': {'enabled': False, 'role': None},'logging': None}
+        data[str(guild.id)] = {'tts': {'enabled': False, 'role': None},'logging': None}
 
         with open('Data/guild_data.json', 'w') as f:
             json.dump(data, f, indent=4)
@@ -35,10 +45,13 @@ class MyClient(commands.AutoShardedBot):
         with open('Data/guild_data.json', 'r') as f:
             data = json.load(f)
 
-        data.pop(str(guild.id))
+        try:
+            data.pop(str(guild.id))
 
-        with open('Data/guild_data.json', 'w') as f:
-            json.dump(data, f, indent=4)
+            with open('Data/guild_data.json', 'w') as f:
+                json.dump(data, f, indent=4)
+        except:
+            pass
 
 intents = discord.Intents(messages = True, guilds = True, reactions = True, voice_states = True)
 

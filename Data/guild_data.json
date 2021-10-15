@@ -1,6 +1,5 @@
 {
     "id":{
-        "prefix": "?",
         "tts": {
             "enabled": true,
             "role": "id/null"
