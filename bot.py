@@ -1,8 +1,16 @@
 import discord, json, os
+from discord.app.commands import Option
 from discord.ext import commands
+import logging
 
 with open('Data/config.json', 'r') as f:
     config = json.load(f)
+
+logger = logging.getLogger('discord')
+logger.setLevel(logging.DEBUG)
+handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
+logger.addHandler(handler)
 
 class MyClient(commands.AutoShardedBot):
 
@@ -14,6 +22,12 @@ class MyClient(commands.AutoShardedBot):
         with open(f'{file}.json', 'w') as f:
             json.dump(data, f, indent=4)
     
+    def is_it_dev(ctx):
+        if ctx.author.id == 652797071623192576:
+            return ctx.author.id == 652797071623192576
+        elif ctx.author.id == 602235481459261440:
+            return ctx.author.id == 602235481459261440
+
     async def on_ready(self):
         print(f'Logged in as {self.user}')
         print(f'Bot is in {len(self.guilds)} guilds.')
@@ -37,6 +51,10 @@ class MyClient(commands.AutoShardedBot):
 
         self.jdump('Data/guild_data', data)
 
+        data = {"voice": {},"stage": {},"category": {},"all": []}
+
+        self.jdump(f'Linked/{guild.id}', data)
+
     async def on_guild_remove(self, guild:discord.Guild):
         data = self.jopen('Data/guild_data')
 
@@ -47,15 +65,34 @@ class MyClient(commands.AutoShardedBot):
         except:
             pass
 
+        try:
+            os.remove(f'Linked/{guild.id}.json')
+        except:
+            pass
+    
+    async def on_application_command_error(self, ctx, error):
+
+        if isinstance(error, commands.MissingPermissions):
+            await ctx.respond('You do not have the required permissions to use this command.')
+
+        if isinstance(error, commands.NotOwner):
+            await ctx.respond('This is a developer only command.')
+
+        else:
+            try:
+                await ctx.respond(f'Error: {error}')
+            except:
+                pass
+
 intents = discord.Intents(messages = True, guilds = True, reactions = True, voice_states = True)
 
 client = MyClient('!', intents=intents)
 
-
 # COMMANDS
 
-# Cog Commands
-@client.slash_command(guild_ids=[758392649979265024])
+# DEV Commands
+@client.slash_command(guild_ids=config['MANAGE_GUILD_IDS'])
+@commands.is_owner()
 async def load(ctx, extension:str):
     try:
         client.load_extension(f'cogs.{extension}')
@@ -63,7 +100,8 @@ async def load(ctx, extension:str):
     except:
         await ctx.respond(f'Failed while loading {extension}')
 
-@client.slash_command(guild_ids=[758392649979265024])
+@client.slash_command(guild_ids=config['MANAGE_GUILD_IDS'])
+@commands.is_owner()
 async def unload(ctx, extension:str):
     try:
         client.unload_extension(f'cogs.{extension}')
@@ -71,13 +109,20 @@ async def unload(ctx, extension:str):
     except:
         await ctx.respond(f'Failed while unloading {extension}')
 
-@client.slash_command(guild_ids=[758392649979265024])
+@client.slash_command(guild_ids=config['MANAGE_GUILD_IDS'])
+@commands.is_owner()
 async def reload(ctx, extension: str):
     try:
         client.reload_extension(f'cogs.{extension}')
         await ctx.respond(f'Successfully reloaded {extension}')
     except:
         await ctx.respond(f'Failed while reloading {extension}')
+
+@client.slash_command(guild_ids=config['MANAGE_GUILD_IDS'])
+@commands.is_owner()
+async def logs(ctx):#, type: Option(str, 'Log type', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'])):
+    await ctx.respond('Fetching Logs...')
+    await ctx.channel.send(file=discord.File(f'discord.log'))
 
 # Adding Extensions
 

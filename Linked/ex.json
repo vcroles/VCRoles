@@ -1,0 +1,12 @@
+{
+    "voice": {
+        "channelid": ["roleid"]
+    },
+    "stage": {
+        "channelid": ["roleid"]
+    },
+    "category": {
+        "catid": ["roleid"]
+    },
+    "all": ["roleid"]
+}
