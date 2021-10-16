@@ -1,20 +1,10 @@
 import discord, json, os
 from discord.ext import commands
 
-from voicestate import all, category, logging, stage, voice
-
 with open('Data/config.json', 'r') as f:
     config = json.load(f)
 
 class MyClient(commands.AutoShardedBot):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.all = all.all(self)
-        self.category = category.category(self)
-        self.logging = logging.logging(self)
-        self.stage = stage.stage(self)
-        self.voice = voice.voice(self)
 
     def jopen(self, file):
         with open(f'{file}.json', 'r') as f:
