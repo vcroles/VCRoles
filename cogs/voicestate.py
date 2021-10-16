@@ -8,13 +8,12 @@ class voicestate(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
-    @commands.slash_command(guild_ids=[758392649979265024])
-    async def test(self, ctx):
-        await ctx.respond(f'{await self.client.all.join()}')
-
-    @commands.slash_command(guild_ids=[758392649979265024])
-    async def test2(self, ctx):
-        await ctx.respond(f'{await self.client.stage.join()}')
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
+        if member.bot == True:
+            return 
+        print(member)
+        # logging_embed = discord.Embed()
         
 
 

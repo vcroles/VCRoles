@@ -15,6 +15,14 @@ class MyClient(commands.AutoShardedBot):
         self.logging = logging.logging(self)
         self.stage = stage.stage(self)
         self.voice = voice.voice(self)
+
+    def jopen(self, file):
+        with open(f'{file}.json', 'r') as f:
+            return json.load(f)
+    
+    def jdump(self, file, data):
+        with open(f'{file}.json', 'w') as f:
+            json.dump(data, f, indent=4)
     
     async def on_ready(self):
         print(f'Logged in as {self.user}')
@@ -33,23 +41,19 @@ class MyClient(commands.AutoShardedBot):
         # await server_count.edit(name=f'{len(client.guilds)} - Servers')
 
     async def on_guild_join(self, guild:discord.Guild):
-        with open('Data/guild_data.json', 'r') as f:
-            data = json.load(f)
+        data = self.jopen('Data/guild_data')
         
         data[str(guild.id)] = {'tts': {'enabled': False, 'role': None},'logging': None}
 
-        with open('Data/guild_data.json', 'w') as f:
-            json.dump(data, f, indent=4)
+        self.jdump('Data/guild_data', data)
 
     async def on_guild_remove(self, guild:discord.Guild):
-        with open('Data/guild_data.json', 'r') as f:
-            data = json.load(f)
+        data = self.jopen('Data/guild_data')
 
         try:
             data.pop(str(guild.id))
 
-            with open('Data/guild_data.json', 'w') as f:
-                json.dump(data, f, indent=4)
+            self.jdump('Data/guild_data', data)
         except:
             pass
 
@@ -80,15 +84,10 @@ async def unload(ctx, extension:str):
 @client.slash_command(guild_ids=[758392649979265024])
 async def reload(ctx, extension: str):
     try:
-        client.unload_extension(f'cogs.{extension}')
-        await ctx.respond(f'Successfully unloaded {extension}')
+        client.reload_extension(f'cogs.{extension}')
+        await ctx.respond(f'Successfully reloaded {extension}')
     except:
-        await ctx.respond(f'Failed while unloading {extension}')
-    try:
-        client.load_extension(f'cogs.{extension}')
-        await ctx.channel.send(f'Successfully loaded {extension}')
-    except:
-        await ctx.channel.send(f'Failed while loading {extension}')
+        await ctx.respond(f'Failed while reloading {extension}')
 
 # Adding Extensions
 
