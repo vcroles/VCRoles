@@ -20,6 +20,7 @@ class voicestate(commands.Cog):
         print(member)
         # logging_embed = discord.Embed()
         
+        
 
 
 def setup(client):
