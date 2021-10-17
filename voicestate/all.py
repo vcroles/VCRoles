@@ -10,7 +10,7 @@ class all():
             roles = []
             for i in data['all']:
                 try:
-                    role = await member.guild.get_role(int(i))
+                    role = member.guild.get_role(int(i))
                     await member.add_roles(role, reason='Joined voice channel')
                     roles.append(role)
                 except:
@@ -24,7 +24,7 @@ class all():
             roles = []
             for i in data['all']:
                 try:
-                    role = await member.guild.get_role(int(i))
+                    role = member.guild.get_role(int(i))
                     await member.remove_roles(role, reason='Left voice channel')
                     roles.append(role)
                 except:

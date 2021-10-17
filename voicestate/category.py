@@ -10,7 +10,7 @@ class category():
             roles = []
             for i in data['category'][str(after.channel.category.id)]:
                 try:
-                    role = await member.guild.get_role(int(i))
+                    role = member.guild.get_role(int(i))
                     await member.add_roles(role, reason='Joined voice channel')
                     roles.append(role)
                 except:
@@ -23,7 +23,7 @@ class category():
             roles = []
             for i in data['category'][str(before.channel.category.id)]:
                 try:
-                    role = await member.guild.get_role(int(i))
+                    role = member.guild.get_role(int(i))
                     await member.remove_roles(role, reason='Left voice channel')
                     roles.append(role)
                 except:

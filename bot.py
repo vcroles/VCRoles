@@ -90,7 +90,7 @@ client = MyClient('!', intents=intents)
 # COMMANDS
 
 # DEV Commands
-@client.slash_command(guild_ids=config['MANAGE_GUILD_IDS'])
+@client.slash_command(description='DEVELOPER COMMAND',guild_ids=config['MANAGE_GUILD_IDS'])
 @commands.is_owner()
 async def load(ctx, extension:str):
     try:
@@ -99,7 +99,7 @@ async def load(ctx, extension:str):
     except:
         await ctx.respond(f'Failed while loading {extension}')
 
-@client.slash_command(guild_ids=config['MANAGE_GUILD_IDS'])
+@client.slash_command(description='DEVELOPER COMMAND',guild_ids=config['MANAGE_GUILD_IDS'])
 @commands.is_owner()
 async def unload(ctx, extension:str):
     try:
@@ -108,7 +108,7 @@ async def unload(ctx, extension:str):
     except:
         await ctx.respond(f'Failed while unloading {extension}')
 
-@client.slash_command(guild_ids=config['MANAGE_GUILD_IDS'])
+@client.slash_command(description='DEVELOPER COMMAND',guild_ids=config['MANAGE_GUILD_IDS'])
 @commands.is_owner()
 async def reload(ctx, extension: str):
     try:
@@ -117,7 +117,7 @@ async def reload(ctx, extension: str):
     except:
         await ctx.respond(f'Failed while reloading {extension}')
 
-@client.slash_command(guild_ids=config['MANAGE_GUILD_IDS'])
+@client.slash_command(description='DEVELOPER COMMAND',guild_ids=config['MANAGE_GUILD_IDS'])
 @commands.is_owner()
 async def logs(ctx):#, type: Option(str, 'Log type', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'])):
     await ctx.respond('Fetching Logs...')
