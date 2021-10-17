@@ -50,15 +50,6 @@ class voicestate(commands.Cog):
         # Changing
         elif before.channel != after.channel:
             data = self.client.jopen(f'Linked/{member.guild.id}')
-
-            # Adding
-            if str(after.channel.type) == 'voice':
-                voice_added = await self.voice.join(data, member, before, after)
-
-            elif str(after.channel.type) == 'stage_voice':
-                stage_added = await self.stage.join(data, member, before, after)
-
-            category_added = await self.category.join(data, member, before, after)
             
             # Removing
             if str(before.channel.type) == 'voice':
@@ -68,6 +59,15 @@ class voicestate(commands.Cog):
                 stage_removed = await self.stage.leave(data, member, before, after)
 
             category_removed = await self.category.leave(data, member, before, after)
+
+            # Adding
+            if str(after.channel.type) == 'voice':
+                voice_added = await self.voice.join(data, member, before, after)
+
+            elif str(after.channel.type) == 'stage_voice':
+                stage_added = await self.stage.join(data, member, before, after)
+
+            category_added = await self.category.join(data, member, before, after)
         
 
 def setup(client):
