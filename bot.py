@@ -1,5 +1,4 @@
 import discord, json, os
-from discord.app.commands import Option
 from discord.ext import commands
 import logging
 
@@ -124,13 +123,15 @@ async def logs(ctx):#, type: Option(str, 'Log type', choices=['DEBUG', 'INFO', '
     await ctx.respond('Fetching Logs...')
     await ctx.channel.send(file=discord.File(f'discord.log'))
 
-# Adding Extensions
+if __name__ == '__main__':
 
-for filename in os.listdir('cogs'):
-    if filename.endswith('.py'):
-        client.load_extension(f'cogs.{filename[:-3]}')
-        print(f'Loaded extension: {filename[:-3]}')
+    # Adding Extensions
 
-# Running the bot.
+    for filename in os.listdir('cogs'):
+        if filename.endswith('.py'):
+            client.load_extension(f'cogs.{filename[:-3]}')
+            print(f'Loaded extension: {filename[:-3]}')
 
-client.run(config['TESTING_TOKEN'])
+    # Running the bot.
+
+    client.run(config['TESTING_TOKEN'])
