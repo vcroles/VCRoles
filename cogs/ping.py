@@ -7,7 +7,6 @@ class ping(commands.Cog):
         self.client = client
 
     @commands.slash_command(description='Used to view the ping of the bot')
-    @commands.has_permissions()
     async def ping(self, ctx):
         await ctx.respond(f'Pong! {round(self.client.latency*1000,1)} ms')
 
