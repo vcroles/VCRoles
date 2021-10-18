@@ -1,9 +1,16 @@
 {
-    "id":{
+    "id": {
         "tts": {
             "enabled": true,
             "role": "id/null"
         },
         "logging": "channel_id"
+    },
+    "758392649979265024": {
+        "tts": {
+            "enabled": false,
+            "role": null
+        },
+        "logging": "806266256332161074"
     }
 }
