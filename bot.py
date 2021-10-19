@@ -132,6 +132,12 @@ if __name__ == '__main__':
             client.load_extension(f'cogs.{filename[:-3]}')
             print(f'Loaded extension: {filename[:-3]}')
 
+    # Removing TTS files
+
+    for filename in os.listdir('tts'):
+        if filename.endswith('.mp3'):
+            os.remove(f'tts\\{filename}')
+
     # Running the bot.
 
     client.run(config['TESTING_TOKEN'])

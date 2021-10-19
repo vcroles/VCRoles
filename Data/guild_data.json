@@ -8,7 +8,7 @@
     },
     "758392649979265024": {
         "tts": {
-            "enabled": false,
+            "enabled": true,
             "role": null
         },
         "logging": "806266256332161074"
