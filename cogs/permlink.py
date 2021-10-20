@@ -12,7 +12,7 @@ class permlink(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def permlink(self, ctx: discord.ApplicationContext, channel: Option(discord.VoiceChannel, 'Select a channel to link', required=True), role: Option(discord.Role,'Select a role to link', required=True)):
             
-        data = self.client.jopen(f'Linked/{ctx.guild.id}')
+        data = self.client.jopen(f'Linked/{ctx.guild.id}', str(ctx.guild.id))
 
         try:
             data['permanent'][str(channel.id)]
@@ -37,7 +37,7 @@ class permlink(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def permunlink(self, ctx: discord.ApplicationContext, channel: Option(discord.VoiceChannel, 'Select a channel to link', required=True), role: Option(discord.Role,'Select a role to link', required=True)):
             
-        data = self.client.jopen(f'Linked/{ctx.guild.id}')
+        data = self.client.jopen(f'Linked/{ctx.guild.id}', str(ctx.guild.id))
 
         try:
             data['permanent'][str(channel.id)]

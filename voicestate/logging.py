@@ -1,15 +1,15 @@
 import json
 import discord
 import datetime
+from bot import MyClient
 
 class logging():
 
-    def __init__(self, client: discord.AutoShardedBot):
+    def __init__(self, client: MyClient):
         self.client = client
 
     async def log_join(self, after: discord.VoiceState, member: discord.Member, v, s, c, a, p):
-        with open('Data/guild_data.json', 'r') as f:
-            data = json.load(f)
+        data = self.client.jopen('Data/guild_data',str(member.guild.id))
 
         if data[str(member.guild.id)]['logging']:
             try:
@@ -62,8 +62,8 @@ class logging():
                 return
 
     async def log_leave(self, before: discord.VoiceState, member: discord.Member, v, s, c, a):
-        with open('Data/guild_data.json', 'r') as f:
-            data = json.load(f)
+        data = self.client.jopen('Data/guild_data',str(member.guild.id))
+
 
         if data[str(member.guild.id)]['logging']:
             try:
@@ -110,9 +110,8 @@ class logging():
                 return
 
     async def log_change(self, before: discord.VoiceState, after:discord.VoiceState, member: discord.Member, v, s, c, v2, s2, c2):
-        with open('Data/guild_data.json', 'r') as f:
-            data = json.load(f)
-
+        data = self.client.jopen('Data/guild_data',str(member.guild.id))
+        
         if data[str(member.guild.id)]['logging']:
             try:
                 channel = data[str(member.guild.id)]['logging']

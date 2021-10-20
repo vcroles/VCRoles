@@ -21,7 +21,7 @@ class voicestate(commands.Cog):
 
         # Joining
         if not before.channel and after.channel:
-            data = self.client.jopen(f'Linked/{member.guild.id}')
+            data = self.client.jopen(f'Linked/{member.guild.id}', str(member.guild.id))
             voice_added = stage_added = category_added = all_added = None
 
             if str(after.channel.type) == 'voice':
@@ -41,7 +41,7 @@ class voicestate(commands.Cog):
 
         # Leaving
         elif before.channel and not after.channel:
-            data = self.client.jopen(f'Linked/{member.guild.id}')
+            data = self.client.jopen(f'Linked/{member.guild.id}', str(member.guild.id))
             voice_removed = stage_removed = category_removed = all_removed = None
 
             if str(before.channel.type) == 'voice':
@@ -58,7 +58,7 @@ class voicestate(commands.Cog):
 
         # Changing
         elif before.channel != after.channel:
-            data = self.client.jopen(f'Linked/{member.guild.id}')
+            data = self.client.jopen(f'Linked/{member.guild.id}', str(member.guild.id))
             voice_removed = stage_removed = category_removed = all_removed = None
             voice_added = stage_added = category_added = all_added = None
             

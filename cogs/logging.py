@@ -15,7 +15,7 @@ class loggingC(commands.Cog):
             await ctx.respond('To enable, select a channel to send logs to.')
         elif enabled == True and channel:
             try:
-                data = self.client.jopen('Data/guild_data')
+                data = self.client.jopen('Data/guild_data', str(ctx.guild.id))
 
                 data[str(ctx.guild.id)]['logging'] = str(channel.id)
 
@@ -26,7 +26,7 @@ class loggingC(commands.Cog):
                 await ctx.respond(f'Unable to enable logging')
         elif enabled == False:
             try:
-                data = self.client.jopen('Data/guild_data')
+                data = self.client.jopen('Data/guild_data', str(ctx.guild.id))
 
                 data[str(ctx.guild.id)]['logging'] = None
 

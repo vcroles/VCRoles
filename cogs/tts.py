@@ -18,7 +18,7 @@ class tts(commands.Cog):
         index = language.find(':')
         language_code = language[0:index]
 
-        data = self.client.jopen('Data/guild_data')
+        data = self.client.jopen('Data/guild_data', str(ctx.guild.id))
         if data[str(ctx.guild.id)]['tts']['enabled'] == False:
             await ctx.respond(f'TTS isn\'t enabled in this server.')
             return
@@ -66,7 +66,7 @@ class tts(commands.Cog):
 
     @commands.slash_command(description='Used to enable/disable TTS & set a required role', guild_ids=[758392649979265024])
     async def ttssetup(self, ctx: discord.ApplicationContext, enabled: Option(bool, 'Whether TTS is enabled'), role: Option(discord.Role, 'A role required to use TTS', required=False, default=None)):
-        data = self.client.jopen('Data/guild_data')
+        data = self.client.jopen('Data/guild_data', str(ctx.guild.id))
 
         if role:
             data[str(ctx.guild.id)]['tts']['enabled'] = enabled
