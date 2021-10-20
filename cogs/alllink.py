@@ -5,7 +5,7 @@ from bot import MyClient
 
 class alllink(commands.Cog):
     
-    def __init__(self, client):
+    def __init__(self, client: MyClient):
         self.client = client
 
     @commands.slash_command(description='Use to link all channels with a role',guild_ids=[758392649979265024])
@@ -14,8 +14,8 @@ class alllink(commands.Cog):
             
         data = self.client.jopen(f'Linked/{ctx.guild.id}')
 
-        if str(role.id) not in data['all']:
-            data['all'].append(str(role.id))
+        if str(role.id) not in data['all']['roles']:
+            data['all']['roles'].append(str(role.id))
 
             self.client.jdump(f'Linked/{ctx.guild.id}', data)
             
@@ -34,9 +34,9 @@ class alllink(commands.Cog):
             
         data = self.client.jopen(f'Linked/{ctx.guild.id}')
 
-        if str(role.id) in data['all']:
+        if str(role.id) in data['all']['roles']:
             try:
-                data['all'].remove(str(role.id))
+                data['all']['roles'].remove(str(role.id))
 
                 self.client.jdump(f'Linked/{ctx.guild.id}', data)
 
@@ -45,6 +45,30 @@ class alllink(commands.Cog):
                 pass
         else:
             await ctx.respond(f'The channel and role are not linked.')
+    
+    @commands.slash_command(description='Use to create an exception to alllink',guild_ids=[758392649979265024])
+    @commands.has_permissions(administrator=True)
+    async def allexception(self, ctx: discord.ApplicationContext, channel: Option(discord.VoiceChannel, 'Select an exception channel')):
+
+        data = self.client.jopen(f'Linked/{ctx.guild.id}')
+
+        data['all']['except'].append(str(channel.id))
+
+        self.client.jdump(f'Linked/{ctx.guild.id}', data)
+
+        await ctx.respond(f'Added {channel.mention} as an exception to alllink')
+
+    @commands.slash_command(description='Use to create an exception to alllink',guild_ids=[758392649979265024])
+    @commands.has_permissions(administrator=True)
+    async def allexceptionremove(self, ctx: discord.ApplicationContext, channel: Option(discord.VoiceChannel, 'Select an exception channel')):
+
+        data = self.client.jopen(f'Linked/{ctx.guild.id}')
+
+        data['all']['except'].remove(str(channel.id))
+
+        self.client.jdump(f'Linked/{ctx.guild.id}', data)
+
+        await ctx.respond(f'Removed {channel.mention} as an exception to alllink')
 
 def setup(client):
     client.add_cog(alllink(client))
