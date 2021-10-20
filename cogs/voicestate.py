@@ -68,6 +68,8 @@ class voicestate(commands.Cog):
 
             category_removed = await self.category.leave(data, member, before, after)
 
+            _v = await self.all.leave(data, member, before, after)
+
             # Adding
             if str(after.channel.type) == 'voice':
                 voice_added = await self.voice.join(data, member, before, after)
@@ -76,6 +78,8 @@ class voicestate(commands.Cog):
                 stage_added = await self.stage.join(data, member, before, after)
 
             category_added = await self.category.join(data, member, before, after)
+
+            _v = await self.all.join(data, member, before, after)
 
             await self.logging.log_change(before, after, member, voice_removed, stage_removed, category_removed, voice_added, stage_added, category_added)
         

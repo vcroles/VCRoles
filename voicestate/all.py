@@ -6,9 +6,11 @@ class all():
         self.client = client
 
     async def join(self, data, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState) -> list:
-        if data['all']:
+        if data['all']['roles']:
+            if str(after.channel.id) in data['all']['except']:
+                return None
             roles = []
-            for i in data['all']:
+            for i in data['all']['roles']:
                 try:
                     role = member.guild.get_role(int(i))
                     await member.add_roles(role, reason='Joined voice channel')
@@ -20,9 +22,11 @@ class all():
 
 
     async def leave(self, data, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState) -> list:
-        if data['all']:
+        if data['all']['roles']:
+            if str(before.channel.id) in data['all']['except']:
+                return None
             roles = []
-            for i in data['all']:
+            for i in data['all']['roles']:
                 try:
                     role = member.guild.get_role(int(i))
                     await member.remove_roles(role, reason='Left voice channel')
