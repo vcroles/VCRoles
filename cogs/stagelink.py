@@ -10,7 +10,7 @@ class stagelink(commands.Cog):
     @commands.slash_command(description='Use to link a stage channel with a role',guild_ids=[758392649979265024])
     @commands.has_permissions(administrator=True)
     async def stagelink(self, ctx: discord.ApplicationContext, channel: Option(discord.StageChannel, 'Select a stage channel to link', required=True), role: Option(discord.Role,'Select a role to link', required=True)):
-        data = self.client.jopen(f'Linked/{ctx.guild.id}')
+        data = self.client.jopen(f'Linked/{ctx.guild.id}', str(ctx.guild.id))
 
         try:
             data['stage'][str(channel.id)]
@@ -34,7 +34,7 @@ class stagelink(commands.Cog):
     @commands.slash_command(description='Use to unlink a stage channel from a role',guild_ids=[758392649979265024])
     @commands.has_permissions(administrator=True)
     async def stageunlink(self, ctx: discord.ApplicationContext, channel: Option(discord.StageChannel, 'Select a stage channel to link', required=True), role: Option(discord.Role,'Select a role to link', required=True)):
-        data = self.client.jopen(f'Linked/{ctx.guild.id}')
+        data = self.client.jopen(f'Linked/{ctx.guild.id}', str(ctx.guild.id))
 
         try:
             data['stage'][str(channel.id)]

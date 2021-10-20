@@ -12,7 +12,7 @@ class catlink(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def catlink(self, ctx: discord.ApplicationContext, channel: Option(discord.CategoryChannel, 'Select a category to link', required=True), role: Option(discord.Role,'Select a role to link', required=True)):
             
-        data = self.client.jopen(f'Linked/{ctx.guild.id}')
+        data = self.client.jopen(f'Linked/{ctx.guild.id}', str(ctx.guild.id))
 
         try:
             data['category'][str(channel.id)]
@@ -37,7 +37,7 @@ class catlink(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def catunlink(self, ctx: discord.ApplicationContext, channel: Option(discord.CategoryChannel, 'Select a category to link', required=True), role: Option(discord.Role,'Select a role to link', required=True)):
             
-        data = self.client.jopen(f'Linked/{ctx.guild.id}')
+        data = self.client.jopen(f'Linked/{ctx.guild.id}', str(ctx.guild.id))
 
         try:
             data['category'][str(channel.id)]

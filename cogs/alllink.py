@@ -12,7 +12,7 @@ class alllink(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def alllink(self, ctx: discord.ApplicationContext, role: Option(discord.Role,'Select a role to link', required=True)):
             
-        data = self.client.jopen(f'Linked/{ctx.guild.id}')
+        data = self.client.jopen(f'Linked/{ctx.guild.id}', str(ctx.guild.id))
 
         if str(role.id) not in data['all']['roles']:
             data['all']['roles'].append(str(role.id))
@@ -32,7 +32,7 @@ class alllink(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def allunlink(self, ctx: discord.ApplicationContext, role: Option(discord.Role,'Select a role to link', required=True)):
             
-        data = self.client.jopen(f'Linked/{ctx.guild.id}')
+        data = self.client.jopen(f'Linked/{ctx.guild.id}', str(ctx.guild.id))
 
         if str(role.id) in data['all']['roles']:
             try:
@@ -50,7 +50,7 @@ class alllink(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def allexception(self, ctx: discord.ApplicationContext, channel: Option(discord.VoiceChannel, 'Select an exception channel')):
 
-        data = self.client.jopen(f'Linked/{ctx.guild.id}')
+        data = self.client.jopen(f'Linked/{ctx.guild.id}', str(ctx.guild.id))
 
         try:
             data['all']['except'].append(str(channel.id))
@@ -65,7 +65,7 @@ class alllink(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def allexceptionremove(self, ctx: discord.ApplicationContext, channel: Option(discord.VoiceChannel, 'Select an exception channel')):
 
-        data = self.client.jopen(f'Linked/{ctx.guild.id}')
+        data = self.client.jopen(f'Linked/{ctx.guild.id}', str(ctx.guild.id))
 
         if str(channel.id) in data['all']['except']:
             data['all']['except'].remove(str(channel.id))

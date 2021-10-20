@@ -5,6 +5,9 @@ import logging
 with open('Data/config.json', 'r') as f:
     config = json.load(f)
 
+default_linked = {"voice": {},"stage": {},"category": {},"all": {"roles":[], "except":[]},"permanent":{}}
+default_gdata = {'tts': {'enabled': False, 'role': None},'logging': None}
+
 logger = logging.getLogger('discord')
 logger.setLevel(logging.DEBUG)
 handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
@@ -13,9 +16,23 @@ logger.addHandler(handler)
 
 class MyClient(commands.AutoShardedBot):
 
-    def jopen(self, file):
-        with open(f'{file}.json', 'r') as f:
-            return json.load(f)
+    def jopen(self, file: str, guild_id: str = None):
+        try:
+            with open(f'{file}.json', 'r') as f:
+                data = json.load(f)
+        except FileNotFoundError:
+            if file.startswith('Linked') and guild_id != None:
+                with open(f'Linked/{guild_id}.json', 'w') as f:
+                    json.dump(default_linked, f, indent=4)
+                return default_linked
+        try:
+            if guild_id and file == 'Data/guild_data':
+                data[guild_id]
+                return data
+        except:
+            data[guild_id] = default_gdata
+            return data
+        return data
     
     def jdump(self, file, data):
         with open(f'{file}.json', 'w') as f:
@@ -46,11 +63,11 @@ class MyClient(commands.AutoShardedBot):
     async def on_guild_join(self, guild:discord.Guild):
         data = self.jopen('Data/guild_data')
         
-        data[str(guild.id)] = {'tts': {'enabled': False, 'role': None},'logging': None}
+        data[str(guild.id)] = default_gdata
 
         self.jdump('Data/guild_data', data)
 
-        data = {"voice": {},"stage": {},"category": {},"all": {"roles":[], "except":[]},"permanent":{}}
+        data = default_linked
 
         self.jdump(f'Linked/{guild.id}', data)
 
