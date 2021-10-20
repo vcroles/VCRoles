@@ -36,6 +36,12 @@ class stagelink(commands.Cog):
     async def stageunlink(self, ctx: discord.ApplicationContext, channel: Option(discord.StageChannel, 'Select a stage channel to link', required=True), role: Option(discord.Role,'Select a role to link', required=True)):
         data = self.client.jopen(f'Linked/{ctx.guild.id}')
 
+        try:
+            data['stage'][str(channel.id)]
+        except:
+            await ctx.respond(f'The channel and role are not linked.')
+            return
+
         if str(role.id) in data['stage'][str(channel.id)]:
             try:
                 data['stage'][str(channel.id)].remove(str(role.id))
@@ -48,8 +54,7 @@ class stagelink(commands.Cog):
                 await ctx.respond(f'Unlinked {channel.mention} and role: `@{role.name}`')
             except:
                 pass
-        else:
-            await ctx.respond(f'The channel and role are not linked.')
+        
 
 def setup(client):
     client.add_cog(stagelink(client))

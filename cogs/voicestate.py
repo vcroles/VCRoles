@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from bot import MyClient
-from voicestate import all, category, logging, stage, voice
+from voicestate import all, category, logging, stage, voice, permanent
 
 class voicestate(commands.Cog):
     
@@ -12,6 +12,7 @@ class voicestate(commands.Cog):
         self.logging = logging.logging(self.client)
         self.stage = stage.stage(self)
         self.voice = voice.voice(self)
+        self.permanent = permanent.perm(self.client)
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
@@ -33,7 +34,9 @@ class voicestate(commands.Cog):
 
             all_added = await self.all.join(data, member, before, after)
 
-            await self.logging.log_join(after, member, voice_added, stage_added, category_added, all_added)
+            perm_added = await self.permanent.join(data, member, before, after)
+
+            await self.logging.log_join(after, member, voice_added, stage_added, category_added, all_added, perm_added)
             
 
         # Leaving

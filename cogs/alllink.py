@@ -52,11 +52,14 @@ class alllink(commands.Cog):
 
         data = self.client.jopen(f'Linked/{ctx.guild.id}')
 
-        data['all']['except'].append(str(channel.id))
+        try:
+            data['all']['except'].append(str(channel.id))
 
-        self.client.jdump(f'Linked/{ctx.guild.id}', data)
+            self.client.jdump(f'Linked/{ctx.guild.id}', data)
 
-        await ctx.respond(f'Added {channel.mention} as an exception to alllink')
+            await ctx.respond(f'Added {channel.mention} as an exception to alllink')
+        except:
+            await ctx.respond(f'Unable to add exception')
 
     @commands.slash_command(description='Use to create an exception to alllink',guild_ids=[758392649979265024])
     @commands.has_permissions(administrator=True)
@@ -64,11 +67,14 @@ class alllink(commands.Cog):
 
         data = self.client.jopen(f'Linked/{ctx.guild.id}')
 
-        data['all']['except'].remove(str(channel.id))
+        if str(channel.id) in data['all']['except']:
+            data['all']['except'].remove(str(channel.id))
 
-        self.client.jdump(f'Linked/{ctx.guild.id}', data)
+            self.client.jdump(f'Linked/{ctx.guild.id}', data)
 
-        await ctx.respond(f'Removed {channel.mention} as an exception to alllink')
+            await ctx.respond(f'Removed {channel.mention} as an exception to alllink')
+        else:
+            await ctx.respond(f'Please select a valid exception channel')
 
 def setup(client):
     client.add_cog(alllink(client))

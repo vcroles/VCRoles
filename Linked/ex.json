@@ -8,5 +8,11 @@
     "category": {
         "catid": ["roleid"]
     },
-    "all": ["roleid"]
+    "all": {
+        "roles":[],
+        "except":[]
+    },
+    "permanent": {
+        "channelid": ["roleid"]
+    }
 }

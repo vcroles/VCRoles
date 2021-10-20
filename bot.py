@@ -50,7 +50,7 @@ class MyClient(commands.AutoShardedBot):
 
         self.jdump('Data/guild_data', data)
 
-        data = {"voice": {},"stage": {},"category": {},"all": {"roles":[], "except":[]}}
+        data = {"voice": {},"stage": {},"category": {},"all": {"roles":[], "except":[]},"permanent":{}}
 
         self.jdump(f'Linked/{guild.id}', data)
 
