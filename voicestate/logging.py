@@ -7,7 +7,7 @@ class logging():
     def __init__(self, client: discord.AutoShardedBot):
         self.client = client
 
-    async def log_join(self, after: discord.VoiceState, member: discord.Member, v, s, c, a):
+    async def log_join(self, after: discord.VoiceState, member: discord.Member, v, s, c, a, p):
         with open('Data/guild_data.json', 'r') as f:
             data = json.load(f)
 
@@ -45,10 +45,16 @@ class logging():
                         va += role.mention + ' '
                     va += '\n'
 
+                if p:
+                    va += 'Permanent: '
+                    for role in p:
+                        va += role.mention + ' '
+                    va += '\n'
+
                 if va:
                     va = va[:-1] # Removes trailing newline
 
-                if v or s or c or a:
+                if v or s or c or a or p:
                     logging_embed.add_field(name='Roles Added:', value=va, inline=False)
 
                 await channel.send(embed=logging_embed)

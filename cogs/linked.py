@@ -46,6 +46,16 @@ class linkedC(commands.Cog):
                 va += f'{role.mention} '
             va += '\n'
 
+        p_dict = data['permanent']
+
+        for p_list in p_dict:
+            channel = self.client.get_channel(int(p_list))
+            va += f'Permanent {channel.mention}: '
+            for role in p_dict[p_list]:
+                role = ctx.guild.get_role(int(role))
+                va += f'{role.mention} '
+            va += '\n'
+
         a_list = data['all']['roles']
         if a_list:
             va += 'All: '
@@ -55,7 +65,7 @@ class linkedC(commands.Cog):
             va += '\n'
         a_list_e = data['all']['except']
         if a_list_e:
-            va += 'All exceptions: '
+            va += 'All-link exceptions: '
             for channel in a_list_e:
                 channel = self.client.get_channel(int(channel))
                 va += f'{channel.mention} '

@@ -39,6 +39,12 @@ class voicelink(commands.Cog):
             
         data = self.client.jopen(f'Linked/{ctx.guild.id}')
 
+        try:
+            data['voice'][str(channel.id)]
+        except:
+            await ctx.respond(f'The channel and role are not linked.')
+            return
+
         if str(role.id) in data['voice'][str(channel.id)]:
             try:
                 data['voice'][str(channel.id)].remove(str(role.id))
@@ -51,8 +57,7 @@ class voicelink(commands.Cog):
                 await ctx.respond(f'Unlinked {channel.mention} and role: `@{role.name}`')
             except:
                 pass
-        else:
-            await ctx.respond(f'The channel and role are not linked.')
+        
 
 
 def setup(client):
