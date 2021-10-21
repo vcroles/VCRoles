@@ -30,7 +30,8 @@ class MyClient(commands.AutoShardedBot):
                 data[guild_id]
                 return data
         except:
-            data[guild_id] = default_gdata
+            if guild_id:
+                data[guild_id] = default_gdata
             return data
         return data
     
