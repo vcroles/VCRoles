@@ -1,0 +1,9 @@
+{
+    "guildid": {
+        "cat": "catid",
+        "gen_id": "channelid",
+        "open": [
+            "channelid"
+        ]
+    }
+}
