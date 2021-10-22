@@ -3,3 +3,4 @@ config.json
 **/*.pyc
 __pycache__/
 tts/
+old/
