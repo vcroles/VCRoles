@@ -27,7 +27,7 @@ def vamig(filename):
                 
         data['voice'] = v
 
-    with open(f'test/{filename}', 'w') as f:
+    with open(f'Linked/{filename}', 'w') as f:
         json.dump(data, f, indent=4)
 
 def cmig(filename):
@@ -37,7 +37,7 @@ def cmig(filename):
     filename = filename[3:]
 
     try:
-        with open(f'test/{filename}', 'r') as f:
+        with open(f'Linked/{filename}', 'r') as f:
             data = json.load(f)
 
         if odata:
@@ -48,7 +48,7 @@ def cmig(filename):
 
             data['category'] = c
 
-            with open(f'test/{filename}', 'w') as f:
+            with open(f'Linked/{filename}', 'w') as f:
                 json.dump(data, f, indent=4)
     except:
         pass
@@ -60,7 +60,7 @@ def smig(filename):
     filename = filename[5:]
 
     try:
-        with open(f'test/{filename}', 'r') as f:
+        with open(f'Linked/{filename}', 'r') as f:
             data = json.load(f)
 
         if odata:
@@ -71,7 +71,7 @@ def smig(filename):
 
             data['stage'] = s
 
-            with open(f'test/{filename}', 'w') as f:
+            with open(f'Linked/{filename}', 'w') as f:
                 json.dump(data, f, indent=4)
     except:
         pass
@@ -88,14 +88,14 @@ def genmig():
         data[i]['gen_id'] = str(odata[i]['lobby_id'])
         data[i]['open'] = []
 
-    with open(f'test/data/generator.json', 'w') as f:
+    with open(f'Data/generator.json', 'w') as f:
         json.dump(data, f, indent=4)
 
 def logttsmig():
     with open(f'old/logging.json', 'r') as f:
         odata = json.load(f)
 
-    with open(f'test/data/guild_data.json', 'r') as f:
+    with open(f'Data/guild_data.json', 'r') as f:
         data = json.load(f)
 
     for i in odata:
@@ -118,19 +118,19 @@ def logttsmig():
 
         data[i]['tts'] = {'enabled': True, 'role': odata[i]['role']}
 
-    with open(f'test/data/guild_data.json', 'w') as f:
+    with open(f'Data/guild_data.json', 'w') as f:
         json.dump(data, f, indent=4)
         
 
-# for filename in os.listdir('old/data'):
-#     vamig(filename)
+for filename in os.listdir('old/data'):
+    vamig(filename)
 
-# for filename in os.listdir('old/category'):
-#     cmig(filename)
+for filename in os.listdir('old/category'):
+    cmig(filename)
 
-# for filename in os.listdir('old/stage'):
-#     smig(filename)
+for filename in os.listdir('old/stage'):
+    smig(filename)
 
-# genmig()
+genmig()
 
 logttsmig()

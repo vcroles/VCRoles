@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from discord.app import Option
+from discord.commands import Option
 from bot import MyClient
 
 class permlink(commands.Cog):
