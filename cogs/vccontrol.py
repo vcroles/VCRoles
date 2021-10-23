@@ -1,147 +1,104 @@
 import discord
+from discord.commands import Option
 from discord.ext import commands
-from ds import ds
-dis = ds()
+from bot import MyClient
 
 class vccontrol(commands.Cog):
 
-    def __init__(self, client):
+    def __init__(self, client: MyClient):
         self.client = client
 
-    @commands.command(aliases=['Vcmute'])
+    async def get_members(self, ctx):
+        mem =[]
+        for user_id, state in ctx.guild._voice_states.items():
+            if state.channel == ctx.author.voice.channel or state.channel.id == ctx.author.voice.channel.id:
+                mem.append(await ctx.guild.fetch_member(user_id))
+        return mem
+
+    @commands.slash_command(description='Mutes everyone in a voice channel')
     @commands.has_permissions(administrator=True)
-    async def vcmute(self, ctx, choice='me'):
-
-        try:
-            choice = int(choice)
-            this = 1
-        except:
-            this = 0
-
-        if choice == 'all':
+    async def vcmute(self, ctx: discord.ApplicationContext, who: Option(str, 'Who to mute?', choices=['everyone', 'everyone but me'], default='everyone but me')):
+        if ctx.author.voice and ctx.author.voice.channel:
             vc = ctx.author.voice.channel
-            for member in vc.members:
-                await member.edit(mute=True)
-            embed_description = 'everyone'
         
-        elif choice == 'me':
-            vc = ctx.author.voice.channel
+        mem = await self.get_members(ctx)
+
+        if who == 'everyone' and vc:
+            for member in mem:
+                await member.edit(mute=True)
+        elif who == 'everyone but me' and vc:
             for member in vc.members:
                 if member == ctx.author:
                     pass
                 else:
                     await member.edit(mute=True)
-            embed_description = 'everyone but you'
-
-        elif this == 1:
-            vc = self.client.get_channel(choice)
-            for member in vc.members:
-                await member.edit(mute=True)
-            embed_description = 'everyone'
-        
         else:
-            await ctx.send(dis.e_embed(100))
+            await ctx.respond('Please ensure you are in a voice channel.')
+            return
 
-
-        mute_embed = discord.Embed(
-            colour=discord.Colour.dark_grey(),
-            description=f'Muted {embed_description} in voice channel {vc.name}'
-        )
-        await ctx.send(embed=mute_embed)
-
-        dis.counter('vcmute')
-
-    @commands.command(aliases=['Vcdeafen'])
-    @commands.has_permissions(administrator=True)
-    async def vcdeafen(self, ctx, choice='me'):
-        try:
-            choice = int(choice)
-            this = 1
-        except:
-            this = 0
-
-        if choice == 'all':
-            vc = ctx.author.voice.channel
-            for member in vc.members:
-                await member.edit(deafen=True)
-            embed_description = 'everyone'
+        embed = discord.Embed(colour=discord.Colour.dark_grey(), description=f'Successfully muted in {vc.mention}')
+        await ctx.respond(embed=embed)
         
-        elif choice == 'me':
+
+    @commands.slash_command(description='Deafens everyone in a voice channel')
+    @commands.has_permissions(administrator=True)
+    async def vcdeafen(self, ctx: discord.ApplicationContext, who: Option(str, 'Who to mute?', choices=['everyone', 'everyone but me'], default='everyone but me')):
+        if ctx.author.voice and ctx.author.voice.channel:
             vc = ctx.author.voice.channel
+        
+        mem = await self.get_members(ctx)
+
+        if who == 'everyone' and vc:
+            for member in mem:
+                await member.edit(deafen=True)
+        elif who == 'everyone but me' and vc:
             for member in vc.members:
                 if member == ctx.author:
                     pass
                 else:
                     await member.edit(deafen=True)
-            embed_description = 'everyone but you'
-
-        elif this == 1:
-            vc = self.client.get_channel(choice)
-            for member in vc.members:
-                await member.edit(deafen=True)
-            embed_description = 'everyone'
-
-        deafen_embed = discord.Embed(
-            colour=discord.Colour.dark_grey(),
-            description=f'Deafened {embed_description} in voice channel {vc.name}'
-        )
-        await ctx.send(embed=deafen_embed)
-
-        dis.counter('vcdeafen')
-
-    @commands.command(aliases=['Vcunmute'])
-    @commands.has_permissions(administrator=True)
-    async def vcunmute(self, ctx, choice='all'):
-        try:
-            choice = int(choice)
-            this = 1
-        except:
-            this = 0
+        else:
+            await ctx.respond('Please ensure you are in a voice channel.')
+            return
         
-        if choice == 'all':
-            vc = ctx.author.voice.channel
-            for member in vc.members:
-                await member.edit(mute=False)
+        embed = discord.Embed(colour=discord.Colour.dark_grey(), description=f'Successfully deafened in {vc.mention}')
+        await ctx.respond(embed=embed)
 
-        elif this == 1:
-            vc = self.client.get_channel(choice)
-            for member in vc.members:
-                await member.edit(mute=False)
-
-        unmute_embed = discord.Embed(
-            colour=discord.Colour.dark_grey(),
-            description=f'Unmuted everyone in voice channel {vc.name}'
-        )
-        await ctx.send(embed=unmute_embed)
-
-        dis.counter('vcunmute')
-
-    @commands.command(aliases=['Vcundeafen','vcundeaf'])
+    @commands.slash_command(description='Unmutes everyone in a voice channel')
     @commands.has_permissions(administrator=True)
-    async def vcundeafen(self, ctx, choice='all'):
-        try:
-            choice = int(choice)
-            this = 1
-        except:
-            this = 0
-        
-        if choice == 'all':
+    async def vcunmute(self, ctx: discord.ApplicationContext):
+        if ctx.author.voice and ctx.author.voice.channel:
             vc = ctx.author.voice.channel
-            for member in vc.members:
+        
+        mem = await self.get_members(ctx)
+
+        if vc:
+            for member in mem:
+                await member.edit(mute=False)
+        else:
+            await ctx.respond('Please ensure you are in a voice channel.')
+            return
+        
+        embed = discord.Embed(colour=discord.Colour.dark_grey(), description=f'Successfully unmuted in {vc.mention}')
+        await ctx.respond(embed=embed)
+
+    @commands.slash_command(description='Undeafens everyone in a voice channel')
+    @commands.has_permissions(administrator=True)
+    async def vcundeafen(self, ctx: discord.ApplicationContext):
+        if ctx.author.voice and ctx.author.voice.channel:
+            vc = ctx.author.voice.channel
+        
+        mem = await self.get_members(ctx)
+
+        if vc:
+            for member in mem:
                 await member.edit(deafen=False)
-
-        elif this == 1:
-            vc = self.client.get_channel(choice)
-            for member in vc.members:
-                await member.edit(deafen=False)
-
-        undeafen_embed = discord.Embed(
-            colour=discord.Colour.dark_grey(),
-            description=f'Undeafened everyone in voice channel {vc.name}'
-        )
-        await ctx.send(embed=undeafen_embed)
-
-        dis.counter('vcundeafen')
+        else:
+            await ctx.respond('Please ensure you are in a voice channel.')
+            return
+        
+        embed = discord.Embed(colour=discord.Colour.dark_grey(), description=f'Successfully undeafened in {vc.mention}')
+        await ctx.respond(embed=embed)
 
 def setup(client):
     client.add_cog(vccontrol(client))

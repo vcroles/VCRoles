@@ -3,24 +3,24 @@ from discord.ext import commands
 from discord.commands import Option
 from bot import MyClient
 
-class catlink(commands.Cog):
+class voicelink(commands.Cog):
 
-    def __init__(self, client):
+    def __init__(self, client: MyClient):
         self.client = client
 
-    @commands.slash_command(description='Use to link all channels in a category with a role')
+    @commands.slash_command(description='Use to link a voice channel with a role')
     @commands.has_permissions(administrator=True)
-    async def catlink(self, ctx: discord.ApplicationContext, channel: Option(discord.CategoryChannel, 'Select a category to link', required=True), role: Option(discord.Role,'Select a role to link', required=True)):
+    async def vclink(self, ctx: discord.ApplicationContext, channel: Option(discord.VoiceChannel, 'Select a voice channel to link', required=True), role: Option(discord.Role,'Select a role to link', required=True)):
             
         data = self.client.jopen(f'Linked/{ctx.guild.id}', str(ctx.guild.id))
 
         try:
-            data['category'][str(channel.id)]
+            data['voice'][str(channel.id)]
         except:
-            data['category'][str(channel.id)] = []
+            data['voice'][str(channel.id)] = []
 
-        if str(role.id) not in data['category'][str(channel.id)]:
-            data['category'][str(channel.id)].append(str(role.id))
+        if str(role.id) not in data['voice'][str(channel.id)]:
+            data['voice'][str(channel.id)].append(str(role.id))
 
             self.client.jdump(f'Linked/{ctx.guild.id}', data)
             
@@ -33,24 +33,24 @@ class catlink(commands.Cog):
             await ctx.respond(f'The channel and role are already linked.')
 
 
-    @commands.slash_command(description='Use to unlink a category from a role')
+    @commands.slash_command(description='Use to unlink a voice channel from a role')
     @commands.has_permissions(administrator=True)
-    async def catunlink(self, ctx: discord.ApplicationContext, channel: Option(discord.CategoryChannel, 'Select a category to link', required=True), role: Option(discord.Role,'Select a role to link', required=True)):
+    async def vcunlink(self, ctx: discord.ApplicationContext, channel: Option(discord.VoiceChannel, 'Select a voice channel to link', required=True), role: Option(discord.Role,'Select a role to link', required=True)):
             
         data = self.client.jopen(f'Linked/{ctx.guild.id}', str(ctx.guild.id))
 
         try:
-            data['category'][str(channel.id)]
+            data['voice'][str(channel.id)]
         except:
             await ctx.respond(f'The channel and role are not linked.')
             return
 
-        if str(role.id) in data['category'][str(channel.id)]:
+        if str(role.id) in data['voice'][str(channel.id)]:
             try:
-                data['category'][str(channel.id)].remove(str(role.id))
+                data['voice'][str(channel.id)].remove(str(role.id))
                 
-                if not data['category'][str(channel.id)]:
-                    data['category'].pop(str(channel.id))
+                if not data['voice'][str(channel.id)]:
+                    data['voice'].pop(str(channel.id))
 
                 self.client.jdump(f'Linked/{ctx.guild.id}', data)
 
@@ -59,5 +59,6 @@ class catlink(commands.Cog):
                 pass
         
 
+
 def setup(client):
-    client.add_cog(catlink(client))
+    client.add_cog(voicelink(client))
