@@ -8,7 +8,7 @@ class loggingC(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
-    @commands.slash_command(description='Used to enable disable logging, in a channel.',guild_ids=[758392649979265024])
+    @commands.slash_command(description='Used to enable disable logging, in a channel.')
     @commands.has_permissions(administrator=True)
     async def logging(self, ctx: discord.ApplicationContext, enabled: Option(bool, 'Enabled?', required=True), channel: Option(discord.TextChannel, 'Logging channel:', required=False)):
         if enabled == True and not channel:

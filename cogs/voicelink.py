@@ -8,7 +8,7 @@ class voicelink(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
-    @commands.slash_command(description='Use to link a voice channel with a role',guild_ids=[758392649979265024])
+    @commands.slash_command(description='Use to link a voice channel with a role')
     @commands.has_permissions(administrator=True)
     async def vclink(self, ctx: discord.ApplicationContext, channel: Option(discord.VoiceChannel, 'Select a voice channel to link', required=True), role: Option(discord.Role,'Select a role to link', required=True)):
             
@@ -33,7 +33,7 @@ class voicelink(commands.Cog):
             await ctx.respond(f'The channel and role are already linked.')
 
 
-    @commands.slash_command(description='Use to unlink a voice channel from a role',guild_ids=[758392649979265024])
+    @commands.slash_command(description='Use to unlink a voice channel from a role')
     @commands.has_permissions(administrator=True)
     async def vcunlink(self, ctx: discord.ApplicationContext, channel: Option(discord.VoiceChannel, 'Select a voice channel to link', required=True), role: Option(discord.Role,'Select a role to link', required=True)):
             

@@ -8,7 +8,7 @@ class linkedC(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
-    @commands.slash_command(description='Displays the linked roles, channels & categories', guild_ids=[758392649979265024])
+    @commands.slash_command(description='Displays the linked roles, channels & categories')
     @commands.has_permissions(administrator=True)
     async def linked(self, ctx: ApplicationContext):
         data = self.client.jopen(f'Linked/{ctx.guild.id}', str(ctx.guild.id))

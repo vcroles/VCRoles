@@ -8,7 +8,7 @@ class permlink(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
-    @commands.slash_command(description='Use to link all a channel and a role (after leaving channel, user will keep role)',guild_ids=[758392649979265024])
+    @commands.slash_command(description='Use to link all a channel and a role (after leaving channel, user will keep role)')
     @commands.has_permissions(administrator=True)
     async def permlink(self, ctx: discord.ApplicationContext, channel: Option(discord.VoiceChannel, 'Select a channel to link', required=True), role: Option(discord.Role,'Select a role to link', required=True)):
             
@@ -33,7 +33,7 @@ class permlink(commands.Cog):
             await ctx.respond(f'The channel and role are already linked.')
 
 
-    @commands.slash_command(description='Use to unlink a "permanent" channel from a role',guild_ids=[758392649979265024])
+    @commands.slash_command(description='Use to unlink a "permanent" channel from a role')
     @commands.has_permissions(administrator=True)
     async def permunlink(self, ctx: discord.ApplicationContext, channel: Option(discord.VoiceChannel, 'Select a channel to link', required=True), role: Option(discord.Role,'Select a role to link', required=True)):
             

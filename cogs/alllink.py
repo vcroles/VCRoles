@@ -8,7 +8,7 @@ class alllink(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
-    @commands.slash_command(description='Use to link all channels with a role',guild_ids=[758392649979265024])
+    @commands.slash_command(description='Use to link all channels with a role')
     @commands.has_permissions(administrator=True)
     async def alllink(self, ctx: discord.ApplicationContext, role: Option(discord.Role,'Select a role to link', required=True)):
             
@@ -28,7 +28,7 @@ class alllink(commands.Cog):
             await ctx.respond(f'The channel and role are already linked.')
 
 
-    @commands.slash_command(description='Use to unlink all channels from a role',guild_ids=[758392649979265024])
+    @commands.slash_command(description='Use to unlink all channels from a role')
     @commands.has_permissions(administrator=True)
     async def allunlink(self, ctx: discord.ApplicationContext, role: Option(discord.Role,'Select a role to link', required=True)):
             
@@ -46,7 +46,7 @@ class alllink(commands.Cog):
         else:
             await ctx.respond(f'The channel and role are not linked.')
     
-    @commands.slash_command(description='Use to create an exception to alllink',guild_ids=[758392649979265024])
+    @commands.slash_command(description='Use to create an exception to alllink')
     @commands.has_permissions(administrator=True)
     async def allexception(self, ctx: discord.ApplicationContext, channel: Option(discord.VoiceChannel, 'Select an exception channel')):
 
@@ -61,7 +61,7 @@ class alllink(commands.Cog):
         except:
             await ctx.respond(f'Unable to add exception')
 
-    @commands.slash_command(description='Use to create an exception to alllink',guild_ids=[758392649979265024])
+    @commands.slash_command(description='Use to create an exception to alllink')
     @commands.has_permissions(administrator=True)
     async def allexceptionremove(self, ctx: discord.ApplicationContext, channel: Option(discord.VoiceChannel, 'Select an exception channel')):
 

@@ -7,15 +7,15 @@ class utilities(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
-    @commands.slash_command(description='Gets an invite to the support server', guild_ids=[758392649979265024])
+    @commands.slash_command(description='Gets an invite to the support server')
     async def discord(self, ctx: discord.ApplicationContext):
         await ctx.respond('https://discord.gg/yHU6qcgNPy')
 
-    @commands.slash_command(description='Gets an invite for the bot', guild_ids=[758392649979265024])
+    @commands.slash_command(description='Gets an invite for the bot')
     async def invite(self, ctx):
         await ctx.respond('https://discord.com/api/oauth2/authorize?client_id=775025797034541107&permissions=300944400&scope=bot%20applications.commands')
 
-    @commands.slash_command(description='Gets info about the bot', guild_ids=[758392649979265024])
+    @commands.slash_command(description='Gets info about the bot')
     async def about(self, ctx):
         embed = discord.Embed(title='About:', colour=discord.Colour.blue())
 

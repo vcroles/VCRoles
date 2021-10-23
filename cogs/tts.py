@@ -12,7 +12,7 @@ class tts(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
-    @commands.slash_command(description='Used to make the bot read a message in a voice channel', guild_ids=[758392649979265024, 766699572881784893])
+    @commands.slash_command(description='Used to make the bot read a message in a voice channel')
     async def tts(self, ctx: discord.ApplicationContext, message: Option(str, 'Message to read.'), language: Option(str, 'Language to read in', choices=tts_langs, default='en: English', required=False), leave: Option(bool, 'Whether the bot leaves the voice channel after reading', default=True, required=False)):
         index = language.find(':')
         language_code = language[0:index]
@@ -46,13 +46,13 @@ class tts(commands.Cog):
                     embed = discord.Embed(color=discord.Color.green(),title="**Reading Message**",description=f"Reading the message sent by {ctx.author.mention} in the voice channel {ctx.author.voice.channel.mention}")
                     await ctx.respond(embed=embed)
 
-                    player = vc.play(discord.FFmpegPCMAudio(executable='C:\\ffmpeg\\bin\\ffmpeg.exe', source=f'tts\\{ctx.guild.id}.mp3'), after=lambda e: 1+1)
+                    player = vc.play(discord.FFmpegPCMAudio(executable='/usr/local/bin/ffmpeg', source=f'tts\\{ctx.guild.id}.mp3'), after=lambda e: 1+1)
                     await asyncio.sleep(audio.info.length+1)
                     if leave == True:
                         await vc.disconnect()
                     os.remove(f'tts\\{ctx.guild.id}.mp3')
 
-    @commands.slash_command(description='Stops the current TTS message & Makes the bot leave the voice channel', guild_ids=[758392649979265024, 766699572881784893])
+    @commands.slash_command(description='Stops the current TTS message & Makes the bot leave the voice channel')
     async def ttsstop(self, ctx: discord.ApplicationContext):
         for x in self.client.voice_clients:
             if(x.guild == ctx.guild):
@@ -63,7 +63,7 @@ class tts(commands.Cog):
                 embed = discord.Embed(colour=discord.Color.green(), description='There are no TTS messages being read at the minute')
                 await ctx.respond(embed=embed)
 
-    @commands.slash_command(description='Used to enable/disable TTS & set a required role', guild_ids=[758392649979265024, 766699572881784893])
+    @commands.slash_command(description='Used to enable/disable TTS & set a required role')
     async def ttssetup(self, ctx: discord.ApplicationContext, enabled: Option(bool, 'Whether TTS is enabled'), role: Option(discord.Role, 'A role required to use TTS', required=False, default=None)):
         data = self.client.jopen('Data/guild_data', str(ctx.guild.id))
 
