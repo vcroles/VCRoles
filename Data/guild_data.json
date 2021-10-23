@@ -12,5 +12,12 @@
             "role": null
         },
         "logging": "806266256332161074"
+    },
+    "766699572881784893": {
+        "tts": {
+            "enabled": true,
+            "role": null
+        },
+        "logging": null
     }
 }
