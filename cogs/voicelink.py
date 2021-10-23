@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from discord.app.commands import Option
+from discord.commands import Option
 from bot import MyClient
 
 class voicelink(commands.Cog):

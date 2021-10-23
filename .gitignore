@@ -4,3 +4,4 @@ config.json
 __pycache__/
 tts/
 old/
+test/

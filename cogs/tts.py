@@ -1,10 +1,9 @@
 import discord, os, asyncio
-from discord.app.commands import Option
+from discord.commands import Option
 from discord.ext import commands
 from gtts import gTTS
 from mutagen.mp3 import MP3
 from bot import MyClient
-from io import BytesIO
 
 tts_langs = ['af: Afrikaans', 'ar: Arabic', 'bn: Bengali', 'ca: Catalan', 'cs: Czech', 'da: Danish', 'de: German', 'en: English', 'es: Spanish', 'fr: French', 'hi: Hindi', 'it: Italian', 'ja: Japanese', 'ko: Korean', 'my: Myanmar (Burmese)', 'nl: Dutch', 'no: Norwegian', 'pl: Polish', 'pt: Portuguese', 'ru: Russian', 'sv: Swedish', 'th: Thai', 'tr: Turkish', 'zh-CN: Chinese', 'zh: Chinese (Mandarin)']
 
@@ -13,7 +12,7 @@ class tts(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
-    @commands.slash_command(description='Used to make the bot read a message in a voice channel', guild_ids=[758392649979265024])
+    @commands.slash_command(description='Used to make the bot read a message in a voice channel', guild_ids=[758392649979265024, 766699572881784893])
     async def tts(self, ctx: discord.ApplicationContext, message: Option(str, 'Message to read.'), language: Option(str, 'Language to read in', choices=tts_langs, default='en: English', required=False), leave: Option(bool, 'Whether the bot leaves the voice channel after reading', default=True, required=False)):
         index = language.find(':')
         language_code = language[0:index]
@@ -53,7 +52,7 @@ class tts(commands.Cog):
                         await vc.disconnect()
                     os.remove(f'tts\\{ctx.guild.id}.mp3')
 
-    @commands.slash_command(description='Stops the current TTS message & Makes the bot leave the voice channel', guild_ids=[758392649979265024])
+    @commands.slash_command(description='Stops the current TTS message & Makes the bot leave the voice channel', guild_ids=[758392649979265024, 766699572881784893])
     async def ttsstop(self, ctx: discord.ApplicationContext):
         for x in self.client.voice_clients:
             if(x.guild == ctx.guild):
@@ -64,7 +63,7 @@ class tts(commands.Cog):
                 embed = discord.Embed(colour=discord.Color.green(), description='There are no TTS messages being read at the minute')
                 await ctx.respond(embed=embed)
 
-    @commands.slash_command(description='Used to enable/disable TTS & set a required role', guild_ids=[758392649979265024])
+    @commands.slash_command(description='Used to enable/disable TTS & set a required role', guild_ids=[758392649979265024, 766699572881784893])
     async def ttssetup(self, ctx: discord.ApplicationContext, enabled: Option(bool, 'Whether TTS is enabled'), role: Option(discord.Role, 'A role required to use TTS', required=False, default=None)):
         data = self.client.jopen('Data/guild_data', str(ctx.guild.id))
 

@@ -1,5 +1,5 @@
 import discord
-from discord.app.commands import Option
+from discord.commands import Option
 from discord.ext import commands
 from bot import MyClient
 
