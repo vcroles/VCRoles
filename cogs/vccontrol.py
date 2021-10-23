@@ -15,7 +15,7 @@ class vccontrol(commands.Cog):
                 mem.append(await ctx.guild.fetch_member(user_id))
         return mem
 
-    @commands.slash_command(description='Mutes everyone in a voice channel', guild_ids=[758392649979265024])
+    @commands.slash_command(description='Mutes everyone in a voice channel')
     @commands.has_permissions(administrator=True)
     async def vcmute(self, ctx: discord.ApplicationContext, who: Option(str, 'Who to mute?', choices=['everyone', 'everyone but me'], default='everyone but me')):
         if ctx.author.voice and ctx.author.voice.channel:
@@ -40,7 +40,7 @@ class vccontrol(commands.Cog):
         await ctx.respond(embed=embed)
         
 
-    @commands.slash_command(description='Deafens everyone in a voice channel', guild_ids=[758392649979265024])
+    @commands.slash_command(description='Deafens everyone in a voice channel')
     @commands.has_permissions(administrator=True)
     async def vcdeafen(self, ctx: discord.ApplicationContext, who: Option(str, 'Who to mute?', choices=['everyone', 'everyone but me'], default='everyone but me')):
         if ctx.author.voice and ctx.author.voice.channel:
@@ -64,7 +64,7 @@ class vccontrol(commands.Cog):
         embed = discord.Embed(colour=discord.Colour.dark_grey(), description=f'Successfully deafened in {vc.mention}')
         await ctx.respond(embed=embed)
 
-    @commands.slash_command(description='Unmutes everyone in a voice channel', guild_ids=[758392649979265024])
+    @commands.slash_command(description='Unmutes everyone in a voice channel')
     @commands.has_permissions(administrator=True)
     async def vcunmute(self, ctx: discord.ApplicationContext):
         if ctx.author.voice and ctx.author.voice.channel:
@@ -82,7 +82,7 @@ class vccontrol(commands.Cog):
         embed = discord.Embed(colour=discord.Colour.dark_grey(), description=f'Successfully unmuted in {vc.mention}')
         await ctx.respond(embed=embed)
 
-    @commands.slash_command(description='Undeafens everyone in a voice channel', guild_ids=[758392649979265024])
+    @commands.slash_command(description='Undeafens everyone in a voice channel')
     @commands.has_permissions(administrator=True)
     async def vcundeafen(self, ctx: discord.ApplicationContext):
         if ctx.author.voice and ctx.author.voice.channel:

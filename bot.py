@@ -158,4 +158,4 @@ if __name__ == '__main__':
 
     # Running the bot.
 
-    client.run(config['TESTING_TOKEN'])
+    client.run(config['BOT_TOKEN'])

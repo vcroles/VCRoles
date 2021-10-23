@@ -8,7 +8,7 @@ class catlink(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @commands.slash_command(description='Use to link all channels in a category with a role',guild_ids=[758392649979265024])
+    @commands.slash_command(description='Use to link all channels in a category with a role')
     @commands.has_permissions(administrator=True)
     async def catlink(self, ctx: discord.ApplicationContext, channel: Option(discord.CategoryChannel, 'Select a category to link', required=True), role: Option(discord.Role,'Select a role to link', required=True)):
             
@@ -33,7 +33,7 @@ class catlink(commands.Cog):
             await ctx.respond(f'The channel and role are already linked.')
 
 
-    @commands.slash_command(description='Use to unlink a category from a role',guild_ids=[758392649979265024])
+    @commands.slash_command(description='Use to unlink a category from a role')
     @commands.has_permissions(administrator=True)
     async def catunlink(self, ctx: discord.ApplicationContext, channel: Option(discord.CategoryChannel, 'Select a category to link', required=True), role: Option(discord.Role,'Select a role to link', required=True)):
             
