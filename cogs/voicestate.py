@@ -26,18 +26,36 @@ class voicestate(commands.Cog):
             voice_added = stage_added = category_added = all_added = None
 
             if str(after.channel.type) == 'voice':
-                voice_added = await self.voice.join(data, member, before, after)
+                try:
+                    voice_added = await self.voice.join(data, member, before, after)
+                except:
+                    voice_added = None
 
             elif str(after.channel.type) == 'stage_voice':
-                stage_added = await self.stage.join(data, member, before, after)
+                try:
+                    stage_added = await self.stage.join(data, member, before, after)
+                except:
+                    stage_added = None
 
-            category_added = await self.category.join(data, member, before, after)
+            try:
+                category_added = await self.category.join(data, member, before, after)
+            except:
+                category_added = None
 
-            all_added = await self.all.join(data, member, before, after)
+            try:
+                all_added = await self.all.join(data, member, before, after)
+            except:
+                all_added = None
 
-            perm_added = await self.permanent.join(data, member, before, after)
+            try:
+                perm_added = await self.permanent.join(data, member, before, after)
+            except:
+                perm_added = None
 
-            await self.generator.join(member, before, after)
+            try:
+                await self.generator.join(member, before, after)
+            except:
+                pass
 
             await self.logging.log_join(after, member, voice_added, stage_added, category_added, all_added, perm_added)
             
@@ -48,16 +66,31 @@ class voicestate(commands.Cog):
             voice_removed = stage_removed = category_removed = all_removed = None
 
             if str(before.channel.type) == 'voice':
-                voice_removed = await self.voice.leave(data, member, before, after)
+                try:
+                    voice_removed = await self.voice.leave(data, member, before, after)
+                except:
+                    voice_removed = None
 
             elif str(before.channel.type) == 'stage_voice':
-                stage_removed = await self.stage.leave(data, member, before, after)
+                try:
+                    stage_removed = await self.stage.leave(data, member, before, after)
+                except:
+                    stage_removed = None
 
-            category_removed = await self.category.leave(data, member, before, after)
+            try:
+                category_removed = await self.category.leave(data, member, before, after)
+            except:
+                category_removed = None
 
-            all_removed = await self.all.leave(data, member, before, after)
+            try:
+                all_removed = await self.all.leave(data, member, before, after)
+            except:
+                all_removed = None
 
-            await self.generator.leave(member, before, after)
+            try:
+                await self.generator.leave(member, before, after)
+            except:
+                pass
 
             await self.logging.log_leave(before, member, voice_removed, stage_removed, category_removed, all_removed)
 
@@ -69,29 +102,64 @@ class voicestate(commands.Cog):
             
             # Removing
             if str(before.channel.type) == 'voice':
-                voice_removed = await self.voice.leave(data, member, before, after)
+                try:
+                    voice_removed = await self.voice.leave(data, member, before, after)
+                except:
+                    voice_removed = None
 
             elif str(before.channel.type) == 'stage_voice':
-                stage_removed = await self.stage.leave(data, member, before, after)
+                try:
+                    stage_removed = await self.stage.leave(data, member, before, after)
+                except:
+                    stage_removed = None
 
-            category_removed = await self.category.leave(data, member, before, after)
+            try:
+                category_removed = await self.category.leave(data, member, before, after)
+            except:
+                category_removed = None
 
-            _v = await self.all.leave(data, member, before, after)
+            try:
+                all_removed = await self.all.leave(data, member, before, after)
+            except:
+                all_removed = None
 
-            await self.generator.leave(member, before, after)
+            try:
+                await self.generator.leave(member, before, after)
+            except:
+                pass
 
             # Adding
             if str(after.channel.type) == 'voice':
-                voice_added = await self.voice.join(data, member, before, after)
+                try:
+                    voice_added = await self.voice.join(data, member, before, after)
+                except:
+                    voice_added = None
 
             elif str(after.channel.type) == 'stage_voice':
-                stage_added = await self.stage.join(data, member, before, after)
+                try:
+                    stage_added = await self.stage.join(data, member, before, after)
+                except:
+                    stage_added = None
 
-            category_added = await self.category.join(data, member, before, after)
+            try:
+                category_added = await self.category.join(data, member, before, after)
+            except:
+                category_added = None
 
-            _v = await self.all.join(data, member, before, after)
+            try:
+                all_added = await self.all.join(data, member, before, after)
+            except:
+                all_added = None
 
-            await self.generator.join(member, before, after)
+            try:
+                perm_added = await self.permanent.join(data, member, before, after)
+            except:
+                perm_added = None
+
+            try:
+                await self.generator.join(member, before, after)
+            except:
+                pass
 
             await self.logging.log_change(before, after, member, voice_removed, stage_removed, category_removed, voice_added, stage_added, category_added)
         
