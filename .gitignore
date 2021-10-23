@@ -1,0 +1,8 @@
+discord.log
+config.json
+**/*.pyc
+__pycache__/
+tts/
+old/
+test/
+Linked/
