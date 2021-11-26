@@ -3,8 +3,8 @@ from discord.ext import commands
 from bot import MyClient
 from voicestate import all, category, logging, stage, voice, permanent, generator
 
+
 class voicestate(commands.Cog):
-    
     def __init__(self, client: MyClient):
         self.client = client
         self.all = all.all(self)
@@ -16,22 +16,27 @@ class voicestate(commands.Cog):
         self.generator = generator.generator(self.client)
 
     @commands.Cog.listener()
-    async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
+    async def on_voice_state_update(
+        self,
+        member: discord.Member,
+        before: discord.VoiceState,
+        after: discord.VoiceState,
+    ):
         if member.bot == True:
-            return 
+            return
 
         # Joining
         if not before.channel and after.channel:
-            data = self.client.jopen(f'Linked/{member.guild.id}', str(member.guild.id))
+            data = self.client.jopen(f"Linked/{member.guild.id}", str(member.guild.id))
             voice_added = stage_added = category_added = all_added = None
 
-            if str(after.channel.type) == 'voice':
+            if str(after.channel.type) == "voice":
                 try:
                     voice_added = await self.voice.join(data, member, before, after)
                 except:
                     voice_added = None
 
-            elif str(after.channel.type) == 'stage_voice':
+            elif str(after.channel.type) == "stage_voice":
                 try:
                     stage_added = await self.stage.join(data, member, before, after)
                 except:
@@ -57,28 +62,37 @@ class voicestate(commands.Cog):
             except:
                 pass
 
-            await self.logging.log_join(after, member, voice_added, stage_added, category_added, all_added, perm_added)
-            
+            await self.logging.log_join(
+                after,
+                member,
+                voice_added,
+                stage_added,
+                category_added,
+                all_added,
+                perm_added,
+            )
 
         # Leaving
         elif before.channel and not after.channel:
-            data = self.client.jopen(f'Linked/{member.guild.id}', str(member.guild.id))
+            data = self.client.jopen(f"Linked/{member.guild.id}", str(member.guild.id))
             voice_removed = stage_removed = category_removed = all_removed = None
 
-            if str(before.channel.type) == 'voice':
+            if str(before.channel.type) == "voice":
                 try:
                     voice_removed = await self.voice.leave(data, member, before, after)
                 except:
                     voice_removed = None
 
-            elif str(before.channel.type) == 'stage_voice':
+            elif str(before.channel.type) == "stage_voice":
                 try:
                     stage_removed = await self.stage.leave(data, member, before, after)
                 except:
                     stage_removed = None
 
             try:
-                category_removed = await self.category.leave(data, member, before, after)
+                category_removed = await self.category.leave(
+                    data, member, before, after
+                )
             except:
                 category_removed = None
 
@@ -92,29 +106,38 @@ class voicestate(commands.Cog):
             except:
                 pass
 
-            await self.logging.log_leave(before, member, voice_removed, stage_removed, category_removed, all_removed)
+            await self.logging.log_leave(
+                before,
+                member,
+                voice_removed,
+                stage_removed,
+                category_removed,
+                all_removed,
+            )
 
         # Changing
         elif before.channel != after.channel:
-            data = self.client.jopen(f'Linked/{member.guild.id}', str(member.guild.id))
+            data = self.client.jopen(f"Linked/{member.guild.id}", str(member.guild.id))
             voice_removed = stage_removed = category_removed = all_removed = None
             voice_added = stage_added = category_added = all_added = None
-            
+
             # Removing
-            if str(before.channel.type) == 'voice':
+            if str(before.channel.type) == "voice":
                 try:
                     voice_removed = await self.voice.leave(data, member, before, after)
                 except:
                     voice_removed = None
 
-            elif str(before.channel.type) == 'stage_voice':
+            elif str(before.channel.type) == "stage_voice":
                 try:
                     stage_removed = await self.stage.leave(data, member, before, after)
                 except:
                     stage_removed = None
 
             try:
-                category_removed = await self.category.leave(data, member, before, after)
+                category_removed = await self.category.leave(
+                    data, member, before, after
+                )
             except:
                 category_removed = None
 
@@ -129,13 +152,13 @@ class voicestate(commands.Cog):
                 pass
 
             # Adding
-            if str(after.channel.type) == 'voice':
+            if str(after.channel.type) == "voice":
                 try:
                     voice_added = await self.voice.join(data, member, before, after)
                 except:
                     voice_added = None
 
-            elif str(after.channel.type) == 'stage_voice':
+            elif str(after.channel.type) == "stage_voice":
                 try:
                     stage_added = await self.stage.join(data, member, before, after)
                 except:
@@ -161,8 +184,18 @@ class voicestate(commands.Cog):
             except:
                 pass
 
-            await self.logging.log_change(before, after, member, voice_removed, stage_removed, category_removed, voice_added, stage_added, category_added)
-        
+            await self.logging.log_change(
+                before,
+                after,
+                member,
+                voice_removed,
+                stage_removed,
+                category_removed,
+                voice_added,
+                stage_added,
+                category_added,
+            )
+
 
 def setup(client):
     client.add_cog(voicestate(client))
