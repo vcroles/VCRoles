@@ -1,0 +1,5 @@
+git+https://github.com/CDE90/pycord.git@master
+gtts
+mutagen
+topggpy
+pynacl
