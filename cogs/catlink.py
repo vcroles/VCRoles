@@ -3,61 +3,78 @@ from discord.ext import commands
 from discord.commands import Option
 from bot import MyClient
 
-class catlink(commands.Cog):
 
+class catlink(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @commands.slash_command(description='Use to link all channels in a category with a role')
+    @commands.slash_command(
+        description="Use to link all channels in a category with a role"
+    )
     @commands.has_permissions(administrator=True)
-    async def catlink(self, ctx: discord.ApplicationContext, channel: Option(discord.CategoryChannel, 'Select a category to link', required=True), role: Option(discord.Role,'Select a role to link', required=True)):
-            
-        data = self.client.jopen(f'Linked/{ctx.guild.id}', str(ctx.guild.id))
+    async def catlink(
+        self,
+        ctx: discord.ApplicationContext,
+        channel: Option(
+            discord.CategoryChannel, "Select a category to link", required=True
+        ),
+        role: Option(discord.Role, "Select a role to link", required=True),
+    ):
+
+        data = self.client.jopen(f"Linked/{ctx.guild.id}", str(ctx.guild.id))
 
         try:
-            data['category'][str(channel.id)]
+            data["category"][str(channel.id)]
         except:
-            data['category'][str(channel.id)] = []
+            data["category"][str(channel.id)] = []
 
-        if str(role.id) not in data['category'][str(channel.id)]:
-            data['category'][str(channel.id)].append(str(role.id))
+        if str(role.id) not in data["category"][str(channel.id)]:
+            data["category"][str(channel.id)].append(str(role.id))
 
-            self.client.jdump(f'Linked/{ctx.guild.id}', data)
-            
-            await ctx.respond(f'Linked {channel.mention} with role: `@{role.name}`')
+            self.client.jdump(f"Linked/{ctx.guild.id}", data)
+
+            await ctx.respond(f"Linked {channel.mention} with role: `@{role.name}`")
 
             member = ctx.guild.get_member(self.client.user.id)
             if member.top_role.position < role.position:
-                await ctx.send(f'Please ensure my highest role is above `@{role.name}`')
+                await ctx.send(f"Please ensure my highest role is above `@{role.name}`")
         else:
-            await ctx.respond(f'The channel and role are already linked.')
+            await ctx.respond(f"The channel and role are already linked.")
 
-
-    @commands.slash_command(description='Use to unlink a category from a role')
+    @commands.slash_command(description="Use to unlink a category from a role")
     @commands.has_permissions(administrator=True)
-    async def catunlink(self, ctx: discord.ApplicationContext, channel: Option(discord.CategoryChannel, 'Select a category to link', required=True), role: Option(discord.Role,'Select a role to link', required=True)):
-            
-        data = self.client.jopen(f'Linked/{ctx.guild.id}', str(ctx.guild.id))
+    async def catunlink(
+        self,
+        ctx: discord.ApplicationContext,
+        channel: Option(
+            discord.CategoryChannel, "Select a category to link", required=True
+        ),
+        role: Option(discord.Role, "Select a role to link", required=True),
+    ):
+
+        data = self.client.jopen(f"Linked/{ctx.guild.id}", str(ctx.guild.id))
 
         try:
-            data['category'][str(channel.id)]
+            data["category"][str(channel.id)]
         except:
-            await ctx.respond(f'The channel and role are not linked.')
+            await ctx.respond(f"The channel and role are not linked.")
             return
 
-        if str(role.id) in data['category'][str(channel.id)]:
+        if str(role.id) in data["category"][str(channel.id)]:
             try:
-                data['category'][str(channel.id)].remove(str(role.id))
-                
-                if not data['category'][str(channel.id)]:
-                    data['category'].pop(str(channel.id))
+                data["category"][str(channel.id)].remove(str(role.id))
 
-                self.client.jdump(f'Linked/{ctx.guild.id}', data)
+                if not data["category"][str(channel.id)]:
+                    data["category"].pop(str(channel.id))
 
-                await ctx.respond(f'Unlinked {channel.mention} and role: `@{role.name}`')
+                self.client.jdump(f"Linked/{ctx.guild.id}", data)
+
+                await ctx.respond(
+                    f"Unlinked {channel.mention} and role: `@{role.name}`"
+                )
             except:
                 pass
-        
+
 
 def setup(client):
     client.add_cog(catlink(client))

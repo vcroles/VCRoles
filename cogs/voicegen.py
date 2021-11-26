@@ -3,16 +3,28 @@ from discord.commands import Option
 from discord.ext import commands
 from bot import MyClient
 
-class voicegen(commands.Cog):
 
+class voicegen(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
-    
-    @commands.slash_command(description='A command to create a voice channel generator')
+
+    @commands.slash_command(description="A command to create a voice channel generator")
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(manage_channels=True)
-    async def voicegenerator(self, ctx: discord.ApplicationContext, category: Option(str, 'Name of generator category', required=False, default='Voice Generator'), channel: Option(str, 'Voice generator channel name', required=False, default='Voice Generator')):
-        data = self.client.jopen('Data/generator')
+    async def voicegenerator(
+        self,
+        ctx: discord.ApplicationContext,
+        category: Option(
+            str, "Name of generator category", required=False, default="Voice Generator"
+        ),
+        channel: Option(
+            str,
+            "Voice generator channel name",
+            required=False,
+            default="Voice Generator",
+        ),
+    ):
+        data = self.client.jopen("Data/generator")
 
         try:
             data.pop(str(ctx.guild.id))
@@ -23,27 +35,39 @@ class voicegen(commands.Cog):
 
         channel = await ctx.guild.create_voice_channel(name=channel, category=category)
 
-        data[str(ctx.guild.id)] = {'cat': str(category.id), 'gen_id': str(channel.id), 'open': []}
+        data[str(ctx.guild.id)] = {
+            "cat": str(category.id),
+            "gen_id": str(channel.id),
+            "open": [],
+        }
 
-        self.client.jdump('Data/generator', data)
+        self.client.jdump("Data/generator", data)
 
-        creation_embed = discord.Embed(color=discord.Color.green(),title='**Voice Generator Setup**', description=f'The category **{category.name}** and voice channel **{channel.name}** have been created.\n Join the voice channel to generate a voice channel.')
+        creation_embed = discord.Embed(
+            color=discord.Color.green(),
+            title="**Voice Generator Setup**",
+            description=f"The category **{category.name}** and voice channel **{channel.name}** have been created.\n Join the voice channel to generate a voice channel.",
+        )
         await ctx.respond(embed=creation_embed)
 
-    @commands.slash_command(description='A command to remove a voice channel generator')
+    @commands.slash_command(description="A command to remove a voice channel generator")
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(manage_channels=True)
     async def removegenerator(self, ctx: discord.ApplicationContext):
-        data = self.client.jopen('Data/generator')
+        data = self.client.jopen("Data/generator")
 
         try:
             data.pop(str(ctx.guild.id))
         except:
             pass
 
-        self.client.jdump('Data/generator', data)
-        
-        embed = discord.Embed(color=discord.Color.green(),title='**Voice Generator Removal**', description=f'The channel will now no longer act as a voice channel generator')
+        self.client.jdump("Data/generator", data)
+
+        embed = discord.Embed(
+            color=discord.Color.green(),
+            title="**Voice Generator Removal**",
+            description=f"The channel will now no longer act as a voice channel generator",
+        )
         await ctx.respond(embed=embed)
 
 
