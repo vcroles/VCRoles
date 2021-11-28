@@ -1,4 +1,4 @@
-import discord, json, os
+import discord, json, os, redis
 from discord.ext import commands
 import logging
 
@@ -23,7 +23,71 @@ handler.setFormatter(
 logger.addHandler(handler)
 
 
+class RedisUtils:
+    def __init__(self, r: redis.Redis):
+        self.r = r
+
+    def list_to_str(self, l: list) -> str:
+        return " ".join(l)
+
+    def str_to_list(self, s: bytes) -> list:
+        return s.decode("utf-8").split(" ")
+
+    def dict_to_str(self, d: dict) -> str:
+        return json.dumps(d)
+
+    def str_to_dict(self, s: bytes) -> dict:
+        return json.loads(s.decode("utf-8"))
+
+    def str_to_bool(self, s: bytes) -> bool:
+        if s.decode("utf-8") == True:
+            return True
+        return False
+
+    def decode(self, s: bytes) -> str:
+        return s.decode("utf-8")
+
+    def guild_add(self, guild_id: int):
+        # Guild data
+        self.r.hset(f"{guild_id}:gd", "tts:enabled", "False")
+        self.r.hset(f"{guild_id}:gd", "tts:role", "None")
+        self.r.hset(f"{guild_id}:gd", "logging", "None")
+
+        # Linked data
+        self.r.hset(f"{guild_id}:linked", "voice", self.dict_to_str({}))
+        self.r.hset(f"{guild_id}:linked", "stage", self.dict_to_str({}))
+        self.r.hset(f"{guild_id}:linked", "category", self.dict_to_str({}))
+        self.r.hset(
+            f"{guild_id}:linked", "all", self.dict_to_str({"roles": [], "except": []})
+        )
+        self.r.hset(f"{guild_id}:linked", "permanent", self.dict_to_str({}))
+
+        return True
+
+    def guild_remove(self, guild_id: int):
+        self.r.delete(f"{guild_id}:gd", f"{guild_id}:linked", f"{guild_id}:gen")
+
+        return False
+
+    def get_linked(self, type: str, guild_id: int) -> dict:
+        return self.str_to_dict(self.r.hget(f"{guild_id}:linked", type))
+
+    def get_guild_data(self, guild_id: int) -> dict:
+        return self.r.hgetall(f"{guild_id}:gd")
+
+    def update_guild_data(self, guild_id: int, data: dict):
+        for key in data:
+            self.r.hset(f"{guild_id}:gd", key, data[key])
+
+
 class MyClient(commands.AutoShardedBot):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        r = redis.Redis(
+            host="188.40.130.153", port=6379, db=0, password="sht8RNp@@X5CoEy&"
+        )
+        self.redis = RedisUtils(r)
+
     def jopen(self, file: str, guild_id: str = None):
         try:
             with open(f"{file}.json", "r") as f:
@@ -162,6 +226,44 @@ async def logs(
     await ctx.channel.send(file=discord.File(f"discord.log"))
 
 
+@client.slash_command(
+    description="DEVELOPER COMMAND", guild_ids=config["MANAGE_GUILD_IDS"]
+)
+@commands.is_owner()
+async def testing(ctx):
+    client.redis.guild_add(ctx.guild.id)
+    await ctx.respond("Done")
+
+
+@client.slash_command(
+    description="DEVELOPER COMMAND", guild_ids=config["MANAGE_GUILD_IDS"]
+)
+@commands.is_owner()
+async def testing1(ctx):
+    client.redis.guild_remove(ctx.guild.id)
+    await ctx.respond("Done")
+
+
+@client.slash_command(
+    description="DEVELOPER COMMAND", guild_ids=config["MANAGE_GUILD_IDS"]
+)
+@commands.is_owner()
+async def testing2(ctx):
+    guild_data = client.redis.get_guild_data(ctx.guild.id)
+    await ctx.respond(f"Done: {guild_data} {type(guild_data)}")
+
+
+@client.slash_command(
+    description="DEVELOPER COMMAND", guild_ids=config["MANAGE_GUILD_IDS"]
+)
+@commands.is_owner()
+async def testing3(ctx):
+    client.redis.update_guild_data(
+        ctx.guild.id, {"tts:enabled": "True", "logging": "id"}
+    )
+    await ctx.respond("Done")
+
+
 if __name__ == "__main__":
 
     # Adding Extensions
@@ -179,4 +281,4 @@ if __name__ == "__main__":
 
     # Running the bot.
 
-    client.run(config["BOT_TOKEN"])
+    client.run(config["TESTING_TOKEN"])
