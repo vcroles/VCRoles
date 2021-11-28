@@ -101,10 +101,7 @@ class tts(commands.Cog):
                     await ctx.respond(embed=embed)
 
                     player = vc.play(
-                        discord.FFmpegPCMAudio(
-                            executable="/usr/local/bin/ffmpeg",
-                            source=f"tts\\{ctx.guild.id}.mp3",
-                        ),
+                        discord.FFmpegPCMAudio(source=f"tts\\{ctx.guild.id}.mp3"),
                         after=lambda e: 1 + 1,
                     )
                     await asyncio.sleep(audio.info.length + 1)

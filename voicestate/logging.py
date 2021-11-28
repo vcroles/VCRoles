@@ -17,6 +17,8 @@ class logging:
             try:
                 channel = data[str(member.guild.id)]["logging"]
                 channel = self.client.get_channel(int(channel))
+                if channel not in member.guild.channels:
+                    return
                 logging_embed = discord.Embed(
                     title=f"Member joined voice channel",
                     description=f"{member} joined {after.channel.mention}",

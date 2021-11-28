@@ -12,6 +12,10 @@ class category:
         before: discord.VoiceState,
         after: discord.VoiceState,
     ) -> list:
+        try:
+            after.channel.category
+        except:
+            return None
         if str(after.channel.category.id) in data["category"]:
             roles = []
             for i in data["category"][str(after.channel.category.id)]:
@@ -31,6 +35,10 @@ class category:
         before: discord.VoiceState,
         after: discord.VoiceState,
     ) -> list:
+        try:
+            before.channel.category
+        except:
+            return None
         if str(before.channel.category.id) in data["category"]:
             roles = []
             for i in data["category"][str(before.channel.category.id)]:
