@@ -61,17 +61,9 @@ class MyClient(commands.AutoShardedBot):
         await client.change_presence(status=discord.Status.online)
         await client.change_presence(
             activity=discord.Activity(
-                type=discord.ActivityType.watching, name="Voice Channels - ?help"
+                type=discord.ActivityType.watching, name="Voice Channels"
             )
         )
-
-        # discord_terminal = client.get_channel(776117712074047539)
-        # await discord_terminal.send(f'Bot is ready\nI am in {serverss} servers')
-        # dev_terminal = client.get_channel(869354307328307230)
-        # await dev_terminal.send(f'Bot is ready\nI am in {serverss} servers')
-
-        # server_count = client.get_channel(869587186318716959)
-        # await server_count.edit(name=f'{len(client.guilds)} - Servers')
 
     async def on_guild_join(self, guild: discord.Guild):
         data = self.jopen("Data/guild_data")
@@ -118,7 +110,7 @@ class MyClient(commands.AutoShardedBot):
 
 intents = discord.Intents(messages=True, guilds=True, reactions=True, voice_states=True)
 
-client = MyClient("!", intents=intents)
+client = MyClient("VCROLESDONOTUSE", intents=intents)
 
 # COMMANDS
 
