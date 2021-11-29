@@ -13,7 +13,6 @@ class linkedC(commands.Cog):
     )
     @commands.has_permissions(administrator=True)
     async def linked(self, ctx: ApplicationContext):
-        data = self.client.jopen(f"Linked/{ctx.guild.id}", str(ctx.guild.id))
 
         linked_embed = discord.Embed(
             colour=discord.Colour.blue(),
@@ -21,7 +20,7 @@ class linkedC(commands.Cog):
         )
         va = ""
 
-        v_dict = data["voice"]
+        v_dict = self.client.redis.get_linked("voice", ctx.guild.id)
 
         for v_list in v_dict:
             try:
@@ -37,7 +36,7 @@ class linkedC(commands.Cog):
             except:
                 pass
 
-        s_dict = data["stage"]
+        s_dict = self.client.redis.get_linked("stage", ctx.guild.id)
 
         for s_list in s_dict:
             try:
@@ -53,7 +52,7 @@ class linkedC(commands.Cog):
             except:
                 pass
 
-        c_dict = data["category"]
+        c_dict = self.client.redis.get_linked("category", ctx.guild.id)
 
         for c_list in c_dict:
             try:
@@ -69,7 +68,7 @@ class linkedC(commands.Cog):
             except:
                 pass
 
-        p_dict = data["permanent"]
+        p_dict = self.client.redis.get_linked("permanent", ctx.guild.id)
 
         for p_list in p_dict:
             try:
@@ -85,7 +84,7 @@ class linkedC(commands.Cog):
             except:
                 pass
 
-        a_list = data["all"]["roles"]
+        a_list = self.client.redis.get_linked("all", ctx.guild.id)['roles']
         if a_list:
             va += "All: "
             for role in a_list:
@@ -95,7 +94,8 @@ class linkedC(commands.Cog):
                 except:
                     pass
             va += "\n"
-        a_list_e = data["all"]["except"]
+
+        a_list_e = self.client.redis.get_linked("all", ctx.guild.id)['except']
         if a_list_e:
             va += "All-link exceptions: "
             for channel in a_list_e:

@@ -1,4 +1,3 @@
-import json
 import discord
 import datetime
 from bot import MyClient
@@ -11,11 +10,11 @@ class logging:
     async def log_join(
         self, after: discord.VoiceState, member: discord.Member, v, s, c, a, p
     ):
-        data = self.client.jopen("Data/guild_data", str(member.guild.id))
+        data = self.client.redis.get_guild_data(member.guild.id)
 
-        if data[str(member.guild.id)]["logging"]:
+        if data["logging"] != 'None':
             try:
-                channel = data[str(member.guild.id)]["logging"]
+                channel = data["logging"]
                 channel = self.client.get_channel(int(channel))
                 if channel not in member.guild.channels:
                     return
@@ -76,11 +75,11 @@ class logging:
     async def log_leave(
         self, before: discord.VoiceState, member: discord.Member, v, s, c, a
     ):
-        data = self.client.jopen("Data/guild_data", str(member.guild.id))
+        data = self.client.redis.get_guild_data(member.guild.id)
 
-        if data[str(member.guild.id)]["logging"]:
+        if data["logging"] != 'None':
             try:
-                channel = data[str(member.guild.id)]["logging"]
+                channel = data["logging"]
                 channel = self.client.get_channel(int(channel))
                 logging_embed = discord.Embed(
                     title=f"Member left voice channel",
@@ -144,11 +143,11 @@ class logging:
         s2,
         c2,
     ):
-        data = self.client.jopen("Data/guild_data", str(member.guild.id))
+        data = self.client.redis.get_guild_data(member.guild.id)
 
-        if data[str(member.guild.id)]["logging"]:
+        if data["logging"] != 'None':
             try:
-                channel = data[str(member.guild.id)]["logging"]
+                channel = data["logging"]
                 channel = self.client.get_channel(int(channel))
                 logging_embed = discord.Embed(
                     title=f"Member moved voice channel",
