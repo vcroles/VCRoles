@@ -24,14 +24,16 @@ logger.addHandler(handler)
 
 
 class RedisUtils:
+    """Tools for interacting with the Redis database & converting datatypes"""
+
     def __init__(self, r: redis.Redis):
         self.r = r
 
     def list_to_str(self, l: list) -> str:
-        return " ".join(l)
+        return json.dumps(l)
 
     def str_to_list(self, s: bytes) -> list:
-        return s.decode("utf-8").split(" ")
+        return json.loads(s.decode("utf-8"))
 
     def dict_to_str(self, d: dict) -> str:
         return json.dumps(d)
@@ -62,22 +64,38 @@ class RedisUtils:
         )
         self.r.hset(f"{guild_id}:linked", "permanent", self.dict_to_str({}))
 
+        # Generator data
+        self.r.hset(f"{guild_id}:gen", "cat", "0")
+        self.r.hset(f"{guild_id}:gen", "gen_id", "0")
+        self.r.hset(f"{guild_id}:gen", "open", self.list_to_str([]))
+
         return True
 
     def guild_remove(self, guild_id: int):
         self.r.delete(f"{guild_id}:gd", f"{guild_id}:linked", f"{guild_id}:gen")
 
-        return False
-
-    def get_linked(self, type: str, guild_id: int) -> dict:
-        return self.str_to_dict(self.r.hget(f"{guild_id}:linked", type))
-
     def get_guild_data(self, guild_id: int) -> dict:
-        return self.r.hgetall(f"{guild_id}:gd")
+        data = {}
+        for key, value in self.r.hgetall(f"{guild_id}:gd").items():
+            data[self.decode(key)] = self.decode(value)
+        return data
 
     def update_guild_data(self, guild_id: int, data: dict):
         for key in data:
             self.r.hset(f"{guild_id}:gd", key, data[key])
+
+    def get_linked(self, type: str, guild_id: int) -> dict:
+        return self.str_to_dict(self.r.hget(f"{guild_id}:linked", type))
+
+    def update_linked(self, type: str, guild_id: int, data: dict):
+        self.r.hset(f"{guild_id}:linked", type, self.dict_to_str(data))
+
+    def get_generator(self, guild_id: int) -> dict:
+        return self.r.hgetall(f"{guild_id}:gen")
+
+    def update_generator(self, guild_id: int, data: dict):
+        for key in data:
+            self.r.hset(f"{guild_id}:gen", key, data[key])
 
 
 class MyClient(commands.AutoShardedBot):
@@ -130,30 +148,10 @@ class MyClient(commands.AutoShardedBot):
         )
 
     async def on_guild_join(self, guild: discord.Guild):
-        data = self.jopen("Data/guild_data")
-
-        data[str(guild.id)] = default_gdata
-
-        self.jdump("Data/guild_data", data)
-
-        data = default_linked
-
-        self.jdump(f"Linked/{guild.id}", data)
+        self.redis.guild_add(guild.id)
 
     async def on_guild_remove(self, guild: discord.Guild):
-        data = self.jopen("Data/guild_data")
-
-        try:
-            data.pop(str(guild.id))
-
-            self.jdump("Data/guild_data", data)
-        except:
-            pass
-
-        try:
-            os.remove(f"Linked/{guild.id}.json")
-        except:
-            pass
+        self.redis.guild_remove(guild.id)
 
     async def on_application_command_error(self, ctx, error):
 
@@ -183,7 +181,7 @@ client = MyClient("VCROLESDONOTUSE", intents=intents)
     description="DEVELOPER COMMAND", guild_ids=config["MANAGE_GUILD_IDS"]
 )
 @commands.is_owner()
-async def load(ctx, extension: str):
+async def load(ctx: discord.ApplicationContext,  extension: str):
     try:
         client.load_extension(f"cogs.{extension}")
         await ctx.respond(f"Successfully loaded {extension}")
@@ -195,7 +193,7 @@ async def load(ctx, extension: str):
     description="DEVELOPER COMMAND", guild_ids=config["MANAGE_GUILD_IDS"]
 )
 @commands.is_owner()
-async def unload(ctx, extension: str):
+async def unload(ctx: discord.ApplicationContext,  extension: str):
     try:
         client.unload_extension(f"cogs.{extension}")
         await ctx.respond(f"Successfully unloaded {extension}")
@@ -207,7 +205,7 @@ async def unload(ctx, extension: str):
     description="DEVELOPER COMMAND", guild_ids=config["MANAGE_GUILD_IDS"]
 )
 @commands.is_owner()
-async def reload(ctx, extension: str):
+async def reload(ctx: discord.ApplicationContext,  extension: str):
     try:
         client.reload_extension(f"cogs.{extension}")
         await ctx.respond(f"Successfully reloaded {extension}")
@@ -220,49 +218,10 @@ async def reload(ctx, extension: str):
 )
 @commands.is_owner()
 async def logs(
-    ctx,
+    ctx: discord.ApplicationContext, 
 ):  # , type: Option(str, 'Log type', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'])):
     await ctx.respond("Fetching Logs...")
     await ctx.channel.send(file=discord.File(f"discord.log"))
-
-
-@client.slash_command(
-    description="DEVELOPER COMMAND", guild_ids=config["MANAGE_GUILD_IDS"]
-)
-@commands.is_owner()
-async def testing(ctx):
-    client.redis.guild_add(ctx.guild.id)
-    await ctx.respond("Done")
-
-
-@client.slash_command(
-    description="DEVELOPER COMMAND", guild_ids=config["MANAGE_GUILD_IDS"]
-)
-@commands.is_owner()
-async def testing1(ctx):
-    client.redis.guild_remove(ctx.guild.id)
-    await ctx.respond("Done")
-
-
-@client.slash_command(
-    description="DEVELOPER COMMAND", guild_ids=config["MANAGE_GUILD_IDS"]
-)
-@commands.is_owner()
-async def testing2(ctx):
-    guild_data = client.redis.get_guild_data(ctx.guild.id)
-    await ctx.respond(f"Done: {guild_data} {type(guild_data)}")
-
-
-@client.slash_command(
-    description="DEVELOPER COMMAND", guild_ids=config["MANAGE_GUILD_IDS"]
-)
-@commands.is_owner()
-async def testing3(ctx):
-    client.redis.update_guild_data(
-        ctx.guild.id, {"tts:enabled": "True", "logging": "id"}
-    )
-    await ctx.respond("Done")
-
 
 if __name__ == "__main__":
 

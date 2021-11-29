@@ -21,17 +21,17 @@ class permlink(commands.Cog):
         role: Option(discord.Role, "Select a role to link", required=True),
     ):
 
-        data = self.client.jopen(f"Linked/{ctx.guild.id}", str(ctx.guild.id))
+        data = self.client.redis.get_linked('permanent', ctx.guild.id)
 
         try:
-            data["permanent"][str(channel.id)]
+            data[str(channel.id)]
         except:
-            data["permanent"][str(channel.id)] = []
+            data[str(channel.id)] = []
 
-        if str(role.id) not in data["permanent"][str(channel.id)]:
-            data["permanent"][str(channel.id)].append(str(role.id))
+        if str(role.id) not in data[str(channel.id)]:
+            data[str(channel.id)].append(str(role.id))
 
-            self.client.jdump(f"Linked/{ctx.guild.id}", data)
+            self.client.redis.update_linked('permanent', ctx.guild.id, data)
 
             await ctx.respond(
                 f"Linked {channel.mention} with role: `@{role.name}`\nWhen a user leaves the channel, they will KEEP the role"
@@ -56,22 +56,22 @@ class permlink(commands.Cog):
         role: Option(discord.Role, "Select a role to link", required=True),
     ):
 
-        data = self.client.jopen(f"Linked/{ctx.guild.id}", str(ctx.guild.id))
+        data = self.client.redis.get_linked('permanent', ctx.guild.id)
 
         try:
-            data["permanent"][str(channel.id)]
+            data[str(channel.id)]
         except:
             await ctx.respond(f"The channel and role are not linked.")
             return
 
-        if str(role.id) in data["permanent"][str(channel.id)]:
+        if str(role.id) in data[str(channel.id)]:
             try:
-                data["permanent"][str(channel.id)].remove(str(role.id))
+                data[str(channel.id)].remove(str(role.id))
 
-                if not data["permanent"][str(channel.id)]:
-                    data["permanent"].pop(str(channel.id))
+                if not data[str(channel.id)]:
+                    data.pop(str(channel.id))
 
-                self.client.jdump(f"Linked/{ctx.guild.id}", data)
+                self.client.redis.update_linked('permanent', ctx.guild.id, data)
 
                 await ctx.respond(
                     f"Unlinked {channel.mention} and role: `@{role.name}`"

@@ -62,15 +62,15 @@ class tts(commands.Cog):
         index = language.find(":")
         language_code = language[0:index]
 
-        data = self.client.jopen("Data/guild_data", str(ctx.guild.id))
-        if data[str(ctx.guild.id)]["tts"]["enabled"] == False:
+        data = self.client.redis.get_guild_data(ctx.guild.id)
+        if data["tts:enabled"] == False:
             await ctx.respond(f"TTS isn't enabled in this server.")
             return
         if len(message) > 250:
             await ctx.respond(f"The message is over the 250 character limit")
             return
         else:
-            role = ctx.guild.get_role(data[str(ctx.guild.id)]["tts"]["role"])
+            role = ctx.guild.get_role(data["tts:role"])
             if role in ctx.author.roles or role == None:
                 if ctx.author.voice.channel:
                     tts_message = gTTS(text=message, lang=language_code)
@@ -139,16 +139,16 @@ class tts(commands.Cog):
             discord.Role, "A role required to use TTS", required=False, default=None
         ),
     ):
-        data = self.client.jopen("Data/guild_data", str(ctx.guild.id))
+        data = self.client.redis.get_guild_data(ctx.guild.id)
 
         if role:
-            data[str(ctx.guild.id)]["tts"]["enabled"] = enabled
-            data[str(ctx.guild.id)]["tts"]["role"] = str(role.id)
+            data["tts:enabled"] = enabled
+            data["tts:role"] = str(role.id)
         else:
-            data[str(ctx.guild.id)]["tts"]["enabled"] = enabled
-            data[str(ctx.guild.id)]["tts"]["role"] = role
+            data["tts:enabled"] = enabled
+            data["tts:role"] = role
 
-        self.client.jdump("Data/guild_data", data)
+        self.client.redis.update_guild_data(ctx.guild.id, data)
 
         await ctx.respond(f"TTS settings updated: Enabled {enabled}, Role {role}")
 

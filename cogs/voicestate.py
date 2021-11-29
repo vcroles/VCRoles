@@ -27,33 +27,32 @@ class voicestate(commands.Cog):
 
         # Joining
         if not before.channel and after.channel:
-            data = self.client.jopen(f"Linked/{member.guild.id}", str(member.guild.id))
             voice_added = stage_added = category_added = all_added = None
 
             if str(after.channel.type) == "voice":
                 try:
-                    voice_added = await self.voice.join(data, member, before, after)
+                    voice_added = await self.voice.join(self.client.redis.get_linked('voice', member.guild.id), member, before, after)
                 except:
                     voice_added = None
 
             elif str(after.channel.type) == "stage_voice":
                 try:
-                    stage_added = await self.stage.join(data, member, before, after)
+                    stage_added = await self.stage.join(self.client.redis.get_linked('stage', member.guild.id), member, before, after)
                 except:
                     stage_added = None
 
             try:
-                category_added = await self.category.join(data, member, before, after)
+                category_added = await self.category.join(self.client.redis.get_linked('category', member.guild.id), member, before, after)
             except:
                 category_added = None
 
             try:
-                all_added = await self.all.join(data, member, before, after)
+                all_added = await self.all.join(self.client.redis.get_linked('all', member.guild.id), member, before, after)
             except:
                 all_added = None
 
             try:
-                perm_added = await self.permanent.join(data, member, before, after)
+                perm_added = await self.permanent.join(self.client.redis.get_linked('permanent', member.guild.id), member, before, after)
             except:
                 perm_added = None
 
@@ -74,30 +73,29 @@ class voicestate(commands.Cog):
 
         # Leaving
         elif before.channel and not after.channel:
-            data = self.client.jopen(f"Linked/{member.guild.id}", str(member.guild.id))
             voice_removed = stage_removed = category_removed = all_removed = None
 
             if str(before.channel.type) == "voice":
                 try:
-                    voice_removed = await self.voice.leave(data, member, before, after)
+                    voice_removed = await self.voice.leave(self.client.redis.get_linked('voice', member.guild.id), member, before, after)
                 except:
                     voice_removed = None
 
             elif str(before.channel.type) == "stage_voice":
                 try:
-                    stage_removed = await self.stage.leave(data, member, before, after)
+                    stage_removed = await self.stage.leave(self.client.redis.get_linked('stage', member.guild.id), member, before, after)
                 except:
                     stage_removed = None
 
             try:
                 category_removed = await self.category.leave(
-                    data, member, before, after
+                    self.client.redis.get_linked('category', member.guild.id), member, before, after
                 )
             except:
                 category_removed = None
 
             try:
-                all_removed = await self.all.leave(data, member, before, after)
+                all_removed = await self.all.leave(self.client.redis.get_linked('all', member.guild.id), member, before, after)
             except:
                 all_removed = None
 
@@ -117,32 +115,31 @@ class voicestate(commands.Cog):
 
         # Changing
         elif before.channel != after.channel:
-            data = self.client.jopen(f"Linked/{member.guild.id}", str(member.guild.id))
             voice_removed = stage_removed = category_removed = all_removed = None
             voice_added = stage_added = category_added = all_added = None
 
             # Removing
             if str(before.channel.type) == "voice":
                 try:
-                    voice_removed = await self.voice.leave(data, member, before, after)
+                    voice_removed = await self.voice.leave(self.client.redis.get_linked('voice', member.guild.id), member, before, after)
                 except:
                     voice_removed = None
 
             elif str(before.channel.type) == "stage_voice":
                 try:
-                    stage_removed = await self.stage.leave(data, member, before, after)
+                    stage_removed = await self.stage.leave(self.client.redis.get_linked('stage', member.guild.id), member, before, after)
                 except:
                     stage_removed = None
 
             try:
                 category_removed = await self.category.leave(
-                    data, member, before, after
+                    self.client.redis.get_linked('category', member.guild.id), member, before, after
                 )
             except:
                 category_removed = None
 
             try:
-                all_removed = await self.all.leave(data, member, before, after)
+                all_removed = await self.all.leave(self.client.redis.get_linked('all', member.guild.id), member, before, after)
             except:
                 all_removed = None
 
@@ -154,28 +151,28 @@ class voicestate(commands.Cog):
             # Adding
             if str(after.channel.type) == "voice":
                 try:
-                    voice_added = await self.voice.join(data, member, before, after)
+                    voice_added = await self.voice.join(self.client.redis.get_linked('voice', member.guild.id), member, before, after)
                 except:
                     voice_added = None
 
             elif str(after.channel.type) == "stage_voice":
                 try:
-                    stage_added = await self.stage.join(data, member, before, after)
+                    stage_added = await self.stage.join(self.client.redis.get_linked('stage', member.guild.id), member, before, after)
                 except:
                     stage_added = None
 
             try:
-                category_added = await self.category.join(data, member, before, after)
+                category_added = await self.category.join(self.client.redis.get_linked('category', member.guild.id), member, before, after)
             except:
                 category_added = None
 
             try:
-                all_added = await self.all.join(data, member, before, after)
+                all_added = await self.all.join(self.client.redis.get_linked('all', member.guild.id), member, before, after)
             except:
                 all_added = None
 
             try:
-                perm_added = await self.permanent.join(data, member, before, after)
+                perm_added = await self.permanent.join(self.client.redis.get_linked('permanent', member.guild.id), member, before, after)
             except:
                 perm_added = None
 
