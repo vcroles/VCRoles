@@ -84,7 +84,7 @@ class linkedC(commands.Cog):
             except:
                 pass
 
-        a_list = self.client.redis.get_linked("all", ctx.guild.id)['roles']
+        a_list = self.client.redis.get_linked("all", ctx.guild.id)["roles"]
         if a_list:
             va += "All: "
             for role in a_list:
@@ -95,7 +95,7 @@ class linkedC(commands.Cog):
                     pass
             va += "\n"
 
-        a_list_e = self.client.redis.get_linked("all", ctx.guild.id)['except']
+        a_list_e = self.client.redis.get_linked("all", ctx.guild.id)["except"]
         if a_list_e:
             va += "All-link exceptions: "
             for channel in a_list_e:

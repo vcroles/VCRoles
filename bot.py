@@ -181,7 +181,7 @@ client = MyClient("VCROLESDONOTUSE", intents=intents)
     description="DEVELOPER COMMAND", guild_ids=config["MANAGE_GUILD_IDS"]
 )
 @commands.is_owner()
-async def load(ctx: discord.ApplicationContext,  extension: str):
+async def load(ctx: discord.ApplicationContext, extension: str):
     try:
         client.load_extension(f"cogs.{extension}")
         await ctx.respond(f"Successfully loaded {extension}")
@@ -193,7 +193,7 @@ async def load(ctx: discord.ApplicationContext,  extension: str):
     description="DEVELOPER COMMAND", guild_ids=config["MANAGE_GUILD_IDS"]
 )
 @commands.is_owner()
-async def unload(ctx: discord.ApplicationContext,  extension: str):
+async def unload(ctx: discord.ApplicationContext, extension: str):
     try:
         client.unload_extension(f"cogs.{extension}")
         await ctx.respond(f"Successfully unloaded {extension}")
@@ -205,7 +205,7 @@ async def unload(ctx: discord.ApplicationContext,  extension: str):
     description="DEVELOPER COMMAND", guild_ids=config["MANAGE_GUILD_IDS"]
 )
 @commands.is_owner()
-async def reload(ctx: discord.ApplicationContext,  extension: str):
+async def reload(ctx: discord.ApplicationContext, extension: str):
     try:
         client.reload_extension(f"cogs.{extension}")
         await ctx.respond(f"Successfully reloaded {extension}")
@@ -218,10 +218,11 @@ async def reload(ctx: discord.ApplicationContext,  extension: str):
 )
 @commands.is_owner()
 async def logs(
-    ctx: discord.ApplicationContext, 
+    ctx: discord.ApplicationContext,
 ):  # , type: Option(str, 'Log type', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'])):
     await ctx.respond("Fetching Logs...")
     await ctx.channel.send(file=discord.File(f"discord.log"))
+
 
 if __name__ == "__main__":
 
