@@ -53,7 +53,9 @@ class voicegen(commands.Cog):
 
         self.client.redis.r.hset(f"{ctx.guild_id}:gen", "cat", "0")
         self.client.redis.r.hset(f"{ctx.guild_id}:gen", "gen_id", "0")
-        self.client.redis.r.hset(f"{ctx.guild_id}:gen", "open", self.client.redis.list_to_str([]))
+        self.client.redis.r.hset(
+            f"{ctx.guild_id}:gen", "open", self.client.redis.list_to_str([])
+        )
 
         self.client.redis.update_generator(ctx.guild.id, data)
 

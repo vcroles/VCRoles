@@ -18,7 +18,7 @@ class stagelink(commands.Cog):
         ),
         role: Option(discord.Role, "Select a role to link", required=True),
     ):
-        data = self.client.redis.get_linked('stage', ctx.guild.id)
+        data = self.client.redis.get_linked("stage", ctx.guild.id)
 
         try:
             data[str(channel.id)]
@@ -28,7 +28,7 @@ class stagelink(commands.Cog):
         if str(role.id) not in data[str(channel.id)]:
             data[str(channel.id)].append(str(role.id))
 
-            self.client.redis.update_linked('stage', ctx.guild.id, data)
+            self.client.redis.update_linked("stage", ctx.guild.id, data)
 
             await ctx.respond(f"Linked {channel.mention} with role: `@{role.name}`")
 
@@ -48,7 +48,7 @@ class stagelink(commands.Cog):
         ),
         role: Option(discord.Role, "Select a role to link", required=True),
     ):
-        data = self.client.redis.get_linked('stage', ctx.guild.id)
+        data = self.client.redis.get_linked("stage", ctx.guild.id)
 
         try:
             data[str(channel.id)]
@@ -63,7 +63,7 @@ class stagelink(commands.Cog):
                 if not data[str(channel.id)]:
                     data.pop(str(channel.id))
 
-                self.client.redis.update_linked('stage', ctx.guild.id, data)
+                self.client.redis.update_linked("stage", ctx.guild.id, data)
 
                 await ctx.respond(
                     f"Unlinked {channel.mention} and role: `@{role.name}`"

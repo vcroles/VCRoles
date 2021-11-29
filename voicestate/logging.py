@@ -12,7 +12,7 @@ class logging:
     ):
         data = self.client.redis.get_guild_data(member.guild.id)
 
-        if data["logging"] != 'None':
+        if data["logging"] != "None":
             try:
                 channel = data["logging"]
                 channel = self.client.get_channel(int(channel))
@@ -77,7 +77,7 @@ class logging:
     ):
         data = self.client.redis.get_guild_data(member.guild.id)
 
-        if data["logging"] != 'None':
+        if data["logging"] != "None":
             try:
                 channel = data["logging"]
                 channel = self.client.get_channel(int(channel))
@@ -145,7 +145,7 @@ class logging:
     ):
         data = self.client.redis.get_guild_data(member.guild.id)
 
-        if data["logging"] != 'None':
+        if data["logging"] != "None":
             try:
                 channel = data["logging"]
                 channel = self.client.get_channel(int(channel))
