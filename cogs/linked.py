@@ -13,7 +13,6 @@ class linkedC(commands.Cog):
     )
     @commands.has_permissions(administrator=True)
     async def linked(self, ctx: ApplicationContext):
-        data = self.client.jopen(f"Linked/{ctx.guild.id}", str(ctx.guild.id))
 
         linked_embed = discord.Embed(
             colour=discord.Colour.blue(),
@@ -21,59 +20,90 @@ class linkedC(commands.Cog):
         )
         va = ""
 
-        v_dict = data["voice"]
+        v_dict = self.client.redis.get_linked("voice", ctx.guild.id)
 
         for v_list in v_dict:
-            channel = self.client.get_channel(int(v_list))
-            va += f"{channel.mention}: "
-            for role in v_dict[v_list]:
-                role = ctx.guild.get_role(int(role))
-                va += f"{role.mention} "
-            va += "\n"
+            try:
+                channel = self.client.get_channel(int(v_list))
+                va += f"{channel.mention}: "
+                for role in v_dict[v_list]:
+                    try:
+                        role = ctx.guild.get_role(int(role))
+                        va += f"{role.mention} "
+                    except:
+                        pass
+                va += "\n"
+            except:
+                pass
 
-        s_dict = data["stage"]
+        s_dict = self.client.redis.get_linked("stage", ctx.guild.id)
 
         for s_list in s_dict:
-            channel = self.client.get_channel(int(s_list))
-            va += f"{channel.mention}: "
-            for role in s_dict[s_list]:
-                role = ctx.guild.get_role(int(role))
-                va += f"{role.mention} "
-            va += "\n"
+            try:
+                channel = self.client.get_channel(int(s_list))
+                va += f"{channel.mention}: "
+                for role in s_dict[s_list]:
+                    try:
+                        role = ctx.guild.get_role(int(role))
+                        va += f"{role.mention} "
+                    except:
+                        pass
+                va += "\n"
+            except:
+                pass
 
-        c_dict = data["category"]
+        c_dict = self.client.redis.get_linked("category", ctx.guild.id)
 
         for c_list in c_dict:
-            channel = self.client.get_channel(int(c_list))
-            va += f"Category {channel.mention}: "
-            for role in c_dict[c_list]:
-                role = ctx.guild.get_role(int(role))
-                va += f"{role.mention} "
-            va += "\n"
+            try:
+                channel = self.client.get_channel(int(c_list))
+                va += f"Category {channel.mention}: "
+                for role in c_dict[c_list]:
+                    try:
+                        role = ctx.guild.get_role(int(role))
+                        va += f"{role.mention} "
+                    except:
+                        pass
+                va += "\n"
+            except:
+                pass
 
-        p_dict = data["permanent"]
+        p_dict = self.client.redis.get_linked("permanent", ctx.guild.id)
 
         for p_list in p_dict:
-            channel = self.client.get_channel(int(p_list))
-            va += f"Permanent {channel.mention}: "
-            for role in p_dict[p_list]:
-                role = ctx.guild.get_role(int(role))
-                va += f"{role.mention} "
-            va += "\n"
+            try:
+                channel = self.client.get_channel(int(p_list))
+                va += f"Permanent {channel.mention}: "
+                for role in p_dict[p_list]:
+                    try:
+                        role = ctx.guild.get_role(int(role))
+                        va += f"{role.mention} "
+                    except:
+                        pass
+                va += "\n"
+            except:
+                pass
 
-        a_list = data["all"]["roles"]
+        a_list = self.client.redis.get_linked("all", ctx.guild.id)["roles"]
         if a_list:
             va += "All: "
             for role in a_list:
-                role = ctx.guild.get_role(int(role))
-                va += f"{role.mention} "
+                try:
+                    role = ctx.guild.get_role(int(role))
+                    va += f"{role.mention} "
+                except:
+                    pass
             va += "\n"
-        a_list_e = data["all"]["except"]
+
+        a_list_e = self.client.redis.get_linked("all", ctx.guild.id)["except"]
         if a_list_e:
             va += "All-link exceptions: "
             for channel in a_list_e:
-                channel = self.client.get_channel(int(channel))
-                va += f"{channel.mention} "
+                try:
+                    channel = self.client.get_channel(int(channel))
+                    va += f"{channel.mention} "
+                except:
+                    pass
             va += "\n"
 
         if va:

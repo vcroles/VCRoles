@@ -3,3 +3,4 @@ gtts
 mutagen
 topggpy
 pynacl
+redis
