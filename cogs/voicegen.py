@@ -24,24 +24,19 @@ class voicegen(commands.Cog):
             default="Voice Generator",
         ),
     ):
-        data = self.client.jopen("Data/generator")
-
-        try:
-            data.pop(str(ctx.guild.id))
-        except:
-            pass
+        data = self.client.redis.get_generator(ctx.guild.id)
 
         category = await ctx.guild.create_category(name=category)
 
         channel = await ctx.guild.create_voice_channel(name=channel, category=category)
 
-        data[str(ctx.guild.id)] = {
+        data = {
             "cat": str(category.id),
             "gen_id": str(channel.id),
-            "open": [],
+            "open": self.client.redis.list_to_str([]),
         }
 
-        self.client.jdump("Data/generator", data)
+        self.client.redis.update_generator(ctx.guild.id, data)
 
         creation_embed = discord.Embed(
             color=discord.Color.green(),
@@ -54,14 +49,15 @@ class voicegen(commands.Cog):
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(manage_channels=True)
     async def removegenerator(self, ctx: discord.ApplicationContext):
-        data = self.client.jopen("Data/generator")
+        data = self.client.redis.get_generator(ctx.guild.id)
 
-        try:
-            data.pop(str(ctx.guild.id))
-        except:
-            pass
+        self.client.redis.r.hset(f"{ctx.guild_id}:gen", "cat", "0")
+        self.client.redis.r.hset(f"{ctx.guild_id}:gen", "gen_id", "0")
+        self.client.redis.r.hset(
+            f"{ctx.guild_id}:gen", "open", self.client.redis.list_to_str([])
+        )
 
-        self.client.jdump("Data/generator", data)
+        self.client.redis.update_generator(ctx.guild.id, data)
 
         embed = discord.Embed(
             color=discord.Color.green(),

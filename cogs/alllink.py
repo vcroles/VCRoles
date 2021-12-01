@@ -16,12 +16,12 @@ class alllink(commands.Cog):
         role: Option(discord.Role, "Select a role to link", required=True),
     ):
 
-        data = self.client.jopen(f"Linked/{ctx.guild.id}", str(ctx.guild.id))
+        data = self.client.redis.get_linked("all", ctx.guild.id)
 
-        if str(role.id) not in data["all"]["roles"]:
-            data["all"]["roles"].append(str(role.id))
+        if str(role.id) not in data["roles"]:
+            data["roles"].append(str(role.id))
 
-            self.client.jdump(f"Linked/{ctx.guild.id}", data)
+            self.client.redis.update_linked("all", ctx.guild.id, data)
 
             await ctx.respond(f"Linked all channels with role: `@{role.name}`")
 
@@ -39,13 +39,13 @@ class alllink(commands.Cog):
         role: Option(discord.Role, "Select a role to link", required=True),
     ):
 
-        data = self.client.jopen(f"Linked/{ctx.guild.id}", str(ctx.guild.id))
+        data = self.client.redis.get_linked("all", ctx.guild.id)
 
-        if str(role.id) in data["all"]["roles"]:
+        if str(role.id) in data["roles"]:
             try:
-                data["all"]["roles"].remove(str(role.id))
+                data["roles"].remove(str(role.id))
 
-                self.client.jdump(f"Linked/{ctx.guild.id}", data)
+                self.client.redis.update_linked("all", ctx.guild.id, data)
 
                 await ctx.respond(f"Unlinked all channels from role: `@{role.name}`")
             except:
@@ -61,14 +61,17 @@ class alllink(commands.Cog):
         channel: Option(discord.VoiceChannel, "Select an exception channel"),
     ):
 
-        data = self.client.jopen(f"Linked/{ctx.guild.id}", str(ctx.guild.id))
+        data = self.client.redis.get_linked("all", ctx.guild.id)
 
         try:
-            data["all"]["except"].append(str(channel.id))
+            if str(channel.id) not in data["except"]:
+                data["except"].append(str(channel.id))
 
-            self.client.jdump(f"Linked/{ctx.guild.id}", data)
+                self.client.redis.update_linked("all", ctx.guild.id, data)
 
-            await ctx.respond(f"Added {channel.mention} as an exception to alllink")
+                await ctx.respond(f"Added exception: `{channel.name}`")
+            else:
+                await ctx.respond(f"The channel is already an exception.")
         except:
             await ctx.respond(f"Unable to add exception")
 
@@ -80,12 +83,12 @@ class alllink(commands.Cog):
         channel: Option(discord.VoiceChannel, "Select an exception channel"),
     ):
 
-        data = self.client.jopen(f"Linked/{ctx.guild.id}", str(ctx.guild.id))
+        data = self.client.redis.get_linked("all", ctx.guild.id)
 
-        if str(channel.id) in data["all"]["except"]:
-            data["all"]["except"].remove(str(channel.id))
+        if str(channel.id) in data["except"]:
+            data["except"].remove(str(channel.id))
 
-            self.client.jdump(f"Linked/{ctx.guild.id}", data)
+            self.client.redis.update_linked("all", ctx.guild.id, data)
 
             await ctx.respond(f"Removed {channel.mention} as an exception to alllink")
         else:

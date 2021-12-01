@@ -62,16 +62,22 @@ class tts(commands.Cog):
         index = language.find(":")
         language_code = language[0:index]
 
-        data = self.client.jopen("Data/guild_data", str(ctx.guild.id))
-        if data[str(ctx.guild.id)]["tts"]["enabled"] == False:
+        data = self.client.redis.get_guild_data(ctx.guild.id)
+
+        if data["tts:enabled"] == "False":
             await ctx.respond(f"TTS isn't enabled in this server.")
             return
         if len(message) > 250:
             await ctx.respond(f"The message is over the 250 character limit")
             return
-        else:
-            role = ctx.guild.get_role(data[str(ctx.guild.id)]["tts"]["role"])
-            if role in ctx.author.roles or role == None:
+        if data["tts:enabled"] == "True":
+
+            try:
+                role = ctx.guild.get_role(int(data["tts:role"]))
+            except:
+                role = None
+
+            if role in ctx.author.roles or data["tts:role"] == "None":
                 if ctx.author.voice.channel:
                     tts_message = gTTS(text=message, lang=language_code)
                     tts_message.save(f"tts\\{ctx.guild.id}.mp3")
@@ -101,16 +107,21 @@ class tts(commands.Cog):
                     await ctx.respond(embed=embed)
 
                     player = vc.play(
-                        discord.FFmpegPCMAudio(
-                            executable="/usr/local/bin/ffmpeg",
-                            source=f"tts\\{ctx.guild.id}.mp3",
-                        ),
+                        discord.FFmpegPCMAudio(source=f"tts\\{ctx.guild.id}.mp3"),
                         after=lambda e: 1 + 1,
                     )
                     await asyncio.sleep(audio.info.length + 1)
                     if leave == True:
                         await vc.disconnect()
                     os.remove(f"tts\\{ctx.guild.id}.mp3")
+
+                else:
+                    await ctx.respond(
+                        "You must be in a voice channel to use this command"
+                    )
+
+            else:
+                await ctx.respond("You don't have the required role to use TTS")
 
     @commands.slash_command(
         description="Stops the current TTS message & Makes the bot leave the voice channel"
@@ -124,12 +135,13 @@ class tts(commands.Cog):
                     description="The current TTS message has been stopped.",
                 )
                 await ctx.respond(embed=embed)
-            else:
-                embed = discord.Embed(
-                    colour=discord.Color.green(),
-                    description="There are no TTS messages being read at the minute",
-                )
-                await ctx.respond(embed=embed)
+                return
+
+        embed = discord.Embed(
+            colour=discord.Color.green(),
+            description="There are no TTS messages being read at the minute",
+        )
+        await ctx.respond(embed=embed)
 
     @commands.slash_command(
         description="Used to enable/disable TTS & set a required role"
@@ -142,16 +154,16 @@ class tts(commands.Cog):
             discord.Role, "A role required to use TTS", required=False, default=None
         ),
     ):
-        data = self.client.jopen("Data/guild_data", str(ctx.guild.id))
+        data = self.client.redis.get_guild_data(ctx.guild.id)
 
         if role:
-            data[str(ctx.guild.id)]["tts"]["enabled"] = enabled
-            data[str(ctx.guild.id)]["tts"]["role"] = str(role.id)
+            data["tts:enabled"] = str(enabled)
+            data["tts:role"] = str(role.id)
         else:
-            data[str(ctx.guild.id)]["tts"]["enabled"] = enabled
-            data[str(ctx.guild.id)]["tts"]["role"] = role
+            data["tts:enabled"] = str(enabled)
+            data["tts:role"] = str(role)
 
-        self.client.jdump("Data/guild_data", data)
+        self.client.redis.update_guild_data(ctx.guild.id, data)
 
         await ctx.respond(f"TTS settings updated: Enabled {enabled}, Role {role}")
 
