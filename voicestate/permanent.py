@@ -13,9 +13,9 @@ class perm:
         before: discord.VoiceState,
         after: discord.VoiceState,
     ) -> list:
-        if str(after.channel.id) in data["permanent"]:
+        if str(after.channel.id) in data:
             roles = []
-            for i in data["permanent"][str(after.channel.id)]:
+            for i in data[str(after.channel.id)]:
                 try:
                     role = member.guild.get_role(int(i))
                     await member.add_roles(role)

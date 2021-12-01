@@ -63,15 +63,21 @@ class tts(commands.Cog):
         language_code = language[0:index]
 
         data = self.client.redis.get_guild_data(ctx.guild.id)
-        if data["tts:enabled"] == False:
+
+        if data["tts:enabled"] == "False":
             await ctx.respond(f"TTS isn't enabled in this server.")
             return
         if len(message) > 250:
             await ctx.respond(f"The message is over the 250 character limit")
             return
-        else:
-            role = ctx.guild.get_role(data["tts:role"])
-            if role in ctx.author.roles or role == None:
+        if data["tts:enabled"] == "True":
+
+            try:
+                role = ctx.guild.get_role(int(data["tts:role"]))
+            except:
+                role = None
+
+            if role in ctx.author.roles or data["tts:role"] == "None":
                 if ctx.author.voice.channel:
                     tts_message = gTTS(text=message, lang=language_code)
                     tts_message.save(f"tts\\{ctx.guild.id}.mp3")
@@ -109,6 +115,14 @@ class tts(commands.Cog):
                         await vc.disconnect()
                     os.remove(f"tts\\{ctx.guild.id}.mp3")
 
+                else:
+                    await ctx.respond(
+                        "You must be in a voice channel to use this command"
+                    )
+
+            else:
+                await ctx.respond("You don't have the required role to use TTS")
+
     @commands.slash_command(
         description="Stops the current TTS message & Makes the bot leave the voice channel"
     )
@@ -121,12 +135,13 @@ class tts(commands.Cog):
                     description="The current TTS message has been stopped.",
                 )
                 await ctx.respond(embed=embed)
-            else:
-                embed = discord.Embed(
-                    colour=discord.Color.green(),
-                    description="There are no TTS messages being read at the minute",
-                )
-                await ctx.respond(embed=embed)
+                return
+
+        embed = discord.Embed(
+            colour=discord.Color.green(),
+            description="There are no TTS messages being read at the minute",
+        )
+        await ctx.respond(embed=embed)
 
     @commands.slash_command(
         description="Used to enable/disable TTS & set a required role"
@@ -142,11 +157,11 @@ class tts(commands.Cog):
         data = self.client.redis.get_guild_data(ctx.guild.id)
 
         if role:
-            data["tts:enabled"] = enabled
+            data["tts:enabled"] = str(enabled)
             data["tts:role"] = str(role.id)
         else:
-            data["tts:enabled"] = enabled
-            data["tts:role"] = role
+            data["tts:enabled"] = str(enabled)
+            data["tts:role"] = str(role)
 
         self.client.redis.update_guild_data(ctx.guild.id, data)
 
