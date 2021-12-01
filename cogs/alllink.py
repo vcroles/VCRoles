@@ -64,8 +64,8 @@ class alllink(commands.Cog):
         data = self.client.redis.get_linked("all", ctx.guild.id)
 
         try:
-            if str(channel.id) not in data["exceptions"]:
-                data["exceptions"].append(str(channel.id))
+            if str(channel.id) not in data["except"]:
+                data["except"].append(str(channel.id))
 
                 self.client.redis.update_linked("all", ctx.guild.id, data)
 

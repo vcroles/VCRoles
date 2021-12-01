@@ -12,9 +12,9 @@ class stage:
         before: discord.VoiceState,
         after: discord.VoiceState,
     ) -> list:
-        if str(after.channel.id) in data["stage"]:
+        if str(after.channel.id) in data:
             roles = []
-            for i in data["stage"][str(after.channel.id)]:
+            for i in data[str(after.channel.id)]:
                 try:
                     role = member.guild.get_role(int(i))
                     await member.add_roles(role, reason="Joined stage channel")
@@ -31,9 +31,9 @@ class stage:
         before: discord.VoiceState,
         after: discord.VoiceState,
     ) -> list:
-        if str(before.channel.id) in data["stage"]:
+        if str(before.channel.id) in data:
             roles = []
-            for i in data["stage"][str(before.channel.id)]:
+            for i in data[str(before.channel.id)]:
                 try:
                     role = member.guild.get_role(int(i))
                     await member.remove_roles(role, reason="Left stage channel")

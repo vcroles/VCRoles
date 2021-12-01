@@ -12,15 +12,15 @@ class voice:
         before: discord.VoiceState,
         after: discord.VoiceState,
     ) -> list:
-        if str(after.channel.id) in data["voice"]:
+        if str(after.channel.id) in data:
             roles = []
-            for i in data["voice"][str(after.channel.id)]:
-                try:
+            for i in data[str(after.channel.id)]:
+                if True:
                     role = member.guild.get_role(int(i))
                     await member.add_roles(role, reason="Joined voice channel")
                     roles.append(role)
-                except:
-                    pass
+                # except:
+                #     pass
             return roles
         return None
 
@@ -31,9 +31,9 @@ class voice:
         before: discord.VoiceState,
         after: discord.VoiceState,
     ) -> list:
-        if str(before.channel.id) in data["voice"]:
+        if str(before.channel.id) in data:
             roles = []
-            for i in data["voice"][str(before.channel.id)]:
+            for i in data[str(before.channel.id)]:
                 try:
                     role = member.guild.get_role(int(i))
                     await member.remove_roles(role, reason="Left voice channel")
