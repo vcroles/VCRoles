@@ -154,38 +154,9 @@ class MyClient(commands.AutoShardedBot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         r = redis.Redis(
-            host="188.40.130.153", port=6379, db=0, password="sht8RNp@@X5CoEy&"
+            host="172.18.0.1", port=6379, db=0, password="sht8RNp@@X5CoEy&"
         )
         self.redis = RedisUtils(r)
-
-    def jopen(self, file: str, guild_id: str = None):
-        try:
-            with open(f"{file}.json", "r") as f:
-                data = json.load(f)
-        except FileNotFoundError:
-            if file.startswith("Linked") and guild_id != None:
-                with open(f"Linked/{guild_id}.json", "w") as f:
-                    json.dump(default_linked, f, indent=4)
-                return default_linked
-        try:
-            if guild_id and file == "Data/guild_data":
-                data[guild_id]
-                return data
-        except:
-            if guild_id:
-                data[guild_id] = default_gdata
-            return data
-        return data
-
-    def jdump(self, file, data):
-        with open(f"{file}.json", "w") as f:
-            json.dump(data, f, indent=4)
-
-    def is_it_dev(ctx):
-        if ctx.author.id == 652797071623192576:
-            return ctx.author.id == 652797071623192576
-        elif ctx.author.id == 602235481459261440:
-            return ctx.author.id == 602235481459261440
 
     async def on_ready(self):
         print(f"Logged in as {self.user}")
