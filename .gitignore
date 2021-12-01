@@ -3,6 +3,5 @@ config.json
 **/*.pyc
 __pycache__/
 tts/
-old/
-test/
-Linked/
+old_data/
+old_linked/
