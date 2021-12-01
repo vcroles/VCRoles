@@ -32,8 +32,8 @@ class RedisUtils:
     def list_to_str(self, l: list) -> str:
         return json.dumps(l)
 
-    def str_to_list(self, s: bytes) -> list:
-        return json.loads(s.decode("utf-8"))
+    def str_to_list(self, s: str) -> list:
+        return json.loads(s)
 
     def dict_to_str(self, d: dict) -> str:
         return json.dumps(d)
@@ -91,11 +91,17 @@ class RedisUtils:
         self.r.hset(f"{guild_id}:linked", type, self.dict_to_str(data))
 
     def get_generator(self, guild_id: int) -> dict:
-        return self.r.hgetall(f"{guild_id}:gen")
+        data = {}
+        for key, value in self.r.hgetall(f"{guild_id}:gen").items():
+            data[self.decode(key)] = self.decode(value)
+        return data
 
     def update_generator(self, guild_id: int, data: dict):
         for key in data:
-            self.r.hset(f"{guild_id}:gen", key, data[key])
+            if key == "open":
+                self.r.hset(f"{guild_id}:gen", key, self.list_to_str(data[key]))
+            else:
+                self.r.hset(f"{guild_id}:gen", key, data[key])
 
 
 class MyClient(commands.AutoShardedBot):
