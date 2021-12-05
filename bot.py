@@ -1,4 +1,4 @@
-import discord, json, os, redis
+import discord, json, os, redis, topgg
 from discord.ext import commands
 import logging
 
@@ -196,6 +196,15 @@ class MyClient(commands.AutoShardedBot):
 intents = discord.Intents(messages=True, guilds=True, reactions=True, voice_states=True)
 
 client = MyClient("VCROLESDONOTUSE", intents=intents)
+
+dbl_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Ijc3NTAyNTc5NzAzNDU0MTEwNyIsImJvdCI6dHJ1ZSwiaWF0IjoxNjA2MDYyNTE5fQ.gGilud7TbOEFJP5aGJ1TeYaWN48n6ohpHOKIdoUFB3E"
+client.topggpy = topgg.DBLClient(client, dbl_token, autopost=True, post_shard_count=True)
+
+@client.event
+async def on_autopost_success():
+    print(
+        f"Posted server count ({client.topggpy.guild_count}), shard count ({client.shard_count})"
+    )
 
 # COMMANDS
 
