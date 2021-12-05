@@ -1,5 +1,7 @@
 # VC Roles (Rewrite)
 
+[![Discord Bots](https://top.gg/api/widget/775025797034541107.svg)(https://top.gg/bot/775025797034541107)
+
 VC Roles, TTS & more!
 https://bit.ly/vcrole
 
