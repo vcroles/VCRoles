@@ -1,4 +1,4 @@
-git+https://github.com/CDE90/pycord.git@stabe
+git+https://github.com/CDE90/pycord.git@stable
 gtts
 mutagen
 topggpy
