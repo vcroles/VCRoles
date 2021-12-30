@@ -80,8 +80,8 @@ class tts(commands.Cog):
             if role in ctx.author.roles or data["tts:role"] == "None":
                 if ctx.author.voice.channel:
                     tts_message = gTTS(text=message, lang=language_code)
-                    tts_message.save(f"tts\\{ctx.guild.id}.mp3")
-                    audio = MP3(f"tts\\{ctx.guild.id}.mp3")
+                    tts_message.save(f"tts/{ctx.guild.id}.mp3")
+                    audio = MP3(f"tts/{ctx.guild.id}.mp3")
 
                     try:
                         vc = await ctx.author.voice.channel.connect()
@@ -107,7 +107,7 @@ class tts(commands.Cog):
                     await ctx.respond(embed=embed)
 
                     player = vc.play(
-                        discord.FFmpegPCMAudio(source=f"tts\\{ctx.guild.id}.mp3"),
+                        discord.FFmpegPCMAudio(source=f"tts/{ctx.guild.id}.mp3"),
                         after=lambda e: 1 + 1,
                     )
                     await asyncio.sleep(audio.info.length + 1)
