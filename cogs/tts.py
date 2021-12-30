@@ -113,7 +113,7 @@ class tts(commands.Cog):
                     await asyncio.sleep(audio.info.length + 1)
                     if leave == True:
                         await vc.disconnect()
-                    os.remove(f"tts\\{ctx.guild.id}.mp3")
+                    os.remove(f"tts/{ctx.guild.id}.mp3")
 
                 else:
                     await ctx.respond(
