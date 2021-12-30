@@ -269,7 +269,7 @@ if __name__ == "__main__":
 
     for filename in os.listdir("tts"):
         if filename.endswith(".mp3"):
-            os.remove(f"tts\\{filename}")
+            os.remove(f"tts/{filename}")
 
     # Running the bot.
 
