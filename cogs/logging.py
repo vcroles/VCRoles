@@ -17,8 +17,8 @@ class loggingC(commands.Cog):
         channel: Option(discord.TextChannel, "Logging channel:", required=False),
     ):
         if enabled == True and not channel:
-            await ctx.respond("To enable, select a channel to send logs to.")
-        elif enabled == True and channel:
+            channel = ctx.channel
+        if enabled == True and channel:
             try:
                 data = self.client.redis.get_guild_data(ctx.guild.id)
 
