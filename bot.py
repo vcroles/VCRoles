@@ -154,7 +154,7 @@ class MyClient(commands.AutoShardedBot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         r = redis.Redis(
-            host="172.18.0.1", port=6379, db=0, password="sht8RNp@@X5CoEy&"
+            host=config["REDIS"]["HOST"], port=config["REDIS"]["PORT"], db=config["REDIS"]["DB"], password=config["REDIS"]["PASSWORD"]
         )
         self.redis = RedisUtils(r)
 
@@ -195,9 +195,9 @@ class MyClient(commands.AutoShardedBot):
 
 intents = discord.Intents(messages=True, guilds=True, reactions=True, voice_states=True)
 
-client = MyClient("VCROLESDONOTUSE", intents=intents)
+client = MyClient(intents=intents)
 
-dbl_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Ijc3NTAyNTc5NzAzNDU0MTEwNyIsImJvdCI6dHJ1ZSwiaWF0IjoxNjA2MDYyNTE5fQ.gGilud7TbOEFJP5aGJ1TeYaWN48n6ohpHOKIdoUFB3E"
+dbl_token = config["DBL_TOKEN"]
 client.topggpy = topgg.DBLClient(client, dbl_token, autopost=True, post_shard_count=True)
 
 @client.event
