@@ -1,0 +1,27 @@
+{
+    "data": {
+        "bot.py": {
+            "text": {
+                "missing_perms": "You do not have the required permissions to use this command.",
+                "missing_dev": "This is a developer only command.",
+                "error": "Error: {0}"
+            }
+        },
+        "cogs": {
+            "all_link": {
+                "text": {
+                    "linked": "Linked all channels with role: `@{0}`",
+                    "role_order": "Please ensure my highest role is above `@{0}`",
+                    "already_linked": "The channel and role are already linked.",
+                    "unlinked": "Unlinked all channels from role: `@{0}`",
+                    "not_linked": "The channel and role are not linked.",
+                    "all_exception": "Added exception: `{0}`",
+                    "already_exception": "The exception is already added.",
+                    "exception_failed": "Failed to add exception",
+                    "removed_exception": "Removed {0} as an exception to alllink",
+                    "exception_error": "Please select a valid exception channel"
+                }
+            }
+        }
+    }
+}

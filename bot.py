@@ -158,6 +158,12 @@ class MyClient(commands.AutoShardedBot):
         )
         self.redis = RedisUtils(r)
 
+        self.langs = {}
+
+        for file in os.listdir('lang'):
+            with open(f'lang/{file}', 'r') as f:
+                self.langs[file[:-4]] = json.load(f)
+
     async def on_ready(self):
         print(f"Logged in as {self.user}")
         print(f"Bot is in {len(self.guilds)} guilds.")
