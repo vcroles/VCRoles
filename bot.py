@@ -49,7 +49,7 @@ class RedisUtils:
     def decode(self, s: bytes) -> str:
         return s.decode("utf-8")
 
-    def guild_add(self, guild_id: int, type = None):
+    def guild_add(self, guild_id: int, type=None):
         if type == None:
             # Guild data
             self.r.hset(f"{guild_id}:gd", "tts:enabled", "False")
@@ -61,7 +61,9 @@ class RedisUtils:
             self.r.hset(f"{guild_id}:linked", "stage", self.dict_to_str({}))
             self.r.hset(f"{guild_id}:linked", "category", self.dict_to_str({}))
             self.r.hset(
-                f"{guild_id}:linked", "all", self.dict_to_str({"roles": [], "except": []})
+                f"{guild_id}:linked",
+                "all",
+                self.dict_to_str({"roles": [], "except": []}),
             )
             self.r.hset(f"{guild_id}:linked", "permanent", self.dict_to_str({}))
 
@@ -69,23 +71,25 @@ class RedisUtils:
             self.r.hset(f"{guild_id}:gen", "cat", "0")
             self.r.hset(f"{guild_id}:gen", "gen_id", "0")
             self.r.hset(f"{guild_id}:gen", "open", self.list_to_str([]))
-        elif type == 'gen':
+        elif type == "gen":
             # Generator data
             self.r.hset(f"{guild_id}:gen", "cat", "0")
             self.r.hset(f"{guild_id}:gen", "gen_id", "0")
             self.r.hset(f"{guild_id}:gen", "open", self.list_to_str([]))
-        elif type == 'gd':
+        elif type == "gd":
             # Guild data
             self.r.hset(f"{guild_id}:gd", "tts:enabled", "False")
             self.r.hset(f"{guild_id}:gd", "tts:role", "None")
             self.r.hset(f"{guild_id}:gd", "logging", "None")
-        elif type == 'linked':
+        elif type == "linked":
             # Linked data
             self.r.hset(f"{guild_id}:linked", "voice", self.dict_to_str({}))
             self.r.hset(f"{guild_id}:linked", "stage", self.dict_to_str({}))
             self.r.hset(f"{guild_id}:linked", "category", self.dict_to_str({}))
             self.r.hset(
-                f"{guild_id}:linked", "all", self.dict_to_str({"roles": [], "except": []})
+                f"{guild_id}:linked",
+                "all",
+                self.dict_to_str({"roles": [], "except": []}),
             )
             self.r.hset(f"{guild_id}:linked", "permanent", self.dict_to_str({}))
 
@@ -102,13 +106,12 @@ class RedisUtils:
                 data[self.decode(key)] = self.decode(value)
             return data
         else:
-            self.guild_add(guild_id, 'gd')
+            self.guild_add(guild_id, "gd")
             r_data = self.r.hgetall(f"{guild_id}:gd")
             data = {}
             for key, value in r_data.items():
                 data[self.decode(key)] = self.decode(value)
             return data
-
 
     def update_guild_data(self, guild_id: int, data: dict):
         for key in data:
@@ -119,7 +122,7 @@ class RedisUtils:
         if r_data:
             return self.str_to_dict(r_data)
         else:
-            self.guild_add(guild_id, 'linked')
+            self.guild_add(guild_id, "linked")
             r_data = self.r.hget(f"{guild_id}:linked", type)
             return self.str_to_dict(r_data)
 
@@ -134,7 +137,7 @@ class RedisUtils:
                 data[self.decode(key)] = self.decode(value)
             return data
         else:
-            self.guild_add(guild_id, 'gen')
+            self.guild_add(guild_id, "gen")
 
             r_data = self.r.hgetall(f"{guild_id}:gen")
             data = {}
@@ -154,7 +157,10 @@ class MyClient(commands.AutoShardedBot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         r = redis.Redis(
-            host=config["REDIS"]["HOST"], port=config["REDIS"]["PORT"], db=config["REDIS"]["DB"], password=config["REDIS"]["PASSWORD"]
+            host=config["REDIS"]["HOST"],
+            port=config["REDIS"]["PORT"],
+            db=config["REDIS"]["DB"],
+            password=config["REDIS"]["PASSWORD"],
         )
         self.redis = RedisUtils(r)
 
@@ -198,13 +204,17 @@ intents = discord.Intents(messages=True, guilds=True, reactions=True, voice_stat
 client = MyClient(intents=intents)
 
 dbl_token = config["DBL_TOKEN"]
-client.topggpy = topgg.DBLClient(client, dbl_token, autopost=True, post_shard_count=True)
+client.topggpy = topgg.DBLClient(
+    client, dbl_token, autopost=True, post_shard_count=True
+)
+
 
 @client.event
 async def on_autopost_success():
     print(
         f"Posted server count ({client.topggpy.guild_count}), shard count ({client.shard_count})"
     )
+
 
 # COMMANDS
 
@@ -254,6 +264,17 @@ async def logs(
 ):  # , type: Option(str, 'Log type', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'])):
     await ctx.respond("Fetching Logs...")
     await ctx.channel.send(file=discord.File(f"discord.log"))
+
+
+@client.slash_command(description="Help Command")
+async def help(ctx: discord.ApplicationContext):
+    embed = discord.Embed(
+        title="VC Roles Help",
+        description="We have moved our help page to https://www.vcroles.com where you can find a list of the bot's commands, how to use them, a basic setup guide and more!",
+        colour=discord.Colour.light_grey(),
+    )
+    embed.set_footer(text="https://www.vcroles.com")
+    await ctx.respond(embed=embed)
 
 
 if __name__ == "__main__":
