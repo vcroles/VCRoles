@@ -26,17 +26,15 @@ Currently running using tested [pycord fork](https://github.com/CDE90/pycord) ma
 
 ## Links
 
-### Discord Developer Page
-
-https://discord.com/developers/applications/775025797034541107/information
-
 ### Top.gg
 
 https://top.gg/bot/775025797034541107
 
 ### Official Website
 
-https://sites.google.com/view/vc-discord-bot/home
+https://sites.google.com/view/vc-discord-bot/home (old website)
+
+https://www.vcroles.com (new website)
 
 ### Admin Invite Link
 
