@@ -71,11 +71,11 @@ class dev(commands.Cog):
             status_embed = discord.Embed(
                 colour=discord.Color.blue(),
                 title="__**Success**__",
-                description="Activity Type set to Listening\nMessage set to ?help - bit.ly/vcrole",
+                description="Activity Type set to Listening\nMessage set to /help - www.vcroles.com",
             )
             await self.client.change_presence(
                 activity=discord.Activity(
-                    type=discord.ActivityType.listening, name="?help - bit.ly/vcrole"
+                    type=discord.ActivityType.listening, name="/help - www.vcroles.com"
                 )
             )
             await ctx.respond(embed=status_embed)
