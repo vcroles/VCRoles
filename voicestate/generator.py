@@ -1,3 +1,4 @@
+import json
 import discord
 from bot import MyClient
 
@@ -22,11 +23,9 @@ class generator:
                 category=category,
                 reason="Voice Channel Generator",
             )
-
-            data["open"] = self.client.redis.str_to_list(data["open"])
-            data["open"].append(str(channel.id))
-
             await member.move_to(channel)
+            data["open"] = json.loads(data["open"])
+            data["open"].append(str(channel.id))
 
             self.client.redis.update_generator(member.guild.id, data)
 

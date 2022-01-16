@@ -33,7 +33,7 @@ class voicegen(commands.Cog):
         data = {
             "cat": str(category.id),
             "gen_id": str(channel.id),
-            "open": self.client.redis.list_to_str([]),
+            "open": [],
         }
 
         self.client.redis.update_generator(ctx.guild.id, data)
