@@ -169,8 +169,8 @@ class MyClient(commands.AutoShardedBot):
         print(f"Bot is in {len(self.guilds)} guilds.")
         print("------")
 
-        await client.change_presence(status=discord.Status.online)
-        await client.change_presence(
+        await self.change_presence(status=discord.Status.online)
+        await self.change_presence(
             activity=discord.Activity(
                 type=discord.ActivityType.watching, name="Voice Channels"
             )
@@ -197,6 +197,38 @@ class MyClient(commands.AutoShardedBot):
                 await ctx.respond(f"Error: {error}")
             except:
                 pass
+
+    async def on_guild_channel_delete(self, channel: discord.abc.GuildChannel):
+        # Voice Channels
+        if isinstance(channel, discord.VoiceChannel):
+            data = self.redis.get_linked("voice", channel.guild.id)
+            if str(channel.id) in data:
+                del data[str(channel.id)]
+                self.redis.update_linked("voice", channel.guild.id, data)
+
+            data = self.redis.get_linked("permanent", channel.guild.id)
+            if str(channel.id) in data:
+                del data[str(channel.id)]
+                self.redis.update_linked("permanent", channel.guild.id, data)
+
+            data = self.redis.get_linked("all", channel.guild.id)
+            if str(channel.id) in data["except"]:
+                data["except"].remove(str(channel.id))
+                self.redis.update_linked("all", channel.guild.id, data)
+
+        # Stage Channels
+        if isinstance(channel, discord.StageChannel):
+            data = self.redis.get_linked("stage", channel.guild.id)
+            if str(channel.id) in data:
+                del data[str(channel.id)]
+                self.redis.update_linked("stage", channel.guild.id, data)
+
+        # Category Channels
+        if isinstance(channel, discord.CategoryChannel):
+            data = self.redis.get_linked("category", channel.guild.id)
+            if str(channel.id) in data:
+                del data[str(channel.id)]
+                self.redis.update_linked("category", channel.guild.id, data)
 
 
 intents = discord.Intents(messages=True, guilds=True, reactions=True, voice_states=True)
