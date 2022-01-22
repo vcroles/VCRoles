@@ -34,7 +34,7 @@ class linkedC(commands.Cog):
                         pass
                 va += "\n"
             except:
-                pass
+                va += f"Not Found - ID `{v_list}`\n"
 
         s_dict = self.client.redis.get_linked("stage", ctx.guild.id)
 
@@ -50,7 +50,7 @@ class linkedC(commands.Cog):
                         pass
                 va += "\n"
             except:
-                pass
+                va += f"Not Found - ID `{s_list}`\n"
 
         c_dict = self.client.redis.get_linked("category", ctx.guild.id)
 
@@ -66,7 +66,7 @@ class linkedC(commands.Cog):
                         pass
                 va += "\n"
             except:
-                pass
+                va += f"Not Found - ID `{c_list}`\n"
 
         p_dict = self.client.redis.get_linked("permanent", ctx.guild.id)
 
@@ -82,7 +82,7 @@ class linkedC(commands.Cog):
                         pass
                 va += "\n"
             except:
-                pass
+                va += f"Not Found - ID `{p_list}`\n"
 
         a_list = self.client.redis.get_linked("all", ctx.guild.id)["roles"]
         if a_list:
@@ -103,7 +103,7 @@ class linkedC(commands.Cog):
                     channel = self.client.get_channel(int(channel))
                     va += f"{channel.mention} "
                 except:
-                    pass
+                    va += f"Not Found - ID `{channel}`"
             va += "\n"
 
         if va:
