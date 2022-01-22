@@ -29,11 +29,9 @@ class utilities(commands.Cog):
         embed.add_field(
             name="__**Current Bot Version**__", value="Bot Version - 2.0", inline=False
         )
-        shard_info = self.client.get_shard(0)
-        shard_id = shard_info.id
-        shard_count = shard_info.shard_count
+        shard_id = ctx.guild.shard_id
         embed.add_field(
-            name="__**Shard Info**__", value=f"Shard {shard_id}/{shard_count}"
+            name="__**Shard Info**__", value=f"Shard {shard_id+1}/{len(self.client.shards)}"
         )
 
         embed.add_field(

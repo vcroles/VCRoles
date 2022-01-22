@@ -92,16 +92,10 @@ class dev(commands.Cog):
     )
     @commands.is_owner()
     async def shards(self, ctx):
-        shards = self.client.shards
-        latency = round(self.client.latency * 1000)
-        latencies = self.client.latencies
-        shard_info = self.client.get_shard(0)
-        shard_id = shard_info.id
-        shard_count = shard_info.shard_count
         shard_embed = discord.Embed(
             colour=discord.Colour.blue(),
             title="Sharding Info:",
-            description=f"There are {shard_count} shards.\nThis is shard {shard_id} - latency: {latency} ms\nThe latency of other shards are: {latencies}",
+            description=f"There are {len(self.client.shards)} shards.\nThis is shard {ctx.guild.shard_id} - latency: {round(self.client.latency * 1000)} ms",
         )
         await ctx.respond(embed=shard_embed)
 
@@ -110,7 +104,7 @@ class dev(commands.Cog):
     )
     @commands.is_owner()
     async def coglist(self, ctx):
-        await ctx.respond(f"The cogs are:\n{self.client.cogs}")
+        await ctx.respond(f"The cogs are:\n{self.client.cogs.keys()}")
 
 
 def setup(client):
