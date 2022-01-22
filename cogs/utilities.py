@@ -31,7 +31,8 @@ class utilities(commands.Cog):
         )
         shard_id = ctx.guild.shard_id
         embed.add_field(
-            name="__**Shard Info**__", value=f"Shard {shard_id+1}/{len(self.client.shards)}"
+            name="__**Shard Info**__",
+            value=f"Shard {shard_id+1}/{len(self.client.shards)}",
         )
 
         embed.add_field(
