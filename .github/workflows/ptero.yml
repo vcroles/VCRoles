@@ -5,6 +5,7 @@ on: [push]
 jobs:
   deployment:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     steps:
     - name: HTTP Request Action
       id: botRestart
@@ -16,3 +17,4 @@ jobs:
         bearerToken: 'wUO3pN5XKalpGhehHBVtocexVwjM9aBKJ9Bwa9zdO6p6ZHAN'
     - name: Show Response
       run: echo ${{ steps.botRestart.outputs.response }}
+    - run: echo DONE!
