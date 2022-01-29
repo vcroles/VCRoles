@@ -1,2 +1,18 @@
-- name: HTTP Request Action
-  uses: fjogeleit/http-request-action@v1.8.2
+name: Restart
+
+on: [push]
+
+jobs:
+  deployment:
+    runs-on: ubuntu-latest
+    steps:
+    - name: HTTP Request Action
+      id: botRestart
+      uses: fjogeleit/http-request-action@v1.8.2
+      with:
+        url: 'https://panel.ridge-hosting.com/api/client/servers/9f578d1b/power'
+        method: 'POST'
+        data: '{"signal": "restart"}'
+        bearerToken: 'wUO3pN5XKalpGhehHBVtocexVwjM9aBKJ9Bwa9zdO6p6ZHAN'
+    - name: Show Response
+      run: echo ${{ steps.botRestart.outputs.response }}
