@@ -200,6 +200,9 @@ class MyClient(commands.AutoShardedBot):
             except:
                 pass
 
+    async def on_command_error(self, ctx, error):
+        return
+
     async def on_guild_channel_delete(self, channel: discord.abc.GuildChannel):
         # Voice Channels
         if isinstance(channel, discord.VoiceChannel):
@@ -250,7 +253,8 @@ class MyClient(commands.AutoShardedBot):
 
 intents = discord.Intents(messages=True, guilds=True, reactions=True, voice_states=True)
 
-client = MyClient(intents=intents)
+client = MyClient(intents=intents, command_prefix=commands.when_mentioned_or('#'))
+client.remove_command("help")
 
 dbl_token = config["DBL_TOKEN"]
 client.topggpy = topgg.DBLClient(
@@ -268,50 +272,50 @@ async def on_autopost_success():
 # COMMANDS
 
 # DEV Commands
-@client.slash_command(
-    description="DEVELOPER COMMAND", guild_ids=config["MANAGE_GUILD_IDS"]
+@client.command(
+    description="DEVELOPER COMMAND"
 )
 @commands.is_owner()
-async def load(ctx: discord.ApplicationContext, extension: str):
+async def load(ctx, extension: str):
     try:
         client.load_extension(f"cogs.{extension}")
-        await ctx.respond(f"Successfully loaded {extension}")
+        await ctx.send(f"Successfully loaded {extension}")
     except:
-        await ctx.respond(f"Failed while loading {extension}")
+        await ctx.send(f"Failed while loading {extension}")
 
 
-@client.slash_command(
-    description="DEVELOPER COMMAND", guild_ids=config["MANAGE_GUILD_IDS"]
+@client.command(
+    description="DEVELOPER COMMAND"
 )
 @commands.is_owner()
-async def unload(ctx: discord.ApplicationContext, extension: str):
+async def unload(ctx, extension: str):
     try:
         client.unload_extension(f"cogs.{extension}")
-        await ctx.respond(f"Successfully unloaded {extension}")
+        await ctx.send(f"Successfully unloaded {extension}")
     except:
-        await ctx.respond(f"Failed while unloading {extension}")
+        await ctx.send(f"Failed while unloading {extension}")
 
 
-@client.slash_command(
-    description="DEVELOPER COMMAND", guild_ids=config["MANAGE_GUILD_IDS"]
+@client.command(
+    description="DEVELOPER COMMAND"
 )
 @commands.is_owner()
-async def reload(ctx: discord.ApplicationContext, extension: str):
+async def reload(ctx, extension: str):
     try:
         client.reload_extension(f"cogs.{extension}")
-        await ctx.respond(f"Successfully reloaded {extension}")
+        await ctx.send(f"Successfully reloaded {extension}")
     except:
-        await ctx.respond(f"Failed while reloading {extension}")
+        await ctx.send(f"Failed while reloading {extension}")
 
 
-@client.slash_command(
-    description="DEVELOPER COMMAND", guild_ids=config["MANAGE_GUILD_IDS"]
+@client.command(
+    description="DEVELOPER COMMAND"
 )
 @commands.is_owner()
 async def logs(
-    ctx: discord.ApplicationContext,
+    ctx,
 ):  # , type: Option(str, 'Log type', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'])):
-    await ctx.respond("Fetching Logs...")
+    await ctx.send("Fetching Logs...")
     await ctx.channel.send(file=discord.File(f"discord.log"))
 
 

@@ -8,22 +8,22 @@ with open("Data/config.json", "r") as f:
     config = json.load(f)
 
 
-class dev(commands.Cog):
+class Dev(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
-    @commands.slash_command(
-        guild_ids=config["MANAGE_GUILD_IDS"], description="DEVELOPER COMMAND"
+    @commands.command(
+        description="DEVELOPER COMMAND"
     )
     @commands.is_owner()
     async def change_status(
-        self, ctx: ApplicationContext, status=None, message=Option(str, "Message")
+        self, ctx, status=None, *, message: str=None
     ):
         try:
             status = int(status)
         except:
             pass
-        print(status, message)
+        
         if status == 1:
             status_embed = discord.Embed(
                 colour=discord.Color.blue(),
@@ -35,7 +35,7 @@ class dev(commands.Cog):
                     type=discord.ActivityType.listening, name=message
                 )
             )
-            await ctx.respond(embed=status_embed)
+            await ctx.send(embed=status_embed)
         elif status == 2:
             status_embed = discord.Embed(
                 colour=discord.Color.blue(),
@@ -47,7 +47,7 @@ class dev(commands.Cog):
                     type=discord.ActivityType.watching, name=message
                 )
             )
-            await ctx.respond(embed=status_embed)
+            await ctx.send(embed=status_embed)
         elif status == 3:
             status_embed = discord.Embed(
                 colour=discord.Color.blue(),
@@ -59,14 +59,14 @@ class dev(commands.Cog):
                     type=discord.ActivityType.playing, name=message
                 )
             )
-            await ctx.respond(embed=status_embed)
+            await ctx.send(embed=status_embed)
         elif status == None:
             status_embed = discord.Embed(
                 colour=discord.Color.blue(),
                 title="__**Numbers For Status Changing**__",
                 description="Listening - 1 \nWatching - 2\nPlaying - 3\n Plain Genric one - 4",
             )
-            await ctx.respond(embed=status_embed)
+            await ctx.send(embed=status_embed)
         elif status == 4:
             status_embed = discord.Embed(
                 colour=discord.Color.blue(),
@@ -78,17 +78,17 @@ class dev(commands.Cog):
                     type=discord.ActivityType.listening, name="/help - www.vcroles.com"
                 )
             )
-            await ctx.respond(embed=status_embed)
+            await ctx.send(embed=status_embed)
 
-    @commands.slash_command(
-        guild_ids=config["MANAGE_GUILD_IDS"], description="DEVELOPER COMMAND"
+    @commands.command(
+        description="DEVELOPER COMMAND"
     )
     @commands.is_owner()
     async def servernum(self, ctx):
-        await ctx.respond(f"Bot is in {len(self.client.guilds)} servers")
+        await ctx.send(f"Bot is in {len(self.client.guilds)} servers")
 
-    @commands.slash_command(
-        guild_ids=config["MANAGE_GUILD_IDS"], description="DEVELOPER COMMAND"
+    @commands.command(
+        description="DEVELOPER COMMAND"
     )
     @commands.is_owner()
     async def shards(self, ctx):
@@ -97,23 +97,23 @@ class dev(commands.Cog):
             title="Sharding Info:",
             description=f"There are {len(self.client.shards)} shards.\nThis is shard {ctx.guild.shard_id} - latency: {round(self.client.latency * 1000)} ms",
         )
-        await ctx.respond(embed=shard_embed)
+        await ctx.send(embed=shard_embed)
 
-    @commands.slash_command(
-        guild_ids=config["MANAGE_GUILD_IDS"], description="DEVELOPER COMMAND"
+    @commands.command(
+        description="DEVELOPER COMMAND"
     )
     @commands.is_owner()
     async def coglist(self, ctx):
-        await ctx.respond(f"The cogs are:\n{self.client.cogs.keys()}")
+        await ctx.send(f"The cogs are:\n{self.client.cogs.keys()}")
 
-    @commands.slash_command(
-        guild_ids=config["MANAGE_GUILD_IDS"], description="DEVELOPER COMMAND"
+    @commands.command(
+        description="DEVELOPER COMMAND"
     )
     @commands.is_owner()
     async def remind(self, ctx):
         await self.client.send_reminder()
-        await ctx.respond("Reminder sent")
+        await ctx.send("Reminder sent")
 
 
 def setup(client):
-    client.add_cog(dev(client))
+    client.add_cog(Dev(client))
