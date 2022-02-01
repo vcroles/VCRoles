@@ -4,3 +4,4 @@ mutagen
 topggpy
 pynacl
 redis
+pre-commit

@@ -19,6 +19,12 @@ Use the ['Black'](https://black.readthedocs.io/en/stable/getting_started.html) p
 Install with: `python -m pip install black` or `pip install black`
 Run formatter in terminal with: `python -m black .` or `black .`
 
+## Pre-commit
+
+When cloning the repo for new, make sure you:
+`pip install pre-commit`
+`pre-commit install`
+
 ## Current Library
 
 Currently running using tested [pycord fork](https://github.com/CDE90/pycord) managed by CDE.
