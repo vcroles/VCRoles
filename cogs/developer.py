@@ -12,18 +12,14 @@ class Dev(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
-    @commands.command(
-        description="DEVELOPER COMMAND"
-    )
+    @commands.command(description="DEVELOPER COMMAND")
     @commands.is_owner()
-    async def change_status(
-        self, ctx, status=None, *, message: str=None
-    ):
+    async def change_status(self, ctx, status=None, *, message: str = None):
         try:
             status = int(status)
         except:
             pass
-        
+
         if status == 1:
             status_embed = discord.Embed(
                 colour=discord.Color.blue(),
@@ -80,16 +76,12 @@ class Dev(commands.Cog):
             )
             await ctx.send(embed=status_embed)
 
-    @commands.command(
-        description="DEVELOPER COMMAND"
-    )
+    @commands.command(description="DEVELOPER COMMAND")
     @commands.is_owner()
     async def servernum(self, ctx):
         await ctx.send(f"Bot is in {len(self.client.guilds)} servers")
 
-    @commands.command(
-        description="DEVELOPER COMMAND"
-    )
+    @commands.command(description="DEVELOPER COMMAND")
     @commands.is_owner()
     async def shards(self, ctx):
         shard_embed = discord.Embed(
@@ -99,16 +91,12 @@ class Dev(commands.Cog):
         )
         await ctx.send(embed=shard_embed)
 
-    @commands.command(
-        description="DEVELOPER COMMAND"
-    )
+    @commands.command(description="DEVELOPER COMMAND")
     @commands.is_owner()
     async def coglist(self, ctx):
         await ctx.send(f"The cogs are:\n{self.client.cogs.keys()}")
 
-    @commands.command(
-        description="DEVELOPER COMMAND"
-    )
+    @commands.command(description="DEVELOPER COMMAND")
     @commands.is_owner()
     async def remind(self, ctx):
         await self.client.send_reminder()

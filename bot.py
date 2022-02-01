@@ -253,7 +253,7 @@ class MyClient(commands.AutoShardedBot):
 
 intents = discord.Intents(messages=True, guilds=True, reactions=True, voice_states=True)
 
-client = MyClient(intents=intents, command_prefix=commands.when_mentioned_or('#'))
+client = MyClient(intents=intents, command_prefix=commands.when_mentioned_or("#"))
 client.remove_command("help")
 
 dbl_token = config["DBL_TOKEN"]
@@ -272,9 +272,7 @@ async def on_autopost_success():
 # COMMANDS
 
 # DEV Commands
-@client.command(
-    description="DEVELOPER COMMAND"
-)
+@client.command(description="DEVELOPER COMMAND")
 @commands.is_owner()
 async def load(ctx, extension: str):
     try:
@@ -284,9 +282,7 @@ async def load(ctx, extension: str):
         await ctx.send(f"Failed while loading {extension}")
 
 
-@client.command(
-    description="DEVELOPER COMMAND"
-)
+@client.command(description="DEVELOPER COMMAND")
 @commands.is_owner()
 async def unload(ctx, extension: str):
     try:
@@ -296,9 +292,7 @@ async def unload(ctx, extension: str):
         await ctx.send(f"Failed while unloading {extension}")
 
 
-@client.command(
-    description="DEVELOPER COMMAND"
-)
+@client.command(description="DEVELOPER COMMAND")
 @commands.is_owner()
 async def reload(ctx, extension: str):
     try:
@@ -308,9 +302,7 @@ async def reload(ctx, extension: str):
         await ctx.send(f"Failed while reloading {extension}")
 
 
-@client.command(
-    description="DEVELOPER COMMAND"
-)
+@client.command(description="DEVELOPER COMMAND")
 @commands.is_owner()
 async def logs(
     ctx,
