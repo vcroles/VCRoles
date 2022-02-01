@@ -3,7 +3,7 @@ from discord.ext import commands
 from bot import MyClient
 
 
-class utilities(commands.Cog):
+class Utils(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
@@ -48,4 +48,4 @@ class utilities(commands.Cog):
 
 
 def setup(client):
-    client.add_cog(utilities(client))
+    client.add_cog(Utils(client))

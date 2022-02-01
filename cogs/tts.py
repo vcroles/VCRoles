@@ -34,7 +34,7 @@ tts_langs = [
 ]
 
 
-class tts(commands.Cog):
+class TTS(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
@@ -169,4 +169,4 @@ class tts(commands.Cog):
 
 
 def setup(client):
-    client.add_cog(tts(client))
+    client.add_cog(TTS(client))

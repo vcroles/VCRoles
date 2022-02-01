@@ -4,7 +4,7 @@ from discord.commands import Option
 from bot import MyClient
 
 
-class alllink(commands.Cog):
+class AllLink(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
@@ -96,4 +96,4 @@ class alllink(commands.Cog):
 
 
 def setup(client):
-    client.add_cog(alllink(client))
+    client.add_cog(AllLink(client))

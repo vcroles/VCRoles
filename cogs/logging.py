@@ -4,7 +4,7 @@ from discord.ext import commands
 from bot import MyClient
 
 
-class loggingC(commands.Cog):
+class Logging(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
@@ -43,4 +43,4 @@ class loggingC(commands.Cog):
 
 
 def setup(client):
-    client.add_cog(loggingC(client))
+    client.add_cog(Logging(client))

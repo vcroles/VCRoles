@@ -4,7 +4,7 @@ from bot import MyClient
 from voicestate import all, category, logging, stage, voice, permanent, generator
 
 
-class voicestate(commands.Cog):
+class VoiceState(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
         self.all = all.all(self)
@@ -281,4 +281,4 @@ class voicestate(commands.Cog):
 
 
 def setup(client):
-    client.add_cog(voicestate(client))
+    client.add_cog(VoiceState(client))

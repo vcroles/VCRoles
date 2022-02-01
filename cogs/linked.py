@@ -4,7 +4,7 @@ from discord.ext import commands
 from bot import MyClient
 
 
-class linkedC(commands.Cog):
+class Linked(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
@@ -115,4 +115,4 @@ class linkedC(commands.Cog):
 
 
 def setup(client):
-    client.add_cog(linkedC(client))
+    client.add_cog(Linked(client))

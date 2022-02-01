@@ -4,7 +4,7 @@ from discord.ext import commands
 from bot import MyClient
 
 
-class vccontrol(commands.Cog):
+class VCControl(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
@@ -134,4 +134,4 @@ class vccontrol(commands.Cog):
 
 
 def setup(client):
-    client.add_cog(vccontrol(client))
+    client.add_cog(VCControl(client))

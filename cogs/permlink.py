@@ -4,7 +4,7 @@ from discord.commands import Option
 from bot import MyClient
 
 
-class permlink(commands.Cog):
+class PermLink(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
@@ -81,4 +81,4 @@ class permlink(commands.Cog):
 
 
 def setup(client):
-    client.add_cog(permlink(client))
+    client.add_cog(PermLink(client))

@@ -4,7 +4,7 @@ from discord.ext import commands
 from bot import MyClient
 
 
-class voicegen(commands.Cog):
+class VoiceGen(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
@@ -68,4 +68,4 @@ class voicegen(commands.Cog):
 
 
 def setup(client):
-    client.add_cog(voicegen(client))
+    client.add_cog(VoiceGen(client))

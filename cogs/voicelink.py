@@ -4,7 +4,7 @@ from discord.commands import Option
 from bot import MyClient
 
 
-class voicelink(commands.Cog):
+class VoiceLink(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
@@ -75,4 +75,4 @@ class voicelink(commands.Cog):
 
 
 def setup(client):
-    client.add_cog(voicelink(client))
+    client.add_cog(VoiceLink(client))

@@ -4,7 +4,7 @@ from discord.ext import commands
 from bot import MyClient
 
 
-class stagelink(commands.Cog):
+class StageLink(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
@@ -73,4 +73,4 @@ class stagelink(commands.Cog):
 
 
 def setup(client):
-    client.add_cog(stagelink(client))
+    client.add_cog(StageLink(client))

@@ -3,7 +3,7 @@ from discord.ext import commands, tasks
 from bot import MyClient
 
 
-class syncCommands(commands.Cog):
+class SyncCommands(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
         self.synccommands.start()
@@ -19,4 +19,4 @@ class syncCommands(commands.Cog):
 
 
 def setup(client):
-    client.add_cog(syncCommands(client))
+    client.add_cog(SyncCommands(client))

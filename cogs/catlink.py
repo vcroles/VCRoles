@@ -4,7 +4,7 @@ from discord.commands import Option
 from bot import MyClient
 
 
-class catlink(commands.Cog):
+class CatLink(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
@@ -77,4 +77,4 @@ class catlink(commands.Cog):
 
 
 def setup(client):
-    client.add_cog(catlink(client))
+    client.add_cog(CatLink(client))
