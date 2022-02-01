@@ -106,6 +106,14 @@ class dev(commands.Cog):
     async def coglist(self, ctx):
         await ctx.respond(f"The cogs are:\n{self.client.cogs.keys()}")
 
+    @commands.slash_command(
+        guild_ids=config["MANAGE_GUILD_IDS"], description="DEVELOPER COMMAND"
+    )
+    @commands.is_owner()
+    async def remind(self, ctx):
+        await self.client.send_reminder()
+        await ctx.respond("Reminder sent")
+
 
 def setup(client):
     client.add_cog(dev(client))

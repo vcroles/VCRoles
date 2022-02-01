@@ -1,5 +1,5 @@
-import discord, json, os, redis, topgg
-from discord.ext import commands
+import discord, json, os, redis, topgg, time
+from discord.ext import commands, tasks
 import logging
 
 with open("Data/config.json", "r") as f:
@@ -176,6 +176,8 @@ class MyClient(commands.AutoShardedBot):
             )
         )
 
+        reminder.start()
+
     async def on_guild_join(self, guild: discord.Guild):
         self.redis.guild_add(guild.id)
 
@@ -229,6 +231,21 @@ class MyClient(commands.AutoShardedBot):
             if str(channel.id) in data:
                 del data[str(channel.id)]
                 self.redis.update_linked("category", channel.guild.id, data)
+
+    async def send_reminder(self):
+        guild = await client.fetch_guild(775477268893270027)
+        for hook in await guild.webhooks():
+            if hook.channel.id == 869494079745056808 and hook.token:
+                embed = discord.Embed(
+                    title="Vote for VC Roles Here",
+                    description="https://top.gg/bot/775025797034541107/vote/",
+                    color=discord.Color.blue(),
+                )
+                await hook.send(
+                    embeds=[embed],
+                    username="VC Roles Top.gg",
+                    avatar_url="https://avatars.githubusercontent.com/u/34552786",
+                )
 
 
 intents = discord.Intents(messages=True, guilds=True, reactions=True, voice_states=True)
@@ -307,6 +324,17 @@ async def help(ctx: discord.ApplicationContext):
     )
     embed.set_footer(text="https://www.vcroles.com")
     await ctx.respond(embed=embed)
+
+
+@tasks.loop(minutes=1)
+async def reminder():
+    if time.strftime("%H:%M") in ["00:00", "12:00"]:
+        await client.send_reminder()
+
+
+@reminder.before_loop
+async def before_reminder():
+    await client.wait_until_ready()
 
 
 if __name__ == "__main__":
