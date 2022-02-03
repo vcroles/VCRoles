@@ -146,6 +146,7 @@ class TTS(commands.Cog):
     @commands.slash_command(
         description="Used to enable/disable TTS & set a required role"
     )
+    @commands.has_permissions(administrator=True)
     async def ttssetup(
         self,
         ctx: discord.ApplicationContext,
