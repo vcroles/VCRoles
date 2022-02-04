@@ -1,5 +1,10 @@
-import discord, json, os, redis, topgg, time
+import discord
 from discord.ext import commands, tasks
+import json
+import os
+import redis
+import topgg
+import time
 import logging
 
 with open("Data/config.json", "r") as f:
@@ -184,19 +189,22 @@ class MyClient(commands.AutoShardedBot):
     async def on_guild_remove(self, guild: discord.Guild):
         self.redis.guild_remove(guild.id)
 
-    async def on_application_command_error(self, ctx, error):
+    async def on_application_command_error(
+        self, ctx: discord.ApplicationContext, error
+    ):
 
         if isinstance(error, commands.MissingPermissions):
             await ctx.respond(
-                "You do not have the required permissions to use this command."
+                "You do not have the required permissions to use this command.",
+                ephemeral=True,
             )
 
         if isinstance(error, commands.NotOwner):
-            await ctx.respond("This is a developer only command.")
+            await ctx.respond("This is a developer only command.", ephemeral=True)
 
         else:
             try:
-                await ctx.respond(f"Error: {error}")
+                await ctx.respond(f"Error: {error}", ephemeral=True)
             except:
                 pass
 
