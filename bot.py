@@ -3,7 +3,6 @@ from discord.ext import commands, tasks
 import json
 import os
 import redis
-import topgg
 import time
 import logging
 
@@ -264,10 +263,15 @@ intents = discord.Intents(messages=True, guilds=True, reactions=True, voice_stat
 client = MyClient(intents=intents, command_prefix=commands.when_mentioned_or("#"))
 client.remove_command("help")
 
-dbl_token = config["DBL_TOKEN"]
-client.topggpy = topgg.DBLClient(
-    client, dbl_token, autopost=True, post_shard_count=True
-)
+try:
+    import topgg
+
+    dbl_token = config["DBL_TOKEN"]
+    client.topggpy = topgg.DBLClient(
+        client, dbl_token, autopost=True, post_shard_count=True
+    )
+except ImportError:
+    pass
 
 
 @client.event
