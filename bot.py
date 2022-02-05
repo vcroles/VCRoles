@@ -74,11 +74,21 @@ class RedisUtils:
             # Generator data
             self.r.hset(f"{guild_id}:gen", "cat", "0")
             self.r.hset(f"{guild_id}:gen", "gen_id", "0")
+            self.r.hset(
+                f"{guild_id}:gen",
+                "interface",
+                self.dict_to_str({"channel": 0, "msg_id": 0}),
+            )
             self.r.hset(f"{guild_id}:gen", "open", self.list_to_str([]))
         elif type == "gen":
             # Generator data
             self.r.hset(f"{guild_id}:gen", "cat", "0")
             self.r.hset(f"{guild_id}:gen", "gen_id", "0")
+            self.r.hset(
+                f"{guild_id}:gen",
+                "interface",
+                self.dict_to_str({"channel": 0, "msg_id": 0}),
+            )
             self.r.hset(f"{guild_id}:gen", "open", self.list_to_str([]))
         elif type == "gd":
             # Guild data
@@ -151,7 +161,7 @@ class RedisUtils:
 
     def update_generator(self, guild_id: int, data: dict):
         for key in data:
-            if key == "open":
+            if key in ["open", "interface"]:
                 self.r.hset(f"{guild_id}:gen", key, self.list_to_str(data[key]))
             else:
                 self.r.hset(f"{guild_id}:gen", key, data[key])
