@@ -42,13 +42,18 @@ class VoiceGen(commands.Cog):
             name=interface_channel_name, category=category
         )
 
+        creation_embed = discord.Embed(
+            color=discord.Color.green(),
+            title="**Voice Generator Setup**",
+            description=f"The category **{category.name}**, voice channel **{voice_channel.name}**, and interface channel {interface_channel.mention} have been created.\n Join the voice channel to generate a voice channel.",
+        )
+        await ctx.respond(embed=creation_embed)
+
         interface_options = [
             ":lock: Locks your VC so no one can join it.",
             ":unlock: Unlocks your VC so people can join it.",
-            ":no_entry: Hides your VC so no one can see it.",
+            ":no_entry_sign: Hides your VC so no one can see it.",
             ":eye: Unhide your VC so people can see it.",
-            ":speech_left: Creates a private message channel for your VC.",
-            ":wastebasket: Deletes the private message channel for your VC.",
             ":heavy_plus_sign: Increases the user limit of your VC.",
             ":heavy_minus_sign: Decreases the user limit of your VC.",
         ]
@@ -58,7 +63,6 @@ class VoiceGen(commands.Cog):
             "🔓",
             "🚫",
             "👁",
-            "🗑",
             "➕",
             "➖",
         ]
@@ -79,32 +83,22 @@ class VoiceGen(commands.Cog):
             "cat": str(category.id),
             "gen_id": str(voice_channel.id),
             "open": [],
-            "interface": {"channel": interface_channel.id, "msg_id": 0},
+            "interface": {
+                "channel": str(interface_channel.id),
+                "msg_id": str(interface_message.id),
+            },
         }
 
         self.client.redis.update_generator(ctx.guild.id, data)
 
-        creation_embed = discord.Embed(
-            color=discord.Color.green(),
-            title="**Voice Generator Setup**",
-            description=f"The category **{category.name}**, voice channel **{voice_channel.name}**, and interface channel {interface_channel.mention} have been created.\n Join the voice channel to generate a voice channel.",
-        )
-        await ctx.respond(embed=creation_embed)
         [await interface_message.add_reaction(emoji) for emoji in emoji_list]
 
     @commands.slash_command(description="A command to remove a voice channel generator")
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(manage_channels=True)
     async def removegenerator(self, ctx: discord.ApplicationContext):
-        data = self.client.redis.get_generator(ctx.guild.id)
 
-        self.client.redis.r.hset(f"{ctx.guild_id}:gen", "cat", "0")
-        self.client.redis.r.hset(f"{ctx.guild_id}:gen", "gen_id", "0")
-        self.client.redis.r.hset(
-            f"{ctx.guild_id}:gen", "open", self.client.redis.list_to_str([])
-        )
-
-        self.client.redis.update_generator(ctx.guild.id, data)
+        self.client.redis.r.delete(f"{ctx.guild.id}:gen")
 
         embed = discord.Embed(
             color=discord.Color.green(),

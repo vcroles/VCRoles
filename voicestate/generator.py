@@ -27,7 +27,7 @@ class generator:
             data["open"] = json.loads(data["open"])
             data["open"].append(str(channel.id))
 
-            self.client.redis.update_generator(member.guild.id, data)
+            self.client.redis.update_gen_open(member.guild.id, data["open"])
 
     async def leave(
         self,
@@ -44,4 +44,4 @@ class generator:
 
                 data["open"].remove(str(before.channel.id))
 
-                self.client.redis.update_generator(member.guild.id, data)
+                self.client.redis.update_gen_open(member.guild.id, data["open"])

@@ -54,9 +54,6 @@ class MyClient(commands.AutoShardedBot):
 
         reminder.start()
 
-    async def on_guild_join(self, guild: discord.Guild):
-        self.redis.guild_add(guild.id)
-
     async def on_guild_remove(self, guild: discord.Guild):
         self.redis.guild_remove(guild.id)
 
