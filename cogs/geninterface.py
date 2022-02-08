@@ -14,9 +14,9 @@ class GenInterface(commands.Cog):
             return
 
         data = self.client.redis.get_generator(payload.guild_id)
-        data["interface"] = json.loads(data["interface"])
+
         try:
-            data["interface"]
+            data["interface"] = json.loads(data["interface"])
         except:
             data["interface"] = {"channel": "0", "msg_id": "0"}
 
