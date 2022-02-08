@@ -74,5 +74,5 @@ class VoiceLink(commands.Cog):
                 pass
 
 
-def setup(client):
+def setup(client: MyClient):
     client.add_cog(VoiceLink(client))

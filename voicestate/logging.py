@@ -3,7 +3,7 @@ import datetime
 from bot import MyClient
 
 
-class logging:
+class Logging:
     def __init__(self, client: MyClient):
         self.client = client
 

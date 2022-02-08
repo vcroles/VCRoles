@@ -133,5 +133,5 @@ class VCControl(commands.Cog):
         await ctx.respond(embed=embed)
 
 
-def setup(client):
+def setup(client: MyClient):
     client.add_cog(VCControl(client))

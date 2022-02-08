@@ -42,5 +42,5 @@ class Logging(commands.Cog):
                 await ctx.respond("Unable to disable logging")
 
 
-def setup(client):
+def setup(client: MyClient):
     client.add_cog(Logging(client))

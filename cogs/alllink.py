@@ -95,5 +95,5 @@ class AllLink(commands.Cog):
             await ctx.respond(f"Please select a valid exception channel")
 
 
-def setup(client):
+def setup(client: MyClient):
     client.add_cog(AllLink(client))

@@ -103,5 +103,5 @@ class Dev(commands.Cog):
         await ctx.send("Reminder sent")
 
 
-def setup(client):
+def setup(client: MyClient):
     client.add_cog(Dev(client))

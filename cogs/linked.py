@@ -114,5 +114,5 @@ class Linked(commands.Cog):
             await ctx.respond("Nothing is linked")
 
 
-def setup(client):
+def setup(client: MyClient):
     client.add_cog(Linked(client))
