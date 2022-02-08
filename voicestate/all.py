@@ -1,10 +1,7 @@
 import discord
 
 
-class all:
-    def __init__(self, client: discord.AutoShardedBot):
-        self.client = client
-
+class All:
     async def join(
         self,
         data,

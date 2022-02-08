@@ -1,11 +1,7 @@
 import discord
-from bot import MyClient
 
 
-class perm:
-    def __init__(self, client: MyClient):
-        self.client = client
-
+class Permanent:
     async def join(
         self,
         data,

@@ -1,10 +1,7 @@
 import discord
 
 
-class stage:
-    def __init__(self, client: discord.AutoShardedBot):
-        self.client = client
-
+class Stage:
     async def join(
         self,
         data,
@@ -42,14 +39,3 @@ class stage:
                     pass
             return roles
         return None
-
-    async def change(
-        self,
-        data,
-        member: discord.Member,
-        before: discord.VoiceState,
-        after: discord.VoiceState,
-    ) -> list:
-        removed_roles = await self.leave(data, member, before, after)
-        added_roles = await self.join(data, member, before, after)
-        return [removed_roles, added_roles]

@@ -3,7 +3,7 @@ import discord
 from bot import MyClient
 
 
-class generator:
+class Generator:
     def __init__(self, client: MyClient):
         self.client = client
 
