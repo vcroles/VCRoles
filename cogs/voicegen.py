@@ -92,6 +92,10 @@ class VoiceGen(commands.Cog):
         self.client.redis.update_generator(ctx.guild.id, data)
 
         [await interface_message.add_reaction(emoji) for emoji in emoji_list]
+        overwrites = {
+            ctx.guild.default_role: discord.PermissionOverwrite(send_messages=False)
+        }
+        await interface_channel.edit(overwrites=overwrites)
 
     @commands.slash_command(description="A command to remove a voice channel generator")
     @commands.has_permissions(administrator=True)
