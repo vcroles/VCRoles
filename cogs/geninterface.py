@@ -23,7 +23,7 @@ class GenInterface(commands.Cog):
         if data["interface"]["msg_id"] != str(payload.message_id):
             return
 
-        if payload.emoji.name not in ["🔒", "🔓", "🚫", "👁", "➕", "➖"]:
+        if payload.emoji.name not in ["🔒", "🔓", "🚫", "👁", "⬆", "⬇"]:
             return
 
         guild = self.client.get_guild(payload.guild_id)
@@ -41,6 +41,12 @@ class GenInterface(commands.Cog):
             await msg.remove_reaction(payload.emoji, user)
             return
 
+        if str(user.voice.channel.id) == data["gen_id"]:
+            channel = self.client.get_channel(payload.channel_id)
+            msg = await channel.fetch_message(payload.message_id)
+            await msg.remove_reaction(payload.emoji, user)
+            return
+
         if payload.emoji.name == "🔒":
             await self.lock(user)
         elif payload.emoji.name == "🔓":
@@ -49,9 +55,9 @@ class GenInterface(commands.Cog):
             await self.hide(user)
         elif payload.emoji.name == "👁":
             await self.unhide(user)
-        elif payload.emoji.name == "➕":
+        elif payload.emoji.name == "⬆":
             await self.increase_limit(user)
-        elif payload.emoji.name == "➖":
+        elif payload.emoji.name == "⬇":
             await self.decrease_limit(user)
 
         channel = self.client.get_channel(payload.channel_id)

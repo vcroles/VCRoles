@@ -54,8 +54,8 @@ class VoiceGen(commands.Cog):
             ":unlock: Unlocks your VC so people can join it.",
             ":no_entry_sign: Hides your VC so no one can see it.",
             ":eye: Unhide your VC so people can see it.",
-            ":heavy_plus_sign: Increases the user limit of your VC.",
-            ":heavy_minus_sign: Decreases the user limit of your VC.",
+            ":arrow_up: Increases the user limit of your VC.",
+            ":arrow_down: Decreases the user limit of your VC.",
         ]
 
         emoji_list = [
@@ -63,8 +63,8 @@ class VoiceGen(commands.Cog):
             "🔓",
             "🚫",
             "👁",
-            "➕",
-            "➖",
+            "⬆",
+            "⬇",
         ]
 
         description_str = "\n".join(interface_options)
