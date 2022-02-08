@@ -72,5 +72,5 @@ class StageLink(commands.Cog):
                 pass
 
 
-def setup(client):
+def setup(client: MyClient):
     client.add_cog(StageLink(client))

@@ -18,5 +18,5 @@ class SyncCommands(commands.Cog):
         await self.client.wait_until_ready()
 
 
-def setup(client):
+def setup(client: MyClient):
     client.add_cog(SyncCommands(client))

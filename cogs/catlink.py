@@ -76,5 +76,5 @@ class CatLink(commands.Cog):
                 pass
 
 
-def setup(client):
+def setup(client: MyClient):
     client.add_cog(CatLink(client))

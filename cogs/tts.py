@@ -169,5 +169,5 @@ class TTS(commands.Cog):
         await ctx.respond(f"TTS settings updated: Enabled {enabled}, Role {role}")
 
 
-def setup(client):
+def setup(client: MyClient):
     client.add_cog(TTS(client))
