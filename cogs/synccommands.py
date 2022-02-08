@@ -8,7 +8,7 @@ class SyncCommands(commands.Cog):
         self.client = client
         self.synccommands.start()
 
-    @tasks.loop(seconds=15)
+    @tasks.loop(seconds=30)
     async def synccommands(self):
         await self.client.register_commands()
         print("Commands registered successfully!")
