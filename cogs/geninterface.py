@@ -53,27 +53,23 @@ class GenInterface(commands.Cog):
         await msg.remove_reaction(payload.emoji, user)
 
     async def lock(self, user: discord.Member):
-        overwrites = {
-            user.guild.default_role: discord.PermissionOverwrite(connect=False)
-        }
+        overwrites = user.voice.channel.overwrites
+        overwrites[user.guild.default_role].connect = False
         await user.voice.channel.edit(overwrites=overwrites)
 
     async def unlock(self, user: discord.Member):
-        overwrites = {
-            user.guild.default_role: discord.PermissionOverwrite(connect=True)
-        }
+        overwrites = user.voice.channel.overwrites
+        overwrites[user.guild.default_role].connect = True
         await user.voice.channel.edit(overwrites=overwrites)
 
     async def hide(self, user: discord.Member):
-        overwrites = {
-            user.guild.default_role: discord.PermissionOverwrite(view_channel=False)
-        }
+        overwrites = user.voice.channel.overwrites
+        overwrites[user.guild.default_role].view_channel = False
         await user.voice.channel.edit(overwrites=overwrites)
 
     async def unhide(self, user: discord.Member):
-        overwrites = {
-            user.guild.default_role: discord.PermissionOverwrite(view_channel=True)
-        }
+        overwrites = user.voice.channel.overwrites
+        overwrites[user.guild.default_role].view_channel = True
         await user.voice.channel.edit(overwrites=overwrites)
 
     async def increase_limit(self, user: discord.Member):
