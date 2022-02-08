@@ -35,73 +35,79 @@ class VoiceState(commands.Cog):
         # Joining
         if not before.channel and after.channel:
             roles_added = await self.join(member, before, after)
-            (
-                voice_added,
-                stage_added,
-                category_added,
-                all_added,
-                perm_added,
-            ) = roles_added
 
-            await self.logging.log_join(
-                after,
-                member,
-                voice_added,
-                stage_added,
-                category_added,
-                all_added,
-                perm_added,
-            )
+            if roles_added:
+                (
+                    voice_added,
+                    stage_added,
+                    category_added,
+                    all_added,
+                    perm_added,
+                ) = roles_added
+
+                await self.logging.log_join(
+                    after,
+                    member,
+                    voice_added,
+                    stage_added,
+                    category_added,
+                    all_added,
+                    perm_added,
+                )
 
         # Leaving
         elif before.channel and not after.channel:
             roles_removed = await self.leave(member, before, after)
-            (
-                voice_removed,
-                stage_removed,
-                category_removed,
-                all_removed,
-            ) = roles_removed
 
-            await self.logging.log_leave(
-                before,
-                member,
-                voice_removed,
-                stage_removed,
-                category_removed,
-                all_removed,
-            )
+            if roles_removed:
+                (
+                    voice_removed,
+                    stage_removed,
+                    category_removed,
+                    all_removed,
+                ) = roles_removed
+
+                await self.logging.log_leave(
+                    before,
+                    member,
+                    voice_removed,
+                    stage_removed,
+                    category_removed,
+                    all_removed,
+                )
 
         # Changing
         elif before.channel != after.channel:
             roles_removed = await self.leave(member, before, after)
-            (
-                voice_removed,
-                stage_removed,
-                category_removed,
-                all_removed,
-            ) = roles_removed
-
             roles_added = await self.join(member, before, after)
-            (
-                voice_added,
-                stage_added,
-                category_added,
-                all_added,
-                perm_added,
-            ) = roles_added
 
-            await self.logging.log_change(
-                before,
-                after,
-                member,
-                voice_removed,
-                stage_removed,
-                category_removed,
-                voice_added,
-                stage_added,
-                category_added,
-            )
+            if roles_removed and roles_added:
+                (
+                    voice_removed,
+                    stage_removed,
+                    category_removed,
+                    all_removed,
+                ) = roles_removed
+
+                (
+                    voice_added,
+                    stage_added,
+                    category_added,
+                    all_added,
+                    perm_added,
+                ) = roles_added
+
+                await self.logging.log_change(
+                    before,
+                    after,
+                    member,
+                    voice_removed,
+                    stage_removed,
+                    category_removed,
+                    voice_added,
+                    stage_added,
+                    category_added,
+                )
 
     async def join(
         self,
