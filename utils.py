@@ -45,7 +45,9 @@ class RedisUtils:
         if r_data:
             return self.str_to_dict(r_data)
         else:
-            return {type: {}}
+            if type != "all":
+                return {}
+            return {"roles": [], "except": []}
 
     def update_linked(self, type: str, guild_id: int, data: dict):
         self.r.hset(f"{guild_id}:linked", type, self.dict_to_str(data))
