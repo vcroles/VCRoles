@@ -54,22 +54,42 @@ class GenInterface(commands.Cog):
 
     async def lock(self, user: discord.Member):
         overwrites = user.voice.channel.overwrites
-        overwrites[user.guild.default_role].connect = False
+        try:
+            overwrites[user.guild.default_role].connect = False
+        except KeyError:
+            overwrites[user.guild.default_role] = discord.PermissionOverwrite(
+                connect=False
+            )
         await user.voice.channel.edit(overwrites=overwrites)
 
     async def unlock(self, user: discord.Member):
         overwrites = user.voice.channel.overwrites
-        overwrites[user.guild.default_role].connect = True
+        try:
+            overwrites[user.guild.default_role].connect = True
+        except KeyError:
+            overwrites[user.guild.default_role] = discord.PermissionOverwrite(
+                connect=True
+            )
         await user.voice.channel.edit(overwrites=overwrites)
 
     async def hide(self, user: discord.Member):
         overwrites = user.voice.channel.overwrites
-        overwrites[user.guild.default_role].view_channel = False
+        try:
+            overwrites[user.guild.default_role].view_channel = False
+        except KeyError:
+            overwrites[user.guild.default_role] = discord.PermissionOverwrite(
+                view_channel=False
+            )
         await user.voice.channel.edit(overwrites=overwrites)
 
     async def unhide(self, user: discord.Member):
         overwrites = user.voice.channel.overwrites
-        overwrites[user.guild.default_role].view_channel = True
+        try:
+            overwrites[user.guild.default_role].view_channel = True
+        except KeyError:
+            overwrites[user.guild.default_role] = discord.PermissionOverwrite(
+                view_channel=True
+            )
         await user.voice.channel.edit(overwrites=overwrites)
 
     async def increase_limit(self, user: discord.Member):
