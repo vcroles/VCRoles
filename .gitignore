@@ -1,4 +1,5 @@
 discord.log
+error.log
 config.json
 **/*.pyc
 __pycache__/

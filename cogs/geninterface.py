@@ -29,6 +29,14 @@ class GenInterface(commands.Cog):
         guild = self.client.get_guild(payload.guild_id)
         user = await guild.fetch_member(payload.user_id)
 
+        try:
+            user.voice.channel
+        except AttributeError:
+            channel = self.client.get_channel(payload.channel_id)
+            msg = await channel.fetch_message(payload.message_id)
+            await msg.remove_reaction(payload.emoji, user)
+            return
+
         if not user.voice.channel:
             channel = self.client.get_channel(payload.channel_id)
             msg = await channel.fetch_message(payload.message_id)

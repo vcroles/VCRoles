@@ -1,3 +1,4 @@
+from datetime import datetime
 import discord
 from discord.ext import commands, tasks
 import json
@@ -78,6 +79,12 @@ class MyClient(commands.AutoShardedBot):
 
     async def on_command_error(self, ctx, error):
         return
+
+    async def on_error(self, event, *args, **kwargs):
+        with open("error.log", "a") as f:
+            f.write(
+                f"{datetime.utcnow().strftime('%m/%d/%Y, %H:%M:%S')} {event}: {str(args).encode('utf-8')}\n"
+            )
 
     async def on_guild_channel_delete(self, channel: discord.abc.GuildChannel):
         # Voice Channels
@@ -228,6 +235,11 @@ if __name__ == "__main__":
     for filename in os.listdir("tts"):
         if filename.endswith(".mp3"):
             os.remove(f"tts/{filename}")
+
+    # Removing Logs
+
+    with open("error.log", "w") as file:
+        file.write("")
 
     # Running the bot.
 
