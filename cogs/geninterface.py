@@ -30,9 +30,15 @@ class GenInterface(commands.Cog):
         user = await guild.fetch_member(payload.user_id)
 
         if not user.voice.channel:
+            channel = self.client.get_channel(payload.channel_id)
+            msg = await channel.fetch_message(payload.message_id)
+            await msg.remove_reaction(payload.emoji, user)
             return
 
         if str(user.voice.channel.category.id) != data["cat"]:
+            channel = self.client.get_channel(payload.channel_id)
+            msg = await channel.fetch_message(payload.message_id)
+            await msg.remove_reaction(payload.emoji, user)
             return
 
         if payload.emoji.name == "🔒":
