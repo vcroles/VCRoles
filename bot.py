@@ -8,18 +8,10 @@ import time
 import logging
 
 from utils import RedisUtils
+from views.interface import Interface
 
 with open("Data/config.json", "r") as f:
     config = json.load(f)
-
-default_linked = {
-    "voice": {},
-    "stage": {},
-    "category": {},
-    "all": {"roles": [], "except": []},
-    "permanent": {},
-}
-default_gdata = {"tts": {"enabled": False, "role": None}, "logging": None}
 
 logger = logging.getLogger("discord")
 logger.setLevel(logging.INFO)
@@ -40,11 +32,12 @@ class MyClient(commands.AutoShardedBot):
             password=config["REDIS"]["PASSWORD"],
         )
         self.redis = RedisUtils(r)
+        self.persistent_views_added = False
 
     async def on_ready(self):
-        print(f"Logged in as {self.user}")
-        print(f"Bot is in {len(self.guilds)} guilds.")
-        print("------")
+        if not self.persistent_views_added:
+            self.add_view(Interface(self.redis))
+            self.persistent_views_added = True
 
         await self.change_presence(status=discord.Status.online)
         await self.change_presence(
@@ -52,6 +45,10 @@ class MyClient(commands.AutoShardedBot):
                 type=discord.ActivityType.watching, name="Voice Channels"
             )
         )
+
+        print(f"Logged in as {self.user}")
+        print(f"Bot is in {len(self.guilds)} guilds.")
+        print("------")
 
         reminder.start()
 
@@ -68,14 +65,14 @@ class MyClient(commands.AutoShardedBot):
                 ephemeral=True,
             )
 
-        if isinstance(error, commands.NotOwner):
+        elif isinstance(error, commands.NotOwner):
             await ctx.respond("This is a developer only command.", ephemeral=True)
 
+        elif isinstance(error, AttributeError):
+            return
+
         else:
-            try:
-                await ctx.respond(f"Error: {error}", ephemeral=True)
-            except:
-                pass
+            return
 
     async def on_command_error(self, ctx, error):
         return
@@ -190,30 +187,18 @@ async def reload(ctx, extension: str):
         await ctx.send(f"Failed while reloading {extension}")
 
 
-@client.command(description="DEVELOPER COMMAND")
-@commands.is_owner()
-async def logs(
-    ctx,
-):  # , type: Option(str, 'Log type', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'])):
-    await ctx.send("Fetching Logs...")
-    await ctx.channel.send(file=discord.File(f"discord.log"))
-
-
-@client.slash_command(description="Help Command")
-async def help(ctx: discord.ApplicationContext):
-    embed = discord.Embed(
-        title="VC Roles Help",
-        description="We have moved our help page to https://www.vcroles.com where you can find a list of the bot's commands, how to use them, a basic setup guide and more!",
-        colour=discord.Colour.light_grey(),
-    )
-    embed.set_footer(text="https://www.vcroles.com")
-    await ctx.respond(embed=embed)
-
-
 @tasks.loop(minutes=1)
 async def reminder():
     if time.strftime("%H:%M") in ["00:00", "12:00"]:
         await client.send_reminder()
+
+        with open("guilds.json", "r") as f:
+            data = json.load(f)
+
+        data[datetime.utcnow().strftime("%H:%M %d/%m/%Y")] = len(client.guilds)
+
+        with open("guilds.json", "w") as f:
+            json.dump(data, f)
 
 
 @reminder.before_loop
@@ -240,6 +225,15 @@ if __name__ == "__main__":
 
     with open("error.log", "w") as file:
         file.write("")
+
+    # Setting up guild count
+
+    try:
+        with open("guilds.json", "r") as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        with open("guilds.json", "w") as f:
+            json.dump({}, f)
 
     # Running the bot.
 

@@ -102,6 +102,13 @@ class Dev(commands.Cog):
         await self.client.send_reminder()
         await ctx.send("Reminder sent")
 
+    @commands.command(description="DEVELOPER COMMAND")
+    @commands.is_owner()
+    async def logs(self, ctx):
+        await ctx.send("Fetching Logs...")
+        await ctx.channel.send(file=discord.File(f"discord.log"))
+        await ctx.channel.send(file=discord.File(f"error.log"))
+
 
 def setup(client: MyClient):
     client.add_cog(Dev(client))
