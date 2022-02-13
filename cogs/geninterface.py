@@ -1,6 +1,7 @@
 import json
 import discord
 from discord.ext import commands
+from discord.commands import SlashCommandGroup
 from bot import MyClient
 
 
@@ -8,52 +9,63 @@ class GenInterface(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
-    @commands.Cog.listener()
-    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
-        if payload.user_id == self.client.user.id:
-            return
+    interface_commands = SlashCommandGroup("interface", "Interface commands")
 
-        data = self.client.redis.get_generator(payload.guild_id)
+    async def in_voice_channel(self, user_id: int, guild_id: int, message_id: int):
+        data = self.client.redis.get_generator(guild_id)
 
         try:
             data["interface"] = json.loads(data["interface"])
         except:
             data["interface"] = {"channel": "0", "msg_id": "0"}
 
-        if data["interface"]["msg_id"] != str(payload.message_id):
+        if data["interface"]["msg_id"] != str(message_id):
+            return None
+
+        guild = self.client.get_guild(guild_id)
+        user = await guild.fetch_member(user_id)
+
+        try:
+            user.voice
+            user.voice.channel
+        except AttributeError:
+            return False
+
+        if not user.voice.channel:
+            return False
+
+        if str(user.voice.channel.category.id) != data["cat"]:
+            return False
+
+        if str(user.voice.channel.id) == data["gen_id"]:
+            return False
+
+        return True
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+        if payload.user_id == self.client.user.id:
             return
 
         if payload.emoji.name not in ["🔒", "🔓", "🚫", "👁", "⬆", "⬇"]:
             return
 
+        in_voice = await self.in_voice_channel(
+            payload.user_id, payload.guild_id, payload.message_id
+        )
+
         guild = self.client.get_guild(payload.guild_id)
         user = await guild.fetch_member(payload.user_id)
 
-        try:
-            user.voice.channel
-        except AttributeError:
-            channel = self.client.get_channel(payload.channel_id)
-            msg = await channel.fetch_message(payload.message_id)
-            await msg.remove_reaction(payload.emoji, user)
-            return
-
-        if not user.voice.channel:
-            channel = self.client.get_channel(payload.channel_id)
-            msg = await channel.fetch_message(payload.message_id)
-            await msg.remove_reaction(payload.emoji, user)
-            return
-
-        if str(user.voice.channel.category.id) != data["cat"]:
-            channel = self.client.get_channel(payload.channel_id)
-            msg = await channel.fetch_message(payload.message_id)
-            await msg.remove_reaction(payload.emoji, user)
-            return
-
-        if str(user.voice.channel.id) == data["gen_id"]:
-            channel = self.client.get_channel(payload.channel_id)
-            msg = await channel.fetch_message(payload.message_id)
-            await msg.remove_reaction(payload.emoji, user)
-            return
+        if not in_voice:
+            try:
+                channel = self.client.get_channel(payload.channel_id)
+                msg = await channel.fetch_message(payload.message_id)
+                await msg.remove_reaction(payload.emoji, user)
+            except:
+                pass
+            finally:
+                return
 
         if payload.emoji.name == "🔒":
             await self.lock(user)
