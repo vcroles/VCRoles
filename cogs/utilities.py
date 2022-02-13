@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from bot import MyClient
+from views.url import Invite, Discord, Website
 
 
 class Utils(commands.Cog):
@@ -9,12 +10,15 @@ class Utils(commands.Cog):
 
     @commands.slash_command(description="Gets an invite to the support server")
     async def discord(self, ctx: discord.ApplicationContext):
-        await ctx.respond("https://discord.gg/yHU6qcgNPy")
+        await ctx.respond(
+            content="To join our support server, click the link below", view=Discord()
+        )
 
     @commands.slash_command(description="Gets an invite for the bot")
     async def invite(self, ctx):
         await ctx.respond(
-            "https://discord.com/api/oauth2/authorize?client_id=775025797034541107&permissions=300944400&scope=bot%20applications.commands"
+            content="To invite the bot, use the link below",
+            view=Invite(),
         )
 
     @commands.slash_command(description="Gets info about the bot")
@@ -53,8 +57,7 @@ class Utils(commands.Cog):
             description="We have moved our help page to https://www.vcroles.com where you can find a list of the bot's commands, how to use them, a basic setup guide and more!",
             colour=discord.Colour.light_grey(),
         )
-        embed.set_footer(text="https://www.vcroles.com")
-        await ctx.respond(embed=embed)
+        await ctx.respond(embed=embed, view=Website())
 
 
 def setup(client: MyClient):
