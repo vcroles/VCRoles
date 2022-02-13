@@ -8,6 +8,7 @@ import time
 import logging
 
 from utils import RedisUtils
+from views.interface import Interface
 
 with open("Data/config.json", "r") as f:
     config = json.load(f)
@@ -40,11 +41,12 @@ class MyClient(commands.AutoShardedBot):
             password=config["REDIS"]["PASSWORD"],
         )
         self.redis = RedisUtils(r)
+        self.persistent_views_added = False
 
     async def on_ready(self):
-        print(f"Logged in as {self.user}")
-        print(f"Bot is in {len(self.guilds)} guilds.")
-        print("------")
+        if not self.persistent_views_added:
+            self.add_view(Interface(self.redis))
+            self.persistent_views_added = True
 
         await self.change_presence(status=discord.Status.online)
         await self.change_presence(
@@ -52,6 +54,10 @@ class MyClient(commands.AutoShardedBot):
                 type=discord.ActivityType.watching, name="Voice Channels"
             )
         )
+
+        print(f"Logged in as {self.user}")
+        print(f"Bot is in {len(self.guilds)} guilds.")
+        print("------")
 
         reminder.start()
 

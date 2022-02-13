@@ -1,7 +1,9 @@
 import discord
+import json
 from discord.commands import Option
 from discord.ext import commands
 from bot import MyClient
+from views.interface import Interface
 
 
 class VoiceGen(commands.Cog):
@@ -30,7 +32,19 @@ class VoiceGen(commands.Cog):
             default="VC Roles Interface",
         ),
     ):
+        await ctx.defer()
+
         data = self.client.redis.get_generator(ctx.guild.id)
+
+        try:
+            data["interface"] = json.loads(data["interface"])
+            channel = self.client.get_channel(int(data["interface"]["channel"]))
+            msg = await channel.fetch_message(int(data["interface"]["msg_id"]))
+            view = discord.ui.View.from_message(msg)
+            view.clear_items()
+            await msg.edit(view=view)
+        except:
+            pass
 
         category = await ctx.guild.create_category(name=category_name)
 
@@ -42,42 +56,46 @@ class VoiceGen(commands.Cog):
             name=interface_channel_name, category=category
         )
 
-        creation_embed = discord.Embed(
-            color=discord.Color.green(),
-            title="**Voice Generator Setup**",
-            description=f"The category **{category.name}**, voice channel **{voice_channel.name}**, and interface channel {interface_channel.mention} have been created.\n Join the voice channel to generate a voice channel.",
-        )
-        await ctx.respond(embed=creation_embed)
-
-        interface_options = [
-            ":lock: Locks your VC so no one can join it.",
-            ":unlock: Unlocks your VC so people can join it.",
-            ":no_entry_sign: Hides your VC so no one can see it.",
-            ":eye: Unhide your VC so people can see it.",
-            ":arrow_up: Increases the user limit of your VC.",
-            ":arrow_down: Decreases the user limit of your VC.",
-        ]
-
-        emoji_list = [
-            "🔒",
-            "🔓",
-            "🚫",
-            "👁",
-            "⬆",
-            "⬇",
-        ]
-
-        description_str = "\n".join(interface_options)
-
         interface_embed = discord.Embed(
             title="Voice Generator Interface",
-            description=f"You can use this interface to customize your private voice channel.\n\n{description_str}",
+            description=f"You can use this interface to customize your private voice channel.",
             color=discord.Color.blue(),
         )
         interface_embed.set_thumbnail(url=self.client.user.avatar.url)
-        interface_embed.set_footer(text="Use these commands via the reactions below.")
+        interface_embed.set_footer(text="Use these commands via the buttons below.")
 
-        interface_message = await interface_channel.send(embed=interface_embed)
+        interface_embed.add_field(
+            name="Lock",
+            value="Stop people from joining your voice channel",
+            inline=False,
+        )
+        interface_embed.add_field(
+            name="Unlock", value="Allow people to join your voice channel", inline=False
+        )
+        interface_embed.add_field(
+            name="Hide",
+            value="Stop people from seeing your voice channel (in channel list)",
+            inline=False,
+        )
+        interface_embed.add_field(
+            name="Show",
+            value="Allow people to see your voice channel (in channel list)",
+            inline=False,
+        )
+        interface_embed.add_field(
+            name="Increase Limit",
+            value="Increase the user limit of your voice channel",
+            inline=False,
+        )
+        interface_embed.add_field(
+            name="Decrease Limit",
+            value="Decrease the user limit of your voice channel (0 - no limit)",
+            inline=False,
+        )
+
+        interface_message = await interface_channel.send(
+            embed=interface_embed, view=Interface(self.client.redis)
+        )
 
         data = {
             "cat": str(category.id),
@@ -91,16 +109,36 @@ class VoiceGen(commands.Cog):
 
         self.client.redis.update_generator(ctx.guild.id, data)
 
-        [await interface_message.add_reaction(emoji) for emoji in emoji_list]
         overwrites = {
             ctx.guild.default_role: discord.PermissionOverwrite(send_messages=False)
         }
         await interface_channel.edit(overwrites=overwrites)
 
+        creation_embed = discord.Embed(
+            color=discord.Color.green(),
+            title="**Voice Generator Setup**",
+            description=f"The category **{category.name}**, voice channel {voice_channel.mention}, and interface channel {interface_channel.mention} have been created.\n Join the voice channel to generate a voice channel.",
+        )
+        await ctx.respond(embed=creation_embed)
+
     @commands.slash_command(description="A command to remove a voice channel generator")
     @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(manage_channels=True)
     async def removegenerator(self, ctx: discord.ApplicationContext):
+
+        await ctx.defer()
+
+        data = self.client.redis.get_generator(ctx.guild.id)
+
+        try:
+            data["interface"] = json.loads(data["interface"])
+            channel = self.client.get_channel(int(data["interface"]["channel"]))
+            msg = await channel.fetch_message(int(data["interface"]["msg_id"]))
+            view = discord.ui.View.from_message(msg)
+            view.clear_items()
+            await msg.edit(view=view)
+        except:
+            pass
 
         self.client.redis.r.delete(f"{ctx.guild.id}:gen")
 
