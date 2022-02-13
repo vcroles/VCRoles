@@ -65,14 +65,14 @@ class MyClient(commands.AutoShardedBot):
                 ephemeral=True,
             )
 
-        if isinstance(error, commands.NotOwner):
+        elif isinstance(error, commands.NotOwner):
             await ctx.respond("This is a developer only command.", ephemeral=True)
 
+        elif isinstance(error, AttributeError):
+            return
+
         else:
-            try:
-                await ctx.respond(f"Error: {error}", ephemeral=True)
-            except:
-                pass
+            return
 
     async def on_command_error(self, ctx, error):
         return
