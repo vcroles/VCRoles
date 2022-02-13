@@ -46,6 +46,16 @@ class Utils(commands.Cog):
 
         await ctx.respond(embed=embed)
 
+    @commands.slash_command(description="Help Command")
+    async def help(self, ctx):
+        embed = discord.Embed(
+            title="VC Roles Help",
+            description="We have moved our help page to https://www.vcroles.com where you can find a list of the bot's commands, how to use them, a basic setup guide and more!",
+            colour=discord.Colour.light_grey(),
+        )
+        embed.set_footer(text="https://www.vcroles.com")
+        await ctx.respond(embed=embed)
+
 
 def setup(client: MyClient):
     client.add_cog(Utils(client))
