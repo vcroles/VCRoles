@@ -50,3 +50,20 @@ class Website(discord.ui.View):
                 url="https://www.vcroles.com",
             )
         )
+
+
+class TopGG(discord.ui.View):
+    """
+    Send a Top.gg button
+    """
+
+    def __init__(self):
+        super().__init__()
+
+        self.add_item(
+            discord.ui.Button(
+                style=discord.ButtonStyle.url,
+                label="Top.gg",
+                url="https://top.gg/bot/775025797034541107",
+            )
+        )

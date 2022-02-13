@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from bot import MyClient
-from views.url import Invite, Discord, Website
+from views.url import Invite, Discord, Website, TopGG
 
 
 class Utils(commands.Cog):
@@ -19,6 +19,12 @@ class Utils(commands.Cog):
         await ctx.respond(
             content="To invite the bot, use the link below",
             view=Invite(),
+        )
+
+    @commands.slash_command(description="Gets a link to the bot's Top.gg page")
+    async def topgg(self, ctx):
+        await ctx.respond(
+            content="To visit the bot's Top.gg, click the link below", view=TopGG()
         )
 
     @commands.slash_command(description="Gets info about the bot")
