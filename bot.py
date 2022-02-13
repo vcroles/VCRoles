@@ -13,15 +13,6 @@ from views.interface import Interface
 with open("Data/config.json", "r") as f:
     config = json.load(f)
 
-default_linked = {
-    "voice": {},
-    "stage": {},
-    "category": {},
-    "all": {"roles": [], "except": []},
-    "permanent": {},
-}
-default_gdata = {"tts": {"enabled": False, "role": None}, "logging": None}
-
 logger = logging.getLogger("discord")
 logger.setLevel(logging.INFO)
 handler = logging.FileHandler(filename="discord.log", encoding="utf-8", mode="w")
@@ -201,6 +192,14 @@ async def reminder():
     if time.strftime("%H:%M") in ["00:00", "12:00"]:
         await client.send_reminder()
 
+        with open("guilds.json", "r") as f:
+            data = json.load(f)
+
+        data[datetime.utcnow().strftime("%H:%M %d/%m/%Y")] = len(client.guilds)
+
+        with open("guilds.json", "w") as f:
+            json.dump(data, f)
+
 
 @reminder.before_loop
 async def before_reminder():
@@ -226,6 +225,15 @@ if __name__ == "__main__":
 
     with open("error.log", "w") as file:
         file.write("")
+
+    # Setting up guild count
+
+    try:
+        with open("guilds.json", "r") as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        with open("guilds.json", "w") as f:
+            json.dump({}, f)
 
     # Running the bot.
 

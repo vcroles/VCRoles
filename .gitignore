@@ -1,6 +1,7 @@
 discord.log
 error.log
 config.json
+guilds.json
 **/*.pyc
 __pycache__/
 tts/
