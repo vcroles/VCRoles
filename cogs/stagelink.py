@@ -2,6 +2,7 @@ import discord
 from discord.commands import Option
 from discord.ext import commands
 from bot import MyClient
+from utils import Permissions
 
 
 class StageLink(commands.Cog):
@@ -9,7 +10,7 @@ class StageLink(commands.Cog):
         self.client = client
 
     @commands.slash_command(description="Use to link a stage channel with a role")
-    @commands.has_permissions(administrator=True)
+    @Permissions.has_permissions(administrator=True)
     async def stagelink(
         self,
         ctx: discord.ApplicationContext,
@@ -39,7 +40,7 @@ class StageLink(commands.Cog):
             await ctx.respond(f"The channel and role are already linked.")
 
     @commands.slash_command(description="Use to unlink a stage channel from a role")
-    @commands.has_permissions(administrator=True)
+    @Permissions.has_permissions(administrator=True)
     async def stageunlink(
         self,
         ctx: discord.ApplicationContext,

@@ -4,6 +4,7 @@ from discord.ext import commands
 from gtts import gTTS
 from mutagen.mp3 import MP3
 from bot import MyClient
+from utils import Permissions
 
 tts_langs = [
     "af: Afrikaans",
@@ -146,7 +147,7 @@ class TTS(commands.Cog):
     @commands.slash_command(
         description="Used to enable/disable TTS & set a required role"
     )
-    @commands.has_permissions(administrator=True)
+    @Permissions.has_permissions(administrator=True)
     async def ttssetup(
         self,
         ctx: discord.ApplicationContext,

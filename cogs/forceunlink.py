@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from discord.commands import Option
 from bot import MyClient
+from utils import Permissions
 
 
 class UnLink(commands.Cog):
@@ -11,7 +12,7 @@ class UnLink(commands.Cog):
     @commands.slash_command(
         description="Use to remove any channel/category from all links (Using ID)"
     )
-    @commands.has_permissions(administrator=True)
+    @Permissions.has_permissions(administrator=True)
     async def forceunlink(
         self,
         ctx: discord.ApplicationContext,

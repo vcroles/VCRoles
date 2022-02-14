@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from discord.commands import Option
 from bot import MyClient
+from utils import Permissions
 
 
 class PermLink(commands.Cog):
@@ -11,7 +12,7 @@ class PermLink(commands.Cog):
     @commands.slash_command(
         description="Use to link all a channel and a role (after leaving channel, user will keep role)"
     )
-    @commands.has_permissions(administrator=True)
+    @Permissions.has_permissions(administrator=True)
     async def permlink(
         self,
         ctx: discord.ApplicationContext,
@@ -46,7 +47,7 @@ class PermLink(commands.Cog):
     @commands.slash_command(
         description='Use to unlink a "permanent" channel from a role'
     )
-    @commands.has_permissions(administrator=True)
+    @Permissions.has_permissions(administrator=True)
     async def permunlink(
         self,
         ctx: discord.ApplicationContext,

@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from discord.commands import Option
 from bot import MyClient
+from utils import Permissions
 
 
 class CatLink(commands.Cog):
@@ -11,7 +12,7 @@ class CatLink(commands.Cog):
     @commands.slash_command(
         description="Use to link all channels in a category with a role"
     )
-    @commands.has_permissions(administrator=True)
+    @Permissions.has_permissions(administrator=True)
     async def catlink(
         self,
         ctx: discord.ApplicationContext,
@@ -42,7 +43,7 @@ class CatLink(commands.Cog):
             await ctx.respond(f"The channel and role are already linked.")
 
     @commands.slash_command(description="Use to unlink a category from a role")
-    @commands.has_permissions(administrator=True)
+    @Permissions.has_permissions(administrator=True)
     async def catunlink(
         self,
         ctx: discord.ApplicationContext,

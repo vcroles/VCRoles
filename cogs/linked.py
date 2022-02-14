@@ -2,6 +2,7 @@ import discord
 from discord import ApplicationContext
 from discord.ext import commands
 from bot import MyClient
+from utils import Permissions
 
 
 class Linked(commands.Cog):
@@ -11,7 +12,7 @@ class Linked(commands.Cog):
     @commands.slash_command(
         description="Displays the linked roles, channels & categories"
     )
-    @commands.has_permissions(administrator=True)
+    @Permissions.has_permissions(administrator=True)
     async def linked(self, ctx: ApplicationContext):
 
         linked_embed = discord.Embed(

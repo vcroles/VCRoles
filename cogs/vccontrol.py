@@ -2,6 +2,7 @@ import discord
 from discord.commands import Option
 from discord.ext import commands
 from bot import MyClient
+from utils import Permissions
 
 
 class VCControl(commands.Cog):
@@ -19,7 +20,7 @@ class VCControl(commands.Cog):
         return mem
 
     @commands.slash_command(description="Mutes everyone in a voice channel")
-    @commands.has_permissions(administrator=True)
+    @Permissions.has_permissions(administrator=True)
     async def vcmute(
         self,
         ctx: discord.ApplicationContext,
@@ -55,7 +56,7 @@ class VCControl(commands.Cog):
         await ctx.respond(embed=embed)
 
     @commands.slash_command(description="Deafens everyone in a voice channel")
-    @commands.has_permissions(administrator=True)
+    @Permissions.has_permissions(administrator=True)
     async def vcdeafen(
         self,
         ctx: discord.ApplicationContext,
@@ -91,7 +92,7 @@ class VCControl(commands.Cog):
         await ctx.respond(embed=embed)
 
     @commands.slash_command(description="Unmutes everyone in a voice channel")
-    @commands.has_permissions(administrator=True)
+    @Permissions.has_permissions(administrator=True)
     async def vcunmute(self, ctx: discord.ApplicationContext):
         if ctx.author.voice and ctx.author.voice.channel:
             vc = ctx.author.voice.channel
@@ -112,7 +113,7 @@ class VCControl(commands.Cog):
         await ctx.respond(embed=embed)
 
     @commands.slash_command(description="Undeafens everyone in a voice channel")
-    @commands.has_permissions(administrator=True)
+    @Permissions.has_permissions(administrator=True)
     async def vcundeafen(self, ctx: discord.ApplicationContext):
         if ctx.author.voice and ctx.author.voice.channel:
             vc = ctx.author.voice.channel

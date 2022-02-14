@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from discord.commands import Option
 from bot import MyClient
+from utils import Permissions
 
 
 class AllLink(commands.Cog):
@@ -9,7 +10,7 @@ class AllLink(commands.Cog):
         self.client = client
 
     @commands.slash_command(description="Use to link all channels with a role")
-    @commands.has_permissions(administrator=True)
+    @Permissions.has_permissions(administrator=True)
     async def alllink(
         self,
         ctx: discord.ApplicationContext,
@@ -32,7 +33,7 @@ class AllLink(commands.Cog):
             await ctx.respond(f"The channel and role are already linked.")
 
     @commands.slash_command(description="Use to unlink all channels from a role")
-    @commands.has_permissions(administrator=True)
+    @Permissions.has_permissions(administrator=True)
     async def allunlink(
         self,
         ctx: discord.ApplicationContext,
@@ -54,7 +55,7 @@ class AllLink(commands.Cog):
             await ctx.respond(f"The channel and role are not linked.")
 
     @commands.slash_command(description="Use to create an exception to alllink")
-    @commands.has_permissions(administrator=True)
+    @Permissions.has_permissions(administrator=True)
     async def allexception(
         self,
         ctx: discord.ApplicationContext,
@@ -76,7 +77,7 @@ class AllLink(commands.Cog):
             await ctx.respond(f"Unable to add exception")
 
     @commands.slash_command(description="Use to create an exception to alllink")
-    @commands.has_permissions(administrator=True)
+    @Permissions.has_permissions(administrator=True)
     async def allexceptionremove(
         self,
         ctx: discord.ApplicationContext,

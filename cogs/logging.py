@@ -2,6 +2,7 @@ import discord
 from discord.commands import Option
 from discord.ext import commands
 from bot import MyClient
+from utils import Permissions
 
 
 class Logging(commands.Cog):
@@ -9,7 +10,7 @@ class Logging(commands.Cog):
         self.client = client
 
     @commands.slash_command(description="Used to enable disable logging, in a channel.")
-    @commands.has_permissions(administrator=True)
+    @Permissions.has_permissions(administrator=True)
     async def logging(
         self,
         ctx: discord.ApplicationContext,

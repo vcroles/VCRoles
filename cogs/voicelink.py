@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from discord.commands import Option
 from bot import MyClient
+from utils import Permissions
 
 
 class VoiceLink(commands.Cog):
@@ -9,7 +10,7 @@ class VoiceLink(commands.Cog):
         self.client = client
 
     @commands.slash_command(description="Use to link a voice channel with a role")
-    @commands.has_permissions(administrator=True)
+    @Permissions.has_permissions(administrator=True)
     async def vclink(
         self,
         ctx: discord.ApplicationContext,
@@ -40,7 +41,7 @@ class VoiceLink(commands.Cog):
             await ctx.respond(f"The channel and role are already linked.")
 
     @commands.slash_command(description="Use to unlink a voice channel from a role")
-    @commands.has_permissions(administrator=True)
+    @Permissions.has_permissions(administrator=True)
     async def vcunlink(
         self,
         ctx: discord.ApplicationContext,

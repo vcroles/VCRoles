@@ -4,6 +4,7 @@ from discord.commands import Option
 from discord.ext import commands
 from bot import MyClient
 from views.interface import Interface
+from utils import Permissions
 
 
 class VoiceGen(commands.Cog):
@@ -11,7 +12,7 @@ class VoiceGen(commands.Cog):
         self.client = client
 
     @commands.slash_command(description="A command to create a voice channel generator")
-    @commands.has_permissions(administrator=True)
+    @Permissions.has_permissions(administrator=True)
     @commands.bot_has_permissions(manage_channels=True)
     async def voicegenerator(
         self,
@@ -122,7 +123,7 @@ class VoiceGen(commands.Cog):
         await ctx.respond(embed=creation_embed)
 
     @commands.slash_command(description="A command to remove a voice channel generator")
-    @commands.has_permissions(administrator=True)
+    @Permissions.has_permissions(administrator=True)
     @commands.bot_has_permissions(manage_channels=True)
     async def removegenerator(self, ctx: discord.ApplicationContext):
 
