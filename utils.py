@@ -1,5 +1,6 @@
-import redis
 import json
+
+import redis
 
 
 class RedisUtils:
@@ -81,8 +82,9 @@ class RedisUtils:
 
 
 from typing import Callable, TypeVar
-from discord.ext.commands import Context, MissingPermissions, check
+
 import discord
+from discord.ext.commands import Context, MissingPermissions, check
 
 T = TypeVar("T")
 

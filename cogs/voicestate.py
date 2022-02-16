@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
-from bot import MyClient
 
+from bot import MyClient
 from voicestate.all import All
 from voicestate.category import Category
 from voicestate.generator import Generator

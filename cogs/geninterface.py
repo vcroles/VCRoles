@@ -1,7 +1,9 @@
 import json
+
 import discord
-from discord.ext import commands
 from discord.commands import SlashCommandGroup
+from discord.ext import commands
+
 from bot import MyClient
 
 

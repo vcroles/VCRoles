@@ -1,7 +1,8 @@
-import discord, json
-from discord.commands import Option
-from discord import ApplicationContext
+import json
+
+import discord
 from discord.ext import commands
+
 from bot import MyClient
 
 with open("Data/config.json", "r") as f:

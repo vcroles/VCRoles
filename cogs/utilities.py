@@ -1,7 +1,8 @@
 import discord
 from discord.ext import commands
+
 from bot import MyClient
-from views.url import Invite, Discord, Website, TopGG
+from views.url import Discord, Invite, TopGG, Website
 
 
 class Utils(commands.Cog):

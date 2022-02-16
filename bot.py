@@ -1,11 +1,12 @@
-from datetime import datetime
-import discord
-from discord.ext import commands, tasks
 import json
-import os
-import redis
-import time
 import logging
+import os
+import time
+from datetime import datetime
+
+import discord
+import redis
+from discord.ext import commands, tasks
 
 from utils import RedisUtils
 from views.interface import Interface

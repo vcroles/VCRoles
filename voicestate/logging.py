@@ -1,5 +1,7 @@
-import discord
 import datetime
+
+import discord
+
 from bot import MyClient
 
 

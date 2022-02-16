@@ -1,5 +1,7 @@
-import discord
 import json
+
+import discord
+
 from utils import RedisUtils
 
 

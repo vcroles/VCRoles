@@ -1,10 +1,12 @@
-import discord
 import json
+
+import discord
 from discord.commands import Option
 from discord.ext import commands
+
 from bot import MyClient
-from views.interface import Interface
 from utils import Permissions
+from views.interface import Interface
 
 
 class VoiceGen(commands.Cog):

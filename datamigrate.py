@@ -1,4 +1,7 @@
-import redis, json, os
+import json
+import os
+
+import redis
 
 r = redis.Redis(host="188.40.130.153", port=6379, db=0, password="sht8RNp@@X5CoEy&")
 

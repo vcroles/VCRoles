@@ -1,8 +1,12 @@
-import discord, os, asyncio
+import asyncio
+import os
+
+import discord
 from discord.commands import Option
 from discord.ext import commands
 from gtts import gTTS
 from mutagen.mp3 import MP3
+
 from bot import MyClient
 from utils import Permissions
 
