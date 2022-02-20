@@ -11,10 +11,10 @@ jobs:
       id: botRestart
       uses: fjogeleit/http-request-action@v1.8.2
       with:
-        url: ${{ env.DEPLOY_URL }}
+        url: ${{ secrets.DEPLOY_URL }}
         method: 'POST'
         data: '{"signal": "restart"}'
-        bearerToken: ${{ env.DEPLOY_KEY }}
+        bearerToken: ${{ secrets.DEPLOY_KEY }}
     - name: Show Response
       run: echo ${{ steps.botRestart.outputs.response }}
     - run: echo DONE!
