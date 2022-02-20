@@ -11,10 +11,10 @@ jobs:
       id: botRestart
       uses: fjogeleit/http-request-action@v1.8.2
       with:
-        url: 'https://panel.ridge-hosting.com/api/client/servers/9f578d1b/power'
+        url: ${{ env.DEPLOY_URL }}
         method: 'POST'
         data: '{"signal": "restart"}'
-        bearerToken: 'wUO3pN5XKalpGhehHBVtocexVwjM9aBKJ9Bwa9zdO6p6ZHAN'
+        bearerToken: ${{ env.DEPLOY_KEY }}
     - name: Show Response
       run: echo ${{ steps.botRestart.outputs.response }}
     - run: echo DONE!
