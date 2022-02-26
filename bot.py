@@ -81,7 +81,7 @@ class MyClient(commands.AutoShardedBot):
     async def on_error(self, event, *args, **kwargs):
         with open("error.log", "a") as f:
             f.write(
-                f"{datetime.utcnow().strftime('%m/%d/%Y, %H:%M:%S')} {event}: {str(args).encode('utf-8')}\n"
+                f"{datetime.utcnow().strftime('%m/%d/%Y, %H:%M:%S')} {event}: {str(args).encode('utf-8')}: {str(kwargs).encode('utf-8')}\n"
             )
 
     async def on_guild_channel_delete(self, channel: discord.abc.GuildChannel):
@@ -144,8 +144,12 @@ try:
     client.topggpy = topgg.DBLClient(
         client, dbl_token, autopost=True, post_shard_count=True
     )
+    client.topgg_webhook = topgg.WebhookManager(client).dbl_webhook(
+        "/dbl", config["DBL_WEBHOOK_PASS"]
+    )
+    client.topgg_webhook.run(config["DBL_WEBHOOK_PORT"])
 except ImportError:
-    pass
+    print("Top.gg integration not found.")
 
 
 @client.event
@@ -153,6 +157,23 @@ async def on_autopost_success():
     print(
         f"Posted server count ({client.topggpy.guild_count}), shard count ({client.shard_count})"
     )
+
+
+@client.event
+async def on_dbl_vote(data):
+    user = await client.fetch_user(int(data["user"]))
+    if data["type"] == "upvote":
+        channel = client.get_channel(947070091797856276)
+        embed = discord.Embed(
+            colour=discord.Colour.blue(),
+            title=":tada: Top.gg Vote! :tada:",
+            description=f"{user.mention} ({user.name}) just voted for VC Roles on Top.gg!\n\nClick [here](https://top.gg/bot/775025797034541107/vote) to vote",
+            url="https://top.gg/bot/775025797034541107/vote",
+        )
+        embed.set_thumbnail(url=user.avatar.url)
+        embed.set_footer(text="Thanks for voting!")
+        await channel.send(embed=embed)
+    print(data)
 
 
 # COMMANDS
