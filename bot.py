@@ -173,7 +173,8 @@ async def on_dbl_vote(data):
         embed.set_thumbnail(url=user.avatar.url)
         embed.set_footer(text="Thanks for voting!")
         await channel.send(embed=embed)
-    print(data)
+    else:
+        print(data)
 
 
 # COMMANDS
