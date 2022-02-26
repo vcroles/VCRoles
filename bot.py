@@ -144,6 +144,10 @@ try:
     client.topggpy = topgg.DBLClient(
         client, dbl_token, autopost=True, post_shard_count=True
     )
+    client.topgg_webhook = topgg.WebhookManager(client).dbl_webhook(
+        "/dbl", config["DBL_WEBHOOK_PASS"]
+    )
+    client.topgg_webhook.run(5000)
 except ImportError:
     pass
 
@@ -153,6 +157,13 @@ async def on_autopost_success():
     print(
         f"Posted server count ({client.topggpy.guild_count}), shard count ({client.shard_count})"
     )
+
+
+@client.event
+async def on_dbl_vote(data):
+    if data["type"] == "upvote":
+        print(f"{client.get_user(data['user']).name} just voted on DBL!")
+    print(data)
 
 
 # COMMANDS
