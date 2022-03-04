@@ -1,5 +1,5 @@
 import discord
-from discord.commands import Option
+from discord.commands import Option, SlashCommandGroup
 from discord.ext import commands
 
 from bot import MyClient
@@ -10,13 +10,20 @@ class AllLink(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
-    @commands.slash_command(description="Use to link all channels with a role")
+    all_commands = SlashCommandGroup("all", "Rules to apply to all channels")
+    exception_commands = all_commands.create_subgroup(
+        "exception", "Channels to exclude from rules"
+    )
+    suffix_commands = all_commands.create_subgroup(
+        "suffix", "Suffix to add to the end of usernames"
+    )
+
+    @all_commands.command(description="Use to link all channels with a role")
     @Permissions.has_permissions(administrator=True)
-    async def alllink(
+    async def link(
         self,
         ctx: discord.ApplicationContext,
         role: Option(discord.Role, "Select a role to link", required=True),
-        suffix: Option(str, "Add a suffix to your username when joining the channel", required=False),
     ):
 
         data = self.client.redis.get_linked("all", ctx.guild.id)
@@ -34,9 +41,9 @@ class AllLink(commands.Cog):
         else:
             await ctx.respond(f"The channel and role are already linked.")
 
-    @commands.slash_command(description="Use to unlink all channels from a role")
+    @all_commands.command(description="Use to unlink all channels from a role")
     @Permissions.has_permissions(administrator=True)
-    async def allunlink(
+    async def unlink(
         self,
         ctx: discord.ApplicationContext,
         role: Option(discord.Role, "Select a role to link", required=True),
@@ -56,9 +63,9 @@ class AllLink(commands.Cog):
         else:
             await ctx.respond(f"The channel and role are not linked.")
 
-    @commands.slash_command(description="Use to create an exception to alllink")
+    @exception_commands.command(description="Use to create an exception to alllink")
     @Permissions.has_permissions(administrator=True)
-    async def allexception(
+    async def add(
         self,
         ctx: discord.ApplicationContext,
         channel: Option(discord.VoiceChannel, "Select an exception channel"),
@@ -78,9 +85,9 @@ class AllLink(commands.Cog):
         except:
             await ctx.respond(f"Unable to add exception")
 
-    @commands.slash_command(description="Use to create an exception to alllink")
+    @exception_commands.command(description="Use to create an exception to alllink")
     @Permissions.has_permissions(administrator=True)
-    async def allexceptionremove(
+    async def remove(
         self,
         ctx: discord.ApplicationContext,
         channel: Option(discord.VoiceChannel, "Select an exception channel"),
@@ -96,6 +103,34 @@ class AllLink(commands.Cog):
             await ctx.respond(f"Removed {channel.mention} as an exception to alllink")
         else:
             await ctx.respond(f"Please select a valid exception channel")
+
+    @suffix_commands.command(description="Use to add a suffix to users")
+    @Permissions.has_permissions(administrator=True)
+    async def add(
+        self,
+        ctx: discord.ApplicationContext,
+        suffix: Option(
+            str,
+            "The suffix to add to your username when joining any channel",
+            required=True,
+        ),
+    ):
+        data = self.client.redis.get_linked("all", ctx.guild.id)
+        data["suffix"] = suffix
+        self.client.redis.update_linked("all", ctx.guild.id, data)
+
+        await ctx.respond(
+            f"When members join any channel, their username will be appended with `{suffix}`"
+        )
+
+    @suffix_commands.command(description="Use to remove a username suffix rule")
+    @Permissions.has_permissions(administrator=True)
+    async def remove(self, ctx: discord.ApplicationContext):
+        data = self.client.redis.get_linked("all", ctx.guild.id)
+        data["suffix"] = ""
+        self.client.redis.update_linked("all", ctx.guild.id, data)
+
+        await ctx.respond("Removed the username suffix rule")
 
 
 def setup(client: MyClient):

@@ -24,69 +24,82 @@ class Linked(commands.Cog):
 
         v_dict = self.client.redis.get_linked("voice", ctx.guild.id)
 
-        for v_list in v_dict:
-            try:
-                channel = self.client.get_channel(int(v_list))
-                va += f"{channel.mention}: "
-                for role in v_dict[v_list]:
-                    try:
-                        role = ctx.guild.get_role(int(role))
-                        va += f"{role.mention} "
-                    except:
-                        pass
-                va += "\n"
-            except:
-                va += f"Not Found - ID `{v_list}`\n"
+        for v in v_dict:
+            if v != "format":
+                try:
+                    channel = self.client.get_channel(int(v))
+                    va += f"{channel.mention}: "
+                    for role in v_dict[v]["roles"]:
+                        try:
+                            role = ctx.guild.get_role(int(role))
+                            va += f"{role.mention} "
+                        except:
+                            pass
+                    if v_dict[v]["suffix"]:
+                        va += f"`{v_dict[v]['suffix']}`"
+                    va += "\n"
+                except:
+                    va += f"Not Found - ID `{v}`\n"
 
         s_dict = self.client.redis.get_linked("stage", ctx.guild.id)
 
-        for s_list in s_dict:
-            try:
-                channel = self.client.get_channel(int(s_list))
-                va += f"{channel.mention}: "
-                for role in s_dict[s_list]:
-                    try:
-                        role = ctx.guild.get_role(int(role))
-                        va += f"{role.mention} "
-                    except:
-                        pass
-                va += "\n"
-            except:
-                va += f"Not Found - ID `{s_list}`\n"
+        for s in s_dict:
+            if s != "format":
+                try:
+                    channel = self.client.get_channel(int(s))
+                    va += f"{channel.mention}: "
+                    for role in s_dict[s]["roles"]:
+                        try:
+                            role = ctx.guild.get_role(int(role))
+                            va += f"{role.mention} "
+                        except:
+                            pass
+                    if s_dict[s]["suffix"]:
+                        va += f"`{s_dict[s]['suffix']}`"
+                    va += "\n"
+                except:
+                    va += f"Not Found - ID `{s}`\n"
 
         c_dict = self.client.redis.get_linked("category", ctx.guild.id)
 
-        for c_list in c_dict:
-            try:
-                channel = self.client.get_channel(int(c_list))
-                va += f"Category {channel.mention}: "
-                for role in c_dict[c_list]:
-                    try:
-                        role = ctx.guild.get_role(int(role))
-                        va += f"{role.mention} "
-                    except:
-                        pass
-                va += "\n"
-            except:
-                va += f"Not Found - ID `{c_list}`\n"
+        for c in c_dict:
+            if c != "format":
+                try:
+                    channel = self.client.get_channel(int(c))
+                    va += f"Category {channel.mention}: "
+                    for role in c_dict[c]["roles"]:
+                        try:
+                            role = ctx.guild.get_role(int(role))
+                            va += f"{role.mention} "
+                        except:
+                            pass
+                    if c_dict[c]["suffix"]:
+                        va += f"`{c_dict[c]['suffix']}`"
+                    va += "\n"
+                except:
+                    va += f"Not Found - ID `{c}`\n"
 
         p_dict = self.client.redis.get_linked("permanent", ctx.guild.id)
 
-        for p_list in p_dict:
-            try:
-                channel = self.client.get_channel(int(p_list))
-                va += f"Permanent {channel.mention}: "
-                for role in p_dict[p_list]:
-                    try:
-                        role = ctx.guild.get_role(int(role))
-                        va += f"{role.mention} "
-                    except:
-                        pass
-                va += "\n"
-            except:
-                va += f"Not Found - ID `{p_list}`\n"
+        for p in p_dict:
+            if p != "format":
+                try:
+                    channel = self.client.get_channel(int(p))
+                    va += f"Permanent {channel.mention}: "
+                    for role in p_dict[p]["roles"]:
+                        try:
+                            role = ctx.guild.get_role(int(role))
+                            va += f"{role.mention} "
+                        except:
+                            pass
+                    if p_dict[p]["suffix"]:
+                        va += f"`{p_dict[p]['suffix']}`"
+                    va += "\n"
+                except:
+                    va += f"Not Found - ID `{p}`\n"
 
-        a_list = self.client.redis.get_linked("all", ctx.guild.id)["roles"]
+        a_dict = self.client.redis.get_linked("all", ctx.guild.id)
+        a_list = a_dict["roles"]
         if a_list:
             va += "All: "
             for role in a_list:
@@ -97,7 +110,7 @@ class Linked(commands.Cog):
                     pass
             va += "\n"
 
-        a_list_e = self.client.redis.get_linked("all", ctx.guild.id)["except"]
+        a_list_e = a_dict["except"]
         if a_list_e:
             va += "All-link exceptions: "
             for channel in a_list_e:
@@ -107,6 +120,10 @@ class Linked(commands.Cog):
                 except:
                     va += f"Not Found - ID `{channel}`"
             va += "\n"
+
+        a_list_s = a_dict["suffix"]
+        if a_list_s:
+            va += f"All-link suffix: `{a_list_s}`\n"
 
         if va:
             va = va[:-1]
