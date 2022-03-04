@@ -19,6 +19,7 @@ class StageLink(commands.Cog):
             discord.StageChannel, "Select a stage channel to link", required=True
         ),
         role: Option(discord.Role, "Select a role to link", required=True),
+        suffix: Option(str, "Add a suffix to your username when joining the channel", required=False),
     ):
         data = self.client.redis.get_linked("stage", ctx.guild.id)
 

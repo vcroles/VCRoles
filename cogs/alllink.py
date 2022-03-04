@@ -16,6 +16,7 @@ class AllLink(commands.Cog):
         self,
         ctx: discord.ApplicationContext,
         role: Option(discord.Role, "Select a role to link", required=True),
+        suffix: Option(str, "Add a suffix to your username when joining the channel", required=False),
     ):
 
         data = self.client.redis.get_linked("all", ctx.guild.id)

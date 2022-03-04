@@ -21,6 +21,7 @@ class PermLink(commands.Cog):
             discord.VoiceChannel, "Select a channel to link", required=True
         ),
         role: Option(discord.Role, "Select a role to link", required=True),
+        suffix: Option(str, "Add a suffix to your username when joining the channel", required=False),
     ):
 
         data = self.client.redis.get_linked("permanent", ctx.guild.id)
