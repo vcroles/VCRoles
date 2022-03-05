@@ -1,5 +1,5 @@
 import discord
-from discord.commands import Option
+from discord.commands import Option, slash_command
 from discord.ext import commands
 
 from bot import MyClient
@@ -10,7 +10,7 @@ class Logging(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
-    @commands.slash_command(description="Used to enable disable logging, in a channel.")
+    @slash_command(description="Used to enable disable logging, in a channel.")
     @Permissions.has_permissions(administrator=True)
     async def logging(
         self,

@@ -1,5 +1,5 @@
 import discord
-from discord import ApplicationContext
+from discord.commands import slash_command
 from discord.ext import commands
 
 from bot import MyClient
@@ -10,11 +10,9 @@ class Linked(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
-    @commands.slash_command(
-        description="Displays the linked roles, channels & categories"
-    )
+    @slash_command(description="Displays the linked roles, channels & categories")
     @Permissions.has_permissions(administrator=True)
-    async def linked(self, ctx: ApplicationContext):
+    async def linked(self, ctx: discord.ApplicationContext):
 
         linked_embed = discord.Embed(
             colour=discord.Colour.blue(),

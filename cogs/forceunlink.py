@@ -1,5 +1,5 @@
 import discord
-from discord.commands import Option
+from discord.commands import Option, slash_command
 from discord.ext import commands
 
 from bot import MyClient
@@ -10,7 +10,7 @@ class UnLink(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
-    @commands.slash_command(
+    @slash_command(
         description="Use to remove any channel/category from all links (Using ID)"
     )
     @Permissions.has_permissions(administrator=True)

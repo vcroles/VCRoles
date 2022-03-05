@@ -2,7 +2,7 @@ import asyncio
 import os
 
 import discord
-from discord.commands import Option
+from discord.commands import Option, SlashCommandGroup, slash_command
 from discord.ext import commands
 from gtts import gTTS
 from mutagen.mp3 import MP3
@@ -43,10 +43,12 @@ class TTS(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
-    @commands.slash_command(
+    tts_commands = SlashCommandGroup("tts", "Text To Speech commands")
+
+    @tts_commands.command(
         description="Used to make the bot read a message in a voice channel"
     )
-    async def tts(
+    async def play(
         self,
         ctx: discord.ApplicationContext,
         message: Option(str, "Message to read."),
@@ -128,10 +130,10 @@ class TTS(commands.Cog):
             else:
                 await ctx.respond("You don't have the required role to use TTS")
 
-    @commands.slash_command(
+    @tts_commands.command(
         description="Stops the current TTS message & Makes the bot leave the voice channel"
     )
-    async def ttsstop(self, ctx: discord.ApplicationContext):
+    async def stop(self, ctx: discord.ApplicationContext):
         for x in self.client.voice_clients:
             if x.guild == ctx.guild:
                 await x.disconnect()
@@ -148,11 +150,11 @@ class TTS(commands.Cog):
         )
         await ctx.respond(embed=embed)
 
-    @commands.slash_command(
+    @tts_commands.command(
         description="Used to enable/disable TTS & set a required role"
     )
     @Permissions.has_permissions(administrator=True)
-    async def ttssetup(
+    async def setup(
         self,
         ctx: discord.ApplicationContext,
         enabled: Option(bool, "Whether TTS is enabled"),
