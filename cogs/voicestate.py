@@ -194,27 +194,15 @@ class VoiceState(commands.Cog):
         except:
             return
 
-        if isinstance(before.channel, discord.VoiceChannel):
-            try:
-                voice_removed = await self.voice.leave(
-                    self.client.redis.get_linked("voice", member.guild.id),
-                    member,
-                    before,
-                    after,
-                )
-            except:
-                voice_removed = None
-
-        elif isinstance(before.channel, discord.StageChannel):
-            try:
-                stage_removed = await self.stage.leave(
-                    self.client.redis.get_linked("stage", member.guild.id),
-                    member,
-                    before,
-                    after,
-                )
-            except:
-                stage_removed = None
+        try:
+            all_removed = await self.all.leave(
+                self.client.redis.get_linked("all", member.guild.id),
+                member,
+                before,
+                after,
+            )
+        except:
+            all_removed = None
 
         try:
             category_removed = await self.category.leave(
@@ -226,15 +214,27 @@ class VoiceState(commands.Cog):
         except:
             category_removed = None
 
-        try:
-            all_removed = await self.all.leave(
-                self.client.redis.get_linked("all", member.guild.id),
-                member,
-                before,
-                after,
-            )
-        except:
-            all_removed = None
+        if isinstance(before.channel, discord.StageChannel):
+            try:
+                stage_removed = await self.stage.leave(
+                    self.client.redis.get_linked("stage", member.guild.id),
+                    member,
+                    before,
+                    after,
+                )
+            except:
+                stage_removed = None
+
+        if isinstance(before.channel, discord.VoiceChannel):
+            try:
+                voice_removed = await self.voice.leave(
+                    self.client.redis.get_linked("voice", member.guild.id),
+                    member,
+                    before,
+                    after,
+                )
+            except:
+                voice_removed = None
 
         try:
             await self.generator.leave(member, before, after)

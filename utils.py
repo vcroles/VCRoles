@@ -134,3 +134,33 @@ class Permissions:
             raise MissingPermissions(missing)
 
         return check(predicate)
+
+
+# Username Suffix Tools
+
+
+async def add_suffix(member: discord.Member, suffix: str):
+    if suffix == "" or member.bot:
+        return
+
+    try:
+        member = await member.guild.fetch_member(member.id)
+        username = member.display_name
+        if not username.endswith(suffix):
+            username += f" {suffix}"
+            await member.edit(nick=username)
+    except:
+        pass
+
+
+async def remove_suffix(member: discord.Member, suffix: str):
+    if suffix == "" or member.bot:
+        return
+
+    try:
+        member = await member.guild.fetch_member(member.id)
+        username = member.display_name
+        if username.endswith(suffix):
+            await member.edit(nick=username.removesuffix(suffix))
+    except:
+        pass
