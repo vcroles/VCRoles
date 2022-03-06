@@ -1,5 +1,5 @@
 import discord
-from discord.commands import slash_command
+from discord.commands import Option, slash_command
 from discord.ext import commands
 
 from bot import MyClient
@@ -9,6 +9,16 @@ from views.url import Discord, Invite, TopGG, Website
 class Utils(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
+
+    @slash_command(description="Use to mention a channel so members can join")
+    async def mention(
+        self,
+        ctx,
+        channel: Option(
+            (discord.VoiceChannel, discord.StageChannel), "select a channel"
+        ),
+    ):
+        await ctx.respond(f"{channel.mention}")
 
     @slash_command(description="Gets an invite to the support server")
     async def discord(self, ctx: discord.ApplicationContext):
