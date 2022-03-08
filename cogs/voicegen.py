@@ -1,7 +1,7 @@
 import json
 
 import discord
-from discord.commands import Option
+from discord.commands import Option, SlashCommandGroup
 from discord.ext import commands
 
 from bot import MyClient
@@ -13,10 +13,14 @@ class VoiceGen(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
-    @commands.slash_command(description="A command to create a voice channel generator")
+    generator_commands = SlashCommandGroup("generator", "Generator channel commands")
+
+    @generator_commands.command(
+        description="A command to create a voice channel generator"
+    )
     @Permissions.has_permissions(administrator=True)
     @commands.bot_has_permissions(manage_channels=True)
-    async def voicegenerator(
+    async def create(
         self,
         ctx: discord.ApplicationContext,
         category_name: Option(
@@ -124,10 +128,12 @@ class VoiceGen(commands.Cog):
         )
         await ctx.respond(embed=creation_embed)
 
-    @commands.slash_command(description="A command to remove a voice channel generator")
+    @generator_commands.command(
+        description="A command to remove a voice channel generator"
+    )
     @Permissions.has_permissions(administrator=True)
     @commands.bot_has_permissions(manage_channels=True)
-    async def removegenerator(self, ctx: discord.ApplicationContext):
+    async def remove(self, ctx: discord.ApplicationContext):
 
         await ctx.defer()
 

@@ -1,5 +1,5 @@
 import discord
-from discord.commands import Option
+from discord.commands import Option, SlashCommandGroup
 from discord.ext import commands
 
 from bot import MyClient
@@ -10,9 +10,14 @@ class StageLink(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
-    @commands.slash_command(description="Use to link a stage channel with a role")
+    stage_commands = SlashCommandGroup("stage", "Rules to apply to stage channels")
+    suffix_commands = stage_commands.create_subgroup(
+        "suffix", "Suffix to add to the end of usernames"
+    )
+
+    @stage_commands.command(description="Use to link a stage channel with a role")
     @Permissions.has_permissions(administrator=True)
-    async def stagelink(
+    async def link(
         self,
         ctx: discord.ApplicationContext,
         channel: Option(
@@ -25,10 +30,10 @@ class StageLink(commands.Cog):
         try:
             data[str(channel.id)]
         except:
-            data[str(channel.id)] = []
+            data[str(channel.id)] = {"roles": [], "suffix": ""}
 
-        if str(role.id) not in data[str(channel.id)]:
-            data[str(channel.id)].append(str(role.id))
+        if str(role.id) not in data[str(channel.id)]["roles"]:
+            data[str(channel.id)]["roles"].append(str(role.id))
 
             self.client.redis.update_linked("stage", ctx.guild.id, data)
 
@@ -40,9 +45,9 @@ class StageLink(commands.Cog):
         else:
             await ctx.respond(f"The channel and role are already linked.")
 
-    @commands.slash_command(description="Use to unlink a stage channel from a role")
+    @stage_commands.command(description="Use to unlink a stage channel from a role")
     @Permissions.has_permissions(administrator=True)
-    async def stageunlink(
+    async def unlink(
         self,
         ctx: discord.ApplicationContext,
         channel: Option(
@@ -58,11 +63,14 @@ class StageLink(commands.Cog):
             await ctx.respond(f"The channel and role are not linked.")
             return
 
-        if str(role.id) in data[str(channel.id)]:
+        if str(role.id) in data[str(channel.id)]["roles"]:
             try:
-                data[str(channel.id)].remove(str(role.id))
+                data[str(channel.id)]["roles"].remove(str(role.id))
 
-                if not data[str(channel.id)]:
+                if (
+                    not data[str(channel.id)]["roles"]
+                    and not data[str(channel.id)]["suffix"]
+                ):
                     data.pop(str(channel.id))
 
                 self.client.redis.update_linked("stage", ctx.guild.id, data)
@@ -72,6 +80,60 @@ class StageLink(commands.Cog):
                 )
             except:
                 pass
+
+    @suffix_commands.command(
+        description="Use to set a suffix to add to the end of usernames"
+    )
+    @Permissions.has_permissions(administrator=True)
+    async def add(
+        self,
+        ctx: discord.ApplicationContext,
+        channel: Option(
+            discord.StageChannel, "Select a stage channel to link", required=True
+        ),
+        suffix: Option(
+            str, "Enter a suffix to add to the end of usernames", required=True
+        ),
+    ):
+        data = self.client.redis.get_linked("stage", ctx.guild.id)
+
+        try:
+            data[str(channel.id)]
+        except:
+            data[str(channel.id)] = {"roles": [], "suffix": ""}
+
+        data[str(channel.id)]["suffix"] = suffix
+
+        self.client.redis.update_linked("stage", ctx.guild.id, data)
+
+        await ctx.respond(
+            f"Added suffix `{suffix}` to the end of usernames in {channel.mention}"
+        )
+
+    @suffix_commands.command(
+        description="Use to remove a suffix from the end of usernames"
+    )
+    @Permissions.has_permissions(administrator=True)
+    async def remove(
+        self,
+        ctx: discord.ApplicationContext,
+        channel: Option(
+            discord.StageChannel, "Select a stage channel to link", required=True
+        ),
+    ):
+        data = self.client.redis.get_linked("stage", ctx.guild.id)
+
+        try:
+            data[str(channel.id)]
+        except:
+            await ctx.respond(f"The channel has no associated rules.")
+            return
+
+        data[str(channel.id)]["suffix"] = ""
+
+        self.client.redis.update_linked("stage", ctx.guild.id, data)
+
+        await ctx.respond(f"Removed suffix rule for {channel.mention}")
 
 
 def setup(client: MyClient):

@@ -8,6 +8,8 @@ class RedisUtils:
 
     def __init__(self, r: redis.Redis):
         self.r = r
+        self.DATA_FORMAT_VER = 1
+        self.DATA_FORMAT = {"roles": [], "suffix": ""}
 
     def list_to_str(self, l: list) -> str:
         return json.dumps(l)
@@ -44,11 +46,28 @@ class RedisUtils:
     def get_linked(self, type: str, guild_id: int) -> dict:
         r_data = self.r.hget(f"{guild_id}:linked", type)
         if r_data:
-            return self.str_to_dict(r_data)
+            data = self.str_to_dict(r_data)
+
+            if type == "all":
+                if "suffix" not in data:
+                    data["suffix"] = ""
+                return data
+            # data formats:
+            # 0: {channel_id: [role_id, role_id, ...]}
+            # 1: {channel_id: {"roles": [role_id, role_id, ...], "suffix": "..."}}
+            if "format" not in data or data["format"] == 0:
+                # reformat data to type 1
+                for channel_id, roles in data.items():
+                    if isinstance(roles, list):
+                        data[channel_id] = {"roles": roles, "suffix": ""}
+                data["format"] = self.DATA_FORMAT_VER
+                self.update_linked(type, guild_id, data)
+            return data
+
         else:
-            if type != "all":
-                return {}
-            return {"roles": [], "except": []}
+            if type == "all":
+                return {"roles": [], "except": [], "suffix": ""}
+            return {"format": self.DATA_FORMAT_VER}
 
     def update_linked(self, type: str, guild_id: int, data: dict):
         self.r.hset(f"{guild_id}:linked", type, self.dict_to_str(data))
@@ -115,3 +134,33 @@ class Permissions:
             raise MissingPermissions(missing)
 
         return check(predicate)
+
+
+# Username Suffix Tools
+
+
+async def add_suffix(member: discord.Member, suffix: str):
+    if suffix == "" or member.bot:
+        return
+
+    try:
+        member = await member.guild.fetch_member(member.id)
+        username = member.display_name
+        if not username.endswith(suffix):
+            username += f" {suffix}"
+            await member.edit(nick=username)
+    except:
+        pass
+
+
+async def remove_suffix(member: discord.Member, suffix: str):
+    if suffix == "" or member.bot:
+        return
+
+    try:
+        member = await member.guild.fetch_member(member.id)
+        username = member.display_name
+        if username.endswith(suffix):
+            await member.edit(nick=username.removesuffix(suffix))
+    except:
+        pass

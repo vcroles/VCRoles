@@ -1,5 +1,7 @@
 import discord
 
+from utils import add_suffix, remove_suffix
+
 
 class Category:
     async def join(
@@ -14,8 +16,9 @@ class Category:
         except:
             return None
         if str(after.channel.category.id) in data:
+            await add_suffix(member, data[str(after.channel.category.id)]["suffix"])
             roles = []
-            for i in data[str(after.channel.category.id)]:
+            for i in data[str(after.channel.category.id)]["roles"]:
                 try:
                     role = member.guild.get_role(int(i))
                     await member.add_roles(role, reason="Joined voice channel")
@@ -37,8 +40,9 @@ class Category:
         except:
             return None
         if str(before.channel.category.id) in data:
+            await remove_suffix(member, data[str(before.channel.category.id)]["suffix"])
             roles = []
-            for i in data[str(before.channel.category.id)]:
+            for i in data[str(before.channel.category.id)]["roles"]:
                 try:
                     role = member.guild.get_role(int(i))
                     await member.remove_roles(role, reason="Left voice channel")

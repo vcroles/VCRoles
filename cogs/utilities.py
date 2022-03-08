@@ -1,4 +1,5 @@
 import discord
+from discord.commands import Option, slash_command
 from discord.ext import commands
 
 from bot import MyClient
@@ -9,26 +10,36 @@ class Utils(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
-    @commands.slash_command(description="Gets an invite to the support server")
+    @slash_command(description="Use to mention a channel so members can join")
+    async def mention(
+        self,
+        ctx,
+        channel: Option(
+            (discord.VoiceChannel, discord.StageChannel), "select a channel"
+        ),
+    ):
+        await ctx.respond(f"{channel.mention}")
+
+    @slash_command(description="Gets an invite to the support server")
     async def discord(self, ctx: discord.ApplicationContext):
         await ctx.respond(
             content="To join our support server, click the link below", view=Discord()
         )
 
-    @commands.slash_command(description="Gets an invite for the bot")
+    @slash_command(description="Gets an invite for the bot")
     async def invite(self, ctx):
         await ctx.respond(
             content="To invite the bot, use the link below",
             view=Invite(),
         )
 
-    @commands.slash_command(description="Gets a link to the bot's Top.gg page")
+    @slash_command(description="Gets a link to the bot's Top.gg page")
     async def topgg(self, ctx):
         await ctx.respond(
             content="To visit the bot's Top.gg, click the link below", view=TopGG()
         )
 
-    @commands.slash_command(description="Gets info about the bot")
+    @slash_command(description="Gets info about the bot")
     async def about(self, ctx):
         embed = discord.Embed(title="About:", colour=discord.Colour.blue())
 
@@ -57,7 +68,7 @@ class Utils(commands.Cog):
 
         await ctx.respond(embed=embed)
 
-    @commands.slash_command(description="Help Command")
+    @slash_command(description="Help Command")
     async def help(self, ctx):
         embed = discord.Embed(
             title="VC Roles Help",

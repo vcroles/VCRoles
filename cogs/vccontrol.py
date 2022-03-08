@@ -1,5 +1,5 @@
 import discord
-from discord.commands import Option
+from discord.commands import Option, SlashCommandGroup
 from discord.ext import commands
 
 from bot import MyClient
@@ -10,7 +10,9 @@ class VCControl(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
-    async def get_members(self, ctx):
+    control_commands = SlashCommandGroup("vc", "Used to control voice channels")
+
+    async def get_members(self, ctx: discord.ApplicationContext):
         mem = []
         for user_id, state in ctx.guild._voice_states.items():
             if (
@@ -20,9 +22,9 @@ class VCControl(commands.Cog):
                 mem.append(await ctx.guild.fetch_member(user_id))
         return mem
 
-    @commands.slash_command(description="Mutes everyone in a voice channel")
+    @control_commands.command(description="Mutes everyone in a voice channel")
     @Permissions.has_permissions(administrator=True)
-    async def vcmute(
+    async def mute(
         self,
         ctx: discord.ApplicationContext,
         who: Option(
@@ -56,9 +58,9 @@ class VCControl(commands.Cog):
         )
         await ctx.respond(embed=embed)
 
-    @commands.slash_command(description="Deafens everyone in a voice channel")
+    @control_commands.command(description="Deafens everyone in a voice channel")
     @Permissions.has_permissions(administrator=True)
-    async def vcdeafen(
+    async def deafen(
         self,
         ctx: discord.ApplicationContext,
         who: Option(
@@ -92,9 +94,9 @@ class VCControl(commands.Cog):
         )
         await ctx.respond(embed=embed)
 
-    @commands.slash_command(description="Unmutes everyone in a voice channel")
+    @control_commands.command(description="Unmutes everyone in a voice channel")
     @Permissions.has_permissions(administrator=True)
-    async def vcunmute(self, ctx: discord.ApplicationContext):
+    async def unmute(self, ctx: discord.ApplicationContext):
         if ctx.author.voice and ctx.author.voice.channel:
             vc = ctx.author.voice.channel
 
@@ -113,9 +115,9 @@ class VCControl(commands.Cog):
         )
         await ctx.respond(embed=embed)
 
-    @commands.slash_command(description="Undeafens everyone in a voice channel")
+    @control_commands.command(description="Undeafens everyone in a voice channel")
     @Permissions.has_permissions(administrator=True)
-    async def vcundeafen(self, ctx: discord.ApplicationContext):
+    async def undeafen(self, ctx: discord.ApplicationContext):
         if ctx.author.voice and ctx.author.voice.channel:
             vc = ctx.author.voice.channel
 
