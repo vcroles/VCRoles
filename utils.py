@@ -8,8 +8,8 @@ class RedisUtils:
 
     def __init__(self, r: redis.Redis):
         self.r = r
-        self.DATA_FORMAT_VER = 1
-        self.DATA_FORMAT = {"roles": [], "suffix": ""}
+        self.DATA_FORMAT_VER = 2
+        self.DATA_FORMAT = {"roles": [], "suffix": "", "reverse_roles": []}
 
     def list_to_str(self, l: list) -> str:
         return json.dumps(l)
@@ -51,15 +51,24 @@ class RedisUtils:
             if type == "all":
                 if "suffix" not in data:
                     data["suffix"] = ""
+                if "reverse_roles" not in data:
+                    data["reverse_roles"] = []
                 return data
             # data formats:
             # 0: {channel_id: [role_id, role_id, ...]}
             # 1: {channel_id: {"roles": [role_id, role_id, ...], "suffix": "..."}}
+            # 2: {channel_id: {"roles": [role_id, role_id, ...], "suffix": "...", "reverse_roles": [role_id, role_id, ...]}}
             if "format" not in data or data["format"] == 0:
                 # reformat data to type 1
                 for channel_id, roles in data.items():
                     if isinstance(roles, list):
                         data[channel_id] = {"roles": roles, "suffix": ""}
+                data["format"] = 1
+                self.update_linked(type, guild_id, data)
+            if data["format"] == 1:
+                # reformat data to type 2
+                for channel_id in data:
+                    data[channel_id]["reverse_roles"] = []
                 data["format"] = self.DATA_FORMAT_VER
                 self.update_linked(type, guild_id, data)
             return data

@@ -2,25 +2,18 @@ import discord
 from discord.ext import commands
 
 from bot import MyClient
+from utils import add_suffix, remove_suffix
 from voicestate.all import All
-from voicestate.category import Category
 from voicestate.generator import Generator
 from voicestate.logging import Logging
-from voicestate.permanent import Permanent
-from voicestate.stage import Stage
-from voicestate.voice import Voice
 
 
 class VoiceState(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
         self.all = All()
-        self.category = Category()
         self.generator = Generator(client)
         self.logging = Logging(client)
-        self.permanent = Permanent()
-        self.stage = Stage()
-        self.voice = Voice()
 
     @commands.Cog.listener()
     async def on_voice_state_update(
@@ -34,79 +27,62 @@ class VoiceState(commands.Cog):
 
         # Joining
         if not before.channel and after.channel:
-            roles_added = await self.join(member, before, after)
+            roles_changed = await self.join(member, before, after)
 
-            if roles_added:
+            if roles_changed:
                 (
-                    voice_added,
-                    stage_added,
-                    category_added,
-                    all_added,
-                    perm_added,
-                ) = roles_added
+                    voice_changed,
+                    stage_changed,
+                    category_changed,
+                    all_changed,
+                    perm_changed,
+                ) = roles_changed
 
                 await self.logging.log_join(
                     after,
                     member,
-                    voice_added,
-                    stage_added,
-                    category_added,
-                    all_added,
-                    perm_added,
+                    voice_changed,
+                    stage_changed,
+                    category_changed,
+                    all_changed,
+                    perm_changed,
                 )
 
         # Leaving
         elif before.channel and not after.channel:
-            roles_removed = await self.leave(member, before, after)
+            roles_changed = await self.leave(member, before, after)
 
-            if roles_removed:
+            if roles_changed:
                 (
-                    voice_removed,
-                    stage_removed,
-                    category_removed,
-                    all_removed,
-                ) = roles_removed
+                    voice_changed,
+                    stage_changed,
+                    category_changed,
+                    all_changed,
+                ) = roles_changed
 
                 await self.logging.log_leave(
                     before,
                     member,
-                    voice_removed,
-                    stage_removed,
-                    category_removed,
-                    all_removed,
+                    voice_changed,
+                    stage_changed,
+                    category_changed,
+                    all_changed,
                 )
 
         # Changing
-        elif before.channel != after.channel:
-            roles_removed = await self.leave(member, before, after)
-            roles_added = await self.join(member, before, after)
+        elif (
+            before.channel != after.channel
+        ):  # CHECK THIS #####################################################################################################
+            leave_roles_changed = await self.leave(member, before, after)
+            join_roles_changed = await self.join(member, before, after)
 
-            if roles_removed and roles_added:
-                (
-                    voice_removed,
-                    stage_removed,
-                    category_removed,
-                    all_removed,
-                ) = roles_removed
-
-                (
-                    voice_added,
-                    stage_added,
-                    category_added,
-                    all_added,
-                    perm_added,
-                ) = roles_added
-
+            if leave_roles_changed and join_roles_changed:
                 await self.logging.log_change(
                     before,
                     after,
                     member,
-                    voice_removed,
-                    stage_removed,
-                    category_removed,
-                    voice_added,
-                    stage_added,
-                    category_added,
+                    leave_roles_changed,
+                    join_roles_changed,
                 )
 
     async def join(
@@ -115,7 +91,12 @@ class VoiceState(commands.Cog):
         before: discord.VoiceState,
         after: discord.VoiceState,
     ):
-        voice_added = stage_added = category_added = all_added = None
+        voice_changed = (
+            stage_changed
+        ) = category_changed = all_changed = perm_changed = {
+            "added": [],
+            "removed": [],
+        }
 
         try:
             after.channel.type
@@ -124,62 +105,68 @@ class VoiceState(commands.Cog):
 
         if isinstance(after.channel, discord.VoiceChannel):
             try:
-                voice_added = await self.voice.join(
+                voice_changed = await self.handle_join(
                     self.client.redis.get_linked("voice", member.guild.id),
                     member,
-                    before,
-                    after,
+                    after.channel.id,
+                    linktype="voice",
                 )
             except:
-                voice_added = None
+                pass
 
         elif isinstance(after.channel, discord.StageChannel):
             try:
-                stage_added = await self.stage.join(
+                stage_changed = await self.handle_join(
                     self.client.redis.get_linked("stage", member.guild.id),
                     member,
-                    before,
-                    after,
+                    after.channel.id,
+                    linktype="stage",
                 )
             except:
-                stage_added = None
+                pass
 
         try:
-            category_added = await self.category.join(
+            category_changed = await self.handle_join(
                 self.client.redis.get_linked("category", member.guild.id),
                 member,
-                before,
-                after,
+                after.channel.category.id,
+                linktype="category",
             )
         except:
-            category_added = None
+            pass
 
         try:
-            all_added = await self.all.join(
+            all_changed = await self.all.join(
                 self.client.redis.get_linked("all", member.guild.id),
                 member,
                 before,
                 after,
             )
         except:
-            all_added = None
+            pass
 
         try:
-            perm_added = await self.permanent.join(
+            perm_changed = await self.handle_join(
                 self.client.redis.get_linked("permanent", member.guild.id),
                 member,
-                before,
-                after,
+                after.channel.id,
+                linktype="permanent",
             )
         except:
-            perm_added = None
+            pass
 
         try:
             await self.generator.join(member, before, after)
         except:
             pass
 
-        return (voice_added, stage_added, category_added, all_added, perm_added)
+        return (
+            voice_changed,
+            stage_changed,
+            category_changed,
+            all_changed,
+            perm_changed,
+        )
 
     async def leave(
         self,
@@ -187,7 +174,10 @@ class VoiceState(commands.Cog):
         before: discord.VoiceState,
         after: discord.VoiceState,
     ):
-        voice_removed = stage_removed = category_removed = all_removed = None
+        voice_changed = stage_changed = category_changed = all_changed = {
+            "added": [],
+            "removed": [],
+        }
 
         try:
             before.channel.type
@@ -195,53 +185,119 @@ class VoiceState(commands.Cog):
             return
 
         try:
-            all_removed = await self.all.leave(
+            all_changed = await self.all.leave(
                 self.client.redis.get_linked("all", member.guild.id),
                 member,
                 before,
                 after,
             )
         except:
-            all_removed = None
+            pass
 
         try:
-            category_removed = await self.category.leave(
+            category_changed = await self.handle_leave(
                 self.client.redis.get_linked("category", member.guild.id),
                 member,
-                before,
-                after,
+                before.channel.category.id,
+                linktype="category",
             )
         except:
-            category_removed = None
+            pass
 
         if isinstance(before.channel, discord.StageChannel):
             try:
-                stage_removed = await self.stage.leave(
+                stage_changed = await self.handle_leave(
                     self.client.redis.get_linked("stage", member.guild.id),
                     member,
-                    before,
-                    after,
+                    before.channel.id,
+                    linktype="stage",
                 )
             except:
-                stage_removed = None
+                pass
 
         if isinstance(before.channel, discord.VoiceChannel):
             try:
-                voice_removed = await self.voice.leave(
+                voice_changed = await self.handle_leave(
                     self.client.redis.get_linked("voice", member.guild.id),
                     member,
-                    before,
-                    after,
+                    before.channel.id,
+                    linktype="voice",
                 )
             except:
-                voice_removed = None
+                pass
 
         try:
             await self.generator.leave(member, before, after)
         except:
             pass
 
-        return (voice_removed, stage_removed, category_removed, all_removed)
+        return (voice_changed, stage_changed, category_changed, all_changed)
+
+    async def handle_join(
+        self,
+        data: dict[str, dict[str, list | str, str]],
+        member: discord.Member,
+        id: str | int,
+        linktype: str,
+    ) -> dict[str, list]:
+        if isinstance(id, int):
+            id = str(id)
+        if id in data:
+            await add_suffix(member, data[id]["suffix"])
+            added = []
+            for i in data[id]["roles"]:
+                try:
+                    role = member.guild.get_role(int(i))
+                    await member.add_roles(role, reason="Joined voice channel")
+                    added.append(role)
+                except:
+                    pass
+            removed = []
+            for i in data[id]["reverse_roles"]:
+                try:
+                    role = member.guild.get_role(int(i))
+                    await member.remove_roles(role, reason="Joined voice channel")
+                    removed.append(role)
+                except:
+                    pass
+            return {"added": added, "removed": removed}
+        return {"added": [], "removed": []}
+
+    async def handle_leave(
+        self,
+        data: dict[str, dict[str, list | str, str]],
+        member: discord.Member,
+        id: str | int,
+        linktype: str,
+    ) -> dict[str, list]:
+        if isinstance(id, int):
+            id = str(id)
+        if id in data:
+            await remove_suffix(
+                member, (data[id]["suffix"] if linktype != "all" else data["suffix"])
+            )
+            added = []
+            for i in (
+                data[id]["reverse_roles"]
+                if linktype != "all"
+                else data["reverse_roles"]
+            ):
+                try:
+                    role = member.guild.get_role(int(i))
+                    await member.add_roles(role, reason="Left voice channel")
+                    added.append(role)
+                except:
+                    pass
+            removed = []
+            for i in data[id]["roles"] if linktype != "all" else data["roles"]:
+                try:
+                    role = member.guild.get_role(int(i))
+                    await member.remove_roles(role, reason="Left voice channel")
+                    removed.append(role)
+                except:
+                    pass
+            return {"added": added, "removed": removed}
+        return {"added": [], "removed": []}
 
 
 def setup(client: MyClient):

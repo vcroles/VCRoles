@@ -17,93 +17,137 @@ class Linked(commands.Cog):
         linked_embed = discord.Embed(
             colour=discord.Colour.blue(),
             title=f"The linked roles, channels & categories in {ctx.guild.name}:",
+            description="Note: \nR before a role means it is a reverse link\nText like `this` shows linked suffixes",
         )
         va = ""
 
         v_dict = self.client.redis.get_linked("voice", ctx.guild.id)
 
         for v in v_dict:
-            if v != "format":
-                try:
-                    channel = self.client.get_channel(int(v))
-                    va += f"{channel.mention}: "
+            if v == "format":
+                continue
+            try:
+                channel = self.client.get_channel(int(v))
+                va += f"{channel.mention}: "
+                if v_dict[v]["roles"]:
                     for role in v_dict[v]["roles"]:
                         try:
                             role = ctx.guild.get_role(int(role))
                             va += f"{role.mention} "
                         except:
                             pass
-                    if v_dict[v]["suffix"]:
-                        va += f"`{v_dict[v]['suffix']}`"
-                    va += "\n"
-                except:
-                    va += f"Not Found - ID `{v}`\n"
+                if v_dict[v]["reverse_roles"]:
+                    for role in v_dict[v]["reverse_roles"]:
+                        try:
+                            role = ctx.guild.get_role(int(role))
+                            va += f"R{role.mention} "
+                        except:
+                            pass
+                if v_dict[v]["suffix"]:
+                    va += f"`{v_dict[v]['suffix']}`"
+                va += "\n"
+            except:
+                va += f"Not Found - ID `{v}`\n"
 
         s_dict = self.client.redis.get_linked("stage", ctx.guild.id)
 
         for s in s_dict:
-            if s != "format":
-                try:
-                    channel = self.client.get_channel(int(s))
-                    va += f"{channel.mention}: "
+            if s == "format":
+                continue
+            try:
+                channel = self.client.get_channel(int(s))
+                va += f"{channel.mention}: "
+                if s_dict[s]["roles"]:
                     for role in s_dict[s]["roles"]:
                         try:
                             role = ctx.guild.get_role(int(role))
                             va += f"{role.mention} "
                         except:
                             pass
-                    if s_dict[s]["suffix"]:
-                        va += f"`{s_dict[s]['suffix']}`"
-                    va += "\n"
-                except:
-                    va += f"Not Found - ID `{s}`\n"
+                if s_dict[s]["reverse_roles"]:
+                    for role in s_dict[s]["reverse_roles"]:
+                        try:
+                            role = ctx.guild.get_role(int(role))
+                            va += f"R{role.mention} "
+                        except:
+                            pass
+                if s_dict[s]["suffix"]:
+                    va += f"`{s_dict[s]['suffix']}`"
+                va += "\n"
+            except:
+                va += f"Not Found - ID `{s}`\n"
 
         c_dict = self.client.redis.get_linked("category", ctx.guild.id)
 
         for c in c_dict:
-            if c != "format":
-                try:
-                    channel = self.client.get_channel(int(c))
-                    va += f"Category {channel.mention}: "
+            if c == "format":
+                continue
+            try:
+                channel = self.client.get_channel(int(c))
+                va += f"Category {channel.mention}: "
+                if c_dict[c]["roles"]:
                     for role in c_dict[c]["roles"]:
                         try:
                             role = ctx.guild.get_role(int(role))
                             va += f"{role.mention} "
                         except:
                             pass
-                    if c_dict[c]["suffix"]:
-                        va += f"`{c_dict[c]['suffix']}`"
-                    va += "\n"
-                except:
-                    va += f"Not Found - ID `{c}`\n"
+                if c_dict[c]["reverse_roles"]:
+                    for role in c_dict[c]["reverse_roles"]:
+                        try:
+                            role = ctx.guild.get_role(int(role))
+                            va += f"R{role.mention} "
+                        except:
+                            pass
+                if c_dict[c]["suffix"]:
+                    va += f"`{c_dict[c]['suffix']}`"
+                va += "\n"
+            except:
+                va += f"Not Found - ID `{c}`\n"
 
         p_dict = self.client.redis.get_linked("permanent", ctx.guild.id)
 
         for p in p_dict:
-            if p != "format":
-                try:
-                    channel = self.client.get_channel(int(p))
-                    va += f"Permanent {channel.mention}: "
+            if p == "format":
+                continue
+            try:
+                channel = self.client.get_channel(int(p))
+                va += f"Permanent {channel.mention}: "
+                if p_dict[p]["roles"]:
                     for role in p_dict[p]["roles"]:
                         try:
                             role = ctx.guild.get_role(int(role))
                             va += f"{role.mention} "
                         except:
                             pass
-                    if p_dict[p]["suffix"]:
-                        va += f"`{p_dict[p]['suffix']}`"
-                    va += "\n"
-                except:
-                    va += f"Not Found - ID `{p}`\n"
+                if p_dict[p]["reverse_roles"]:
+                    for role in p_dict[p]["reverse_roles"]:
+                        try:
+                            role = ctx.guild.get_role(int(role))
+                            va += f"R{role.mention} "
+                        except:
+                            pass
+                if p_dict[p]["suffix"]:
+                    va += f"`{p_dict[p]['suffix']}`"
+                va += "\n"
+            except:
+                va += f"Not Found - ID `{p}`\n"
 
         a_dict = self.client.redis.get_linked("all", ctx.guild.id)
         a_list = a_dict["roles"]
-        if a_list:
+        a_list_reverse = a_dict["reverse_roles"]
+        if a_list or a_list_reverse:
             va += "All: "
             for role in a_list:
                 try:
                     role = ctx.guild.get_role(int(role))
                     va += f"{role.mention} "
+                except:
+                    pass
+            for role in a_list_reverse:
+                try:
+                    role = ctx.guild.get_role(int(role))
+                    va += f"R{role.mention} "
                 except:
                     pass
             va += "\n"
