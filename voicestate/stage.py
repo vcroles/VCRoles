@@ -10,19 +10,27 @@ class Stage:
         member: discord.Member,
         before: discord.VoiceState,
         after: discord.VoiceState,
-    ) -> list:
+    ) -> dict[str, list]:
         if str(after.channel.id) in data:
             await add_suffix(member, data[str(after.channel.id)]["suffix"])
-            roles = []
+            added = []
             for i in data[str(after.channel.id)]["roles"]:
                 try:
                     role = member.guild.get_role(int(i))
                     await member.add_roles(role, reason="Joined stage channel")
-                    roles.append(role)
+                    added.append(role)
                 except:
                     pass
-            return roles
-        return None
+            removed = []
+            for i in data[str(after.channel.id)]["reverse_roles"]:
+                try:
+                    role = member.guild.get_role(int(i))
+                    await member.remove_roles(role, reason="Joined stage channel")
+                    removed.append(role)
+                except:
+                    pass
+            return {"added": added, "removed": removed}
+        return {"added": [], "removed": []}
 
     async def leave(
         self,
@@ -30,16 +38,24 @@ class Stage:
         member: discord.Member,
         before: discord.VoiceState,
         after: discord.VoiceState,
-    ) -> list:
+    ) -> dict[str, list]:
         if str(before.channel.id) in data:
             await remove_suffix(member, data[str(before.channel.id)]["suffix"])
-            roles = []
+            removed = []
             for i in data[str(before.channel.id)]["roles"]:
                 try:
                     role = member.guild.get_role(int(i))
                     await member.remove_roles(role, reason="Left stage channel")
-                    roles.append(role)
+                    removed.append(role)
                 except:
                     pass
-            return roles
-        return None
+            added = []
+            for i in data[str(before.channel.id)]["reverse_roles"]:
+                try:
+                    role = member.guild.get_role(int(i))
+                    await member.add_roles(role, reason="Left stage channel")
+                    added.append(role)
+                except:
+                    pass
+            return {"added": added, "removed": removed}
+        return {"added": [], "removed": []}
