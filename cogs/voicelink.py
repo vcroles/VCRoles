@@ -14,6 +14,7 @@ class VoiceLink(commands.Cog):
     suffix_commands = voice_commands.create_subgroup(
         "suffix", "Suffix to add to the end of usernames"
     )
+    reverse_commands = voice_commands.create_subgroup("reverse", "Reverse roles")
 
     @voice_commands.command(description="Use to link a voice channel with a role")
     @Permissions.has_permissions(administrator=True)
@@ -31,7 +32,7 @@ class VoiceLink(commands.Cog):
         try:
             data[str(channel.id)]
         except:
-            data[str(channel.id)] = {"roles": [], "suffix": ""}
+            data[str(channel.id)] = {"roles": [], "suffix": "", "reverse_roles": []}
 
         if str(role.id) not in data[str(channel.id)]["roles"]:
             data[str(channel.id)]["roles"].append(str(role.id))
@@ -102,7 +103,7 @@ class VoiceLink(commands.Cog):
         try:
             data[str(channel.id)]
         except:
-            data[str(channel.id)] = {"roles": [], "suffix": ""}
+            data[str(channel.id)] = {"roles": [], "suffix": "", "reverse_roles": []}
 
         data[str(channel.id)]["suffix"] = suffix
 
@@ -134,6 +135,78 @@ class VoiceLink(commands.Cog):
         self.client.redis.update_linked("voice", ctx.guild.id, data)
 
         await ctx.respond(f"Removed suffix rule for {channel.mention}")
+
+    @reverse_commands.command(
+        description="Use to reverse roles in a voice channel", name="link"
+    )
+    @Permissions.has_permissions(administrator=True)
+    async def rlink(
+        self,
+        ctx: discord.ApplicationContext,
+        channel: Option(
+            discord.VoiceChannel, "Select a voice channel to link", required=True
+        ),
+        role: Option(discord.Role, "Select a role to link", required=True),
+    ):
+
+        data = self.client.redis.get_linked("voice", ctx.guild.id)
+
+        try:
+            data[str(channel.id)]
+        except:
+            data[str(channel.id)] = {"roles": [], "suffix": "", "reverse_roles": []}
+
+        if str(role.id) not in data[str(channel.id)]["reverse_roles"]:
+            data[str(channel.id)]["reverse_roles"].append(str(role.id))
+
+            self.client.redis.update_linked("voice", ctx.guild.id, data)
+
+            await ctx.respond(f"Linked {channel.mention} with role: `@{role.name}`")
+
+            member = ctx.guild.get_member(self.client.user.id)
+            if member.top_role.position < role.position:
+                await ctx.send(f"Please ensure my highest role is above `@{role.name}`")
+        else:
+            await ctx.respond(f"The channel and role are already linked.")
+
+    @reverse_commands.command(
+        description="Use to unlink a voice channel from a role", name="unlink"
+    )
+    @Permissions.has_permissions(administrator=True)
+    async def runlink(
+        self,
+        ctx: discord.ApplicationContext,
+        channel: Option(
+            discord.VoiceChannel, "Select a voice channel to link", required=True
+        ),
+        role: Option(discord.Role, "Select a role to link", required=True),
+    ):
+
+        data = self.client.redis.get_linked("voice", ctx.guild.id)
+
+        try:
+            data[str(channel.id)]
+        except:
+            await ctx.respond(f"The channel and role are not linked.")
+            return
+
+        if str(role.id) in data[str(channel.id)]["reverse_roles"]:
+            try:
+                data[str(channel.id)]["reverse_roles"].remove(str(role.id))
+
+                if (
+                    not data[str(channel.id)]["reverse_roles"]
+                    and not data[str(channel.id)]["suffix"]
+                ):
+                    data.pop(str(channel.id))
+
+                self.client.redis.update_linked("voice", ctx.guild.id, data)
+
+                await ctx.respond(
+                    f"Unlinked {channel.mention} and role: `@{role.name}`"
+                )
+            except:
+                pass
 
 
 def setup(client: MyClient):
