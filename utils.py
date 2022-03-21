@@ -173,3 +173,17 @@ async def remove_suffix(member: discord.Member, suffix: str):
             await member.edit(nick=username.removesuffix(suffix))
     except:
         pass
+
+
+# Unlink commands delete empty channel data
+
+
+def handle_data_deletion(data: dict, channel_id: str) -> dict:
+    if (
+        not data[channel_id]["roles"]
+        and not data[channel_id]["reverse_roles"]
+        and not data[channel_id]["suffix"]
+    ):
+        data.pop(channel_id)
+
+    return data

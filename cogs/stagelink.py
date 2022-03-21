@@ -3,7 +3,7 @@ from discord.commands import Option, SlashCommandGroup
 from discord.ext import commands
 
 from bot import MyClient
-from utils import Permissions
+from utils import Permissions, handle_data_deletion
 
 
 class StageLink(commands.Cog):
@@ -68,11 +68,7 @@ class StageLink(commands.Cog):
             try:
                 data[str(channel.id)]["roles"].remove(str(role.id))
 
-                if (
-                    not data[str(channel.id)]["roles"]
-                    and not data[str(channel.id)]["suffix"]
-                ):
-                    data.pop(str(channel.id))
+                data = handle_data_deletion(data, str(channel.id))
 
                 self.client.redis.update_linked("stage", ctx.guild.id, data)
 
@@ -131,6 +127,8 @@ class StageLink(commands.Cog):
             return
 
         data[str(channel.id)]["suffix"] = ""
+
+        data = handle_data_deletion(data, str(channel.id))
 
         self.client.redis.update_linked("stage", ctx.guild.id, data)
 
@@ -192,11 +190,7 @@ class StageLink(commands.Cog):
             try:
                 data[str(channel.id)]["reverse_roles"].remove(str(role.id))
 
-                if (
-                    not data[str(channel.id)]["reverse_roles"]
-                    and not data[str(channel.id)]["suffix"]
-                ):
-                    data.pop(str(channel.id))
+                data = handle_data_deletion(data, str(channel.id))
 
                 self.client.redis.update_linked("stage", ctx.guild.id, data)
 
