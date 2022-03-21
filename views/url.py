@@ -67,3 +67,48 @@ class TopGG(discord.ui.View):
                 url="https://top.gg/bot/775025797034541107",
             )
         )
+
+
+class Combination(discord.ui.View):
+    """
+    Send a button with the:
+    - Website
+    - Invite
+    - Support Server
+    - Top.gg Link
+    """
+
+    def __init__(self):
+        super().__init__()
+
+        self.add_item(
+            discord.ui.Button(
+                style=discord.ButtonStyle.url,
+                label="Website",
+                url="https://www.vcroles.com",
+            )
+        )
+
+        self.add_item(
+            discord.ui.Button(
+                style=discord.ButtonStyle.url,
+                label="Invite the bot",
+                url="https://discord.com/api/oauth2/authorize?client_id=775025797034541107&permissions=300944400&scope=bot%20applications.commands",
+            )
+        )
+
+        self.add_item(
+            discord.ui.Button(
+                style=discord.ButtonStyle.url,
+                label="Support Server",
+                url="https://discord.gg/yHU6qcgNPy",
+            )
+        )
+
+        self.add_item(
+            discord.ui.Button(
+                style=discord.ButtonStyle.url,
+                label="Top.gg",
+                url="https://top.gg/bot/775025797034541107",
+            )
+        )
