@@ -75,7 +75,7 @@ class RedisUtils:
 
         else:
             if type == "all":
-                return {"roles": [], "except": [], "suffix": ""}
+                return {"roles": [], "except": [], "suffix": "", "reverse_roles": []}
             return {"format": self.DATA_FORMAT_VER}
 
     def update_linked(self, type: str, guild_id: int, data: dict):
