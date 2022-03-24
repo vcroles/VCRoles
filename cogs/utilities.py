@@ -4,7 +4,7 @@ from discord.commands import Option, slash_command
 from discord.ext import commands
 
 from bot import MyClient
-from views.url import Discord, Invite, TopGG, Website, Combination
+from views.url import Combination, Discord, Invite, TopGG, Website
 
 
 class Utils(commands.Cog):

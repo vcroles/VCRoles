@@ -5,3 +5,4 @@ topggpy
 pynacl
 redis
 pre-commit
+requests

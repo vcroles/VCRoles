@@ -43,7 +43,7 @@ class Linked(commands.Cog):
         for role_id in channel_data["reverse_roles"]:
             try:
                 role = ctx.guild.get_role(int(role_id))
-                content += f"{role.mention}, "
+                content += f"R{role.mention}, "
             except:
                 pass
         content += f"`{channel_data['suffix']}`" if channel_data["suffix"] else ""
@@ -73,16 +73,17 @@ class Linked(commands.Cog):
 
         all_content = self.iterate_links(all_dict, ctx)
 
-        if all_dict["except"]:
-            all_content += "All-link exceptions: "
-            for exception_id in all_dict["except"]:
-                try:
-                    channel = self.client.get_channel(int(exception_id))
-                    all_content += f"{channel.mention}, "
-                except:
-                    all_content += f"Not Found - ID `{exception_id}`"
-            all_content = all_content.removesuffix(", ")
-        if all_content:
+        if "except" in all_dict:
+            if len(all_dict["except"]) > 0:
+                all_content += "All-link exceptions: "
+                for exception_id in all_dict["except"]:
+                    try:
+                        channel = self.client.get_channel(int(exception_id))
+                        all_content += f"{channel.mention}, "
+                    except:
+                        all_content += f"Not Found - ID `{exception_id}`"
+                all_content = all_content.removesuffix(", ")
+        if all_content.strip():
             linked_embed.add_field(
                 name="All Link:", value=all_content.strip(), inline=False
             )

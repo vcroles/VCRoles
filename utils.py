@@ -9,7 +9,12 @@ class RedisUtils:
     def __init__(self, r: redis.Redis):
         self.r = r
         self.DATA_FORMAT_VER = 2
-        self.DATA_FORMAT = {"roles": [], "suffix": "", "reverse_roles": []}
+        self.DATA_FORMAT = {
+            "roles": [],
+            "suffix": "",
+            "reverse_roles": [],
+            "format": self.DATA_FORMAT_VER,
+        }
 
     def list_to_str(self, l: list) -> str:
         return json.dumps(l)
