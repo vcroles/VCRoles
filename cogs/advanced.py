@@ -20,15 +20,7 @@ class Advanced(commands.Cog):
         data: dict[str, dict],
         guild: discord.Guild,
     ):
-        # data = {
-        #     "all": {"roles": ["!787740836364025887"], "suffix": "Test", "reverse_roles": ["!932022185315409942"]},
-        #     "category": {"758392649979265025": {"roles": ["932022185315409942"], "!suffix": ""}, "!758392649979265026": {}},
-        #     "stage": {"944261529908436992": {"suffix": "Test"}},
-        #     "permanent": {},
-        #     "!voice": {}
-        # }
         for key, value in data.items():
-            print(f"{key=}, {value=}")
             if key.startswith("!"):
                 # Unlink all
                 self.client.redis.r.hdel(
@@ -49,7 +41,6 @@ class Advanced(commands.Cog):
         guild: discord.Guild,
     ):
         for channel, links in data.items():
-            print(f"{channel=}, {links=}")
             if channel.startswith("!"):
                 # Unlink channel
                 linked_data = self.client.redis.get_linked(key, guild.id)
@@ -64,21 +55,43 @@ class Advanced(commands.Cog):
                     # channel is id
                 except:
                     # channel is name
-                    # so make new
+                    # so get id/make new
 
                     try:
+                        channels = await guild.fetch_channels()
                         if key == "category":
-                            ch = await guild.create_category_channel(
-                                name=channel, reason="Auto-created by advanced link"
-                            )
+                            done = False
+                            for ch in channels:
+                                if isinstance(ch, discord.CategoryChannel):
+                                    if ch.name == channel:
+                                        done = True
+                                        break
+                            if not done:
+                                ch = await guild.create_category_channel(
+                                    name=channel, reason="Auto-created by advanced link"
+                                )
                         elif key == "stage":
-                            ch = await guild.create_stage_channel(
-                                name=channel, reason="Auto-created by advanced link"
-                            )
+                            done = False
+                            for ch in channels:
+                                if isinstance(ch, discord.StageChannel):
+                                    if ch.name == channel:
+                                        done = True
+                                        break
+                            if not done:
+                                ch = await guild.create_stage_channel(
+                                    name=channel, reason="Auto-created by advanced link"
+                                )
                         elif key == "permanent" or key == "voice":
-                            ch = await guild.create_voice_channel(
-                                name=channel, reason="Auto-created by advanced link"
-                            )
+                            done = False
+                            for ch in channels:
+                                if isinstance(ch, discord.VoiceChannel):
+                                    if ch.name == channel:
+                                        done = True
+                                        break
+                            if not done:
+                                ch = await guild.create_voice_channel(
+                                    name=channel, reason="Auto-created by advanced link"
+                                )
                         channel = str(ch.id)
                     except:
                         continue
@@ -118,9 +131,7 @@ class Advanced(commands.Cog):
             return linked_data
 
         # Check data
-        # data = {"roles": ["!787740836364025887"], "suffix": "Test", "reverse_roles": ["!932022185315409942"]}
         for linktype, value in data.items():
-            print(f"{linktype=}, {value=}")
             if linktype.startswith("!") and linktype.endswith(
                 ("roles", "reverse_roles", "suffix")
             ):
@@ -143,7 +154,6 @@ class Advanced(commands.Cog):
 
                 if linktype == "roles" or linktype == "reverse_roles":
                     for role in value:
-                        print(f"{role=}")
                         if role.startswith("!"):
                             # Unlink role
                             try:
@@ -163,18 +173,18 @@ class Advanced(commands.Cog):
                                 done = False
                                 for r in guild.roles:
                                     if r.name == role:
-                                        role = str(r.id)
                                         done = True
+                                        break
                                 # make new channel
                                 if not done:
                                     r = await guild.create_role(
                                         name=role,
                                         reason="Auto-created by advanced link",
                                     )
-                                    role = str(r.id)
+                                role = str(r.id)
 
-                            linked_data_edit[linktype].append(role)
-                            print(f"{linked_data_edit=}")
+                            if role not in linked_data_edit[linktype]:
+                                linked_data_edit[linktype].append(role)
                 elif linktype == "suffix":
                     linked_data_edit[linktype] = value
                 linked_data = combine_edit_data(
