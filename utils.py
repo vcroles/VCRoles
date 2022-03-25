@@ -42,7 +42,12 @@ class RedisUtils:
                 data[self.decode(key)] = self.decode(value)
             return data
         else:
-            return {"tts:enabled": "False", "tts:role": "None", "logging": "None"}
+            return {
+                "tts:enabled": "False",
+                "tts:role": "None",
+                "tts:leave": "True",
+                "logging": "None",
+            }
 
     def update_guild_data(self, guild_id: int, data: dict):
         for key in data:

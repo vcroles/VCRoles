@@ -118,7 +118,7 @@ class TTS(commands.Cog):
                         after=lambda e: 1 + 1,
                     )
                     await asyncio.sleep(audio.info.length + 1)
-                    if leave == True:
+                    if leave == True and data["tts:leave"] == "True":
                         await vc.disconnect()
                     os.remove(f"tts/{ctx.guild.id}.mp3")
 
@@ -161,19 +161,21 @@ class TTS(commands.Cog):
         role: Option(
             discord.Role, "A role required to use TTS", required=False, default=None
         ),
+        leave: Option(
+            bool, "Whether the bot leaves the voice channel after reading", default=True
+        ),
     ):
         data = self.client.redis.get_guild_data(ctx.guild.id)
 
-        if role:
-            data["tts:enabled"] = str(enabled)
-            data["tts:role"] = str(role.id)
-        else:
-            data["tts:enabled"] = str(enabled)
-            data["tts:role"] = str(role)
+        data["tts:enabled"] = str(enabled)
+        data["tts:role"] = str(role.id) if role else "None"
+        data["tts:leave"] = str(leave)
 
         self.client.redis.update_guild_data(ctx.guild.id, data)
 
-        await ctx.respond(f"TTS settings updated: Enabled {enabled}, Role {role}")
+        await ctx.respond(
+            f"TTS settings updated: Enabled {enabled}, Role {role}, Leave {leave}"
+        )
 
 
 def setup(client: MyClient):
