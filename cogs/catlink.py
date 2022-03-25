@@ -17,7 +17,7 @@ class CatLink(commands.Cog):
     reverse_commands = category_commands.create_subgroup("reverse", "Reverse roles")
 
     @category_commands.command(
-        description="Use to link all channels in a category with a role"
+        description="DEPRECATED Use to link all channels in a category with a role"
     )
     @Permissions.has_permissions(administrator=True)
     async def link(
@@ -49,7 +49,9 @@ class CatLink(commands.Cog):
         else:
             await ctx.respond(f"The channel and role are already linked.")
 
-    @category_commands.command(description="Use to unlink a category from a role")
+    @category_commands.command(
+        description="DEPRECATED Use to unlink a category from a role"
+    )
     @Permissions.has_permissions(administrator=True)
     async def unlink(
         self,
@@ -83,7 +85,7 @@ class CatLink(commands.Cog):
                 pass
 
     @suffix_commands.command(
-        description="Use to add a suffix to the end of usernames in a category"
+        description="DEPRECATED Use to add a suffix to the end of usernames in a category"
     )
     @Permissions.has_permissions(administrator=True)
     async def add(
@@ -107,7 +109,9 @@ class CatLink(commands.Cog):
 
         await ctx.respond(f"Added suffix rule of `{suffix}` for {channel.mention}")
 
-    @suffix_commands.command(description="Use to remove a username suffix rule")
+    @suffix_commands.command(
+        description="DEPRECATED Use to remove a username suffix rule"
+    )
     @Permissions.has_permissions(administrator=True)
     async def remove(
         self,
@@ -132,7 +136,9 @@ class CatLink(commands.Cog):
 
         await ctx.respond(f"Removed suffix rule for {channel.mention}")
 
-    @reverse_commands.command(description="Use to add a reverse role link", name="link")
+    @reverse_commands.command(
+        description="DEPRECATED Use to add a reverse role link", name="link"
+    )
     @Permissions.has_permissions(administrator=True)
     async def rlink(
         self,
@@ -163,7 +169,8 @@ class CatLink(commands.Cog):
             await ctx.respond(f"The channel and role are already linked.")
 
     @reverse_commands.command(
-        description="Use to unlink a category from a reverse role", name="unlink"
+        description="DEPRECATED Use to unlink a category from a reverse role",
+        name="unlink",
     )
     @Permissions.has_permissions(administrator=True)
     async def runlink(

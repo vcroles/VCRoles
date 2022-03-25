@@ -16,7 +16,9 @@ class StageLink(commands.Cog):
     )
     reverse_commands = stage_commands.create_subgroup("reverse", "Reverse roles")
 
-    @stage_commands.command(description="Use to link a stage channel with a role")
+    @stage_commands.command(
+        description="DEPRECATED Use to link a stage channel with a role"
+    )
     @Permissions.has_permissions(administrator=True)
     async def link(
         self,
@@ -46,7 +48,9 @@ class StageLink(commands.Cog):
         else:
             await ctx.respond(f"The channel and role are already linked.")
 
-    @stage_commands.command(description="Use to unlink a stage channel from a role")
+    @stage_commands.command(
+        description="DEPRECATED Use to unlink a stage channel from a role"
+    )
     @Permissions.has_permissions(administrator=True)
     async def unlink(
         self,
@@ -79,7 +83,7 @@ class StageLink(commands.Cog):
                 pass
 
     @suffix_commands.command(
-        description="Use to set a suffix to add to the end of usernames"
+        description="DEPRECATED Use to set a suffix to add to the end of usernames"
     )
     @Permissions.has_permissions(administrator=True)
     async def add(
@@ -108,7 +112,7 @@ class StageLink(commands.Cog):
         )
 
     @suffix_commands.command(
-        description="Use to remove a suffix from the end of usernames"
+        description="DEPRECATED Use to remove a suffix from the end of usernames"
     )
     @Permissions.has_permissions(administrator=True)
     async def remove(
@@ -135,7 +139,7 @@ class StageLink(commands.Cog):
         await ctx.respond(f"Removed suffix rule for {channel.mention}")
 
     @reverse_commands.command(
-        description="Use to reverse roles in a stage channel", name="link"
+        description="DEPRECATED Use to reverse roles in a stage channel", name="link"
     )
     @Permissions.has_permissions(administrator=True)
     async def rlink(
@@ -167,7 +171,8 @@ class StageLink(commands.Cog):
             await ctx.respond(f"The channel and role are already linked.")
 
     @reverse_commands.command(
-        description="Use to unlink a stage channel from a role", name="unlink"
+        description="DEPRECATED Use to unlink a stage channel from a role",
+        name="unlink",
     )
     @Permissions.has_permissions(administrator=True)
     async def runlink(

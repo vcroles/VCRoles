@@ -16,7 +16,9 @@ class VoiceLink(commands.Cog):
     )
     reverse_commands = voice_commands.create_subgroup("reverse", "Reverse roles")
 
-    @voice_commands.command(description="Use to link a voice channel with a role")
+    @voice_commands.command(
+        description="DEPRECATED Use to link a voice channel with a role"
+    )
     @Permissions.has_permissions(administrator=True)
     async def link(
         self,
@@ -47,7 +49,9 @@ class VoiceLink(commands.Cog):
         else:
             await ctx.respond(f"The channel and role are already linked.")
 
-    @voice_commands.command(description="Use to unlink a voice channel from a role")
+    @voice_commands.command(
+        description="DEPRECATED Use to unlink a voice channel from a role"
+    )
     @Permissions.has_permissions(administrator=True)
     async def unlink(
         self,
@@ -81,7 +85,7 @@ class VoiceLink(commands.Cog):
                 pass
 
     @suffix_commands.command(
-        description="Use to set a suffix to add to the end of usernames"
+        description="DEPRECATED Use to set a suffix to add to the end of usernames"
     )
     @Permissions.has_permissions(administrator=True)
     async def add(
@@ -108,7 +112,7 @@ class VoiceLink(commands.Cog):
         await ctx.respond(f"Added suffix rule of `{suffix}` for {channel.mention}")
 
     @suffix_commands.command(
-        description="Use to remove a suffix to add to the end of usernames"
+        description="DEPRECATED Use to remove a suffix to add to the end of usernames"
     )
     @Permissions.has_permissions(administrator=True)
     async def remove(
@@ -135,7 +139,7 @@ class VoiceLink(commands.Cog):
         await ctx.respond(f"Removed suffix rule for {channel.mention}")
 
     @reverse_commands.command(
-        description="Use to reverse roles in a voice channel", name="link"
+        description="DEPRECATED Use to reverse roles in a voice channel", name="link"
     )
     @Permissions.has_permissions(administrator=True)
     async def rlink(
@@ -168,7 +172,8 @@ class VoiceLink(commands.Cog):
             await ctx.respond(f"The channel and role are already linked.")
 
     @reverse_commands.command(
-        description="Use to unlink a voice channel from a role", name="unlink"
+        description="DEPRECATED Use to unlink a voice channel from a role",
+        name="unlink",
     )
     @Permissions.has_permissions(administrator=True)
     async def runlink(
