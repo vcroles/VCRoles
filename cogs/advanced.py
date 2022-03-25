@@ -1,5 +1,4 @@
 import json
-import os
 
 import discord
 import requests
@@ -192,7 +191,7 @@ class Advanced(commands.Cog):
                 )
                 self.client.redis.update_linked(key, guild.id, linked_data)
 
-    @slash_command(guild_ids=[758392649979265024])
+    @slash_command()
     @Permissions.has_permissions(administrator=True)
     async def advanced(
         self,
@@ -229,7 +228,7 @@ class Advanced(commands.Cog):
 
         await ctx.respond("Done")
 
-    @slash_command(guild_ids=[758392649979265024])
+    @slash_command()
     @Permissions.has_permissions(administrator=True)
     async def export(self, ctx: discord.ApplicationContext):
         """
@@ -245,15 +244,13 @@ class Advanced(commands.Cog):
         for type in ["all", "category", "permanent", "stage", "voice"]:
             data[type] = self.client.redis.get_linked(type, guild.id)
 
-        with open(f"{ctx.guild.id}.json", "w") as f:
+        with open(f"exports/{ctx.guild.id}.json", "w") as f:
             json.dump(data, f, indent=4)
 
-        with open(f"{ctx.guild.id}.json", "rb") as f:
-            await ctx.respond(
-                "Here is the exported data.", file=discord.File(f, "data.json")
-            )
+        with open(f"exports/{ctx.guild.id}.json", "rb") as f:
+            file = discord.File(f, "data.json")
 
-        os.remove(f"{ctx.guild.id}.json")
+        await ctx.respond("Here is the exported data.", file=file)
 
 
 def setup(client: MyClient):

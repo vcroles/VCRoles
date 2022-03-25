@@ -249,6 +249,12 @@ if __name__ == "__main__":
     with open("error.log", "w") as file:
         file.write("")
 
+    # Removing Export Files
+
+    for filename in os.listdir("exports"):
+        if filename.endswith(".json"):
+            os.remove(f"exports/{filename}")
+
     # Setting up guild count
 
     try:
