@@ -13,7 +13,6 @@ class RedisUtils:
             "roles": [],
             "suffix": "",
             "reverse_roles": [],
-            "format": self.DATA_FORMAT_VER,
         }
 
     def list_to_str(self, l: list) -> str:
@@ -78,7 +77,8 @@ class RedisUtils:
             if data["format"] == 1:
                 # reformat data to type 2
                 for channel_id in data:
-                    data[channel_id]["reverse_roles"] = []
+                    if channel_id != "format":
+                        data[channel_id]["reverse_roles"] = []
                 data["format"] = self.DATA_FORMAT_VER
                 self.update_linked(type, guild_id, data)
             return data
