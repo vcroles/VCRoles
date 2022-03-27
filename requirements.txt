@@ -1,7 +1,6 @@
-git+https://github.com/CDE90/pycord.git@master
+py-cord==2.0.0b4
 gtts
 mutagen
 topggpy
 pynacl
 redis
-pre-commit
