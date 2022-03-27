@@ -156,11 +156,28 @@ class Advanced(commands.Cog):
                         if role.startswith("!"):
                             # Unlink role
                             try:
-                                linked_data_edit[linktype].remove(
-                                    role.removeprefix("!")
-                                )
+                                # linked_data_edit[linktype].remove(
+                                #     role.removeprefix("!")
+                                # )
+                                # role is id
+                                int(role.removeprefix("!"))
                             except:
-                                pass
+                                # role is name
+                                # so get id/make new
+                                done = False
+                                for r in guild.roles:
+                                    if r.name == role.removeprefix("!"):
+                                        done = True
+                                        break
+                                # make new role
+                                if not done:
+                                    r = await guild.create_role(
+                                        name=role,
+                                        reason="Auto-created by advanced link",
+                                    )
+                                role = str(r.id)
+                            if role in linked_data_edit[linktype]:
+                                linked_data_edit[linktype].remove(role)
                         else:
                             # Link role
                             try:
