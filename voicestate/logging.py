@@ -14,8 +14,8 @@ class Logging:
         voice_changed: dict[str, list],
         stage_changed: dict[str, list],
         category_changed: dict[str, list],
-        all_changed: dict[str, list] | None = None,
-        perm_changed: dict[str, list] | None = None,
+        all_changed: dict[str, list] = None,
+        perm_changed: dict[str, list] = None,
     ):
         added_content = ""
         removed_content = ""

@@ -233,9 +233,9 @@ class VoiceState(commands.Cog):
 
     async def handle_join(
         self,
-        data: dict[str, dict[str, list | str, str]],
+        data: dict,
         member: discord.Member,
-        id: str | int,
+        id,
         linktype: str,
     ) -> dict[str, list]:
         if isinstance(id, int):
@@ -263,9 +263,9 @@ class VoiceState(commands.Cog):
 
     async def handle_leave(
         self,
-        data: dict[str, dict[str, list | str, str]],
+        data: dict[str, dict],
         member: discord.Member,
-        id: str | int,
+        id,
         linktype: str,
     ) -> dict[str, list]:
         if isinstance(id, int):
