@@ -1,1 +1,0 @@
-This is where the code associated with joining, leaving and changing channels is handled as well as the logging.

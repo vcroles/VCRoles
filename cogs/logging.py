@@ -35,7 +35,7 @@ class Logging(commands.Cog):
             try:
                 data = self.client.redis.get_guild_data(ctx.guild.id)
 
-                data["logging"] = None
+                data["logging"] = "None"
 
                 self.client.redis.update_guild_data(ctx.guild.id, data)
 

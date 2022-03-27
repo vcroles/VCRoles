@@ -17,6 +17,7 @@ class AllLink(commands.Cog):
     suffix_commands = all_commands.create_subgroup(
         "suffix", "Suffix to add to the end of usernames"
     )
+    reverse_commands = all_commands.create_subgroup("reverse", "Reverse roles")
 
     @all_commands.command(description="Use to link all channels with a role")
     @Permissions.has_permissions(administrator=True)
@@ -131,6 +132,47 @@ class AllLink(commands.Cog):
         self.client.redis.update_linked("all", ctx.guild.id, data)
 
         await ctx.respond("Removed the username suffix rule")
+
+    @reverse_commands.command(description="Use to add reverse links", name="link")
+    @Permissions.has_permissions(administrator=True)
+    async def rlink(
+        self,
+        ctx: discord.ApplicationContext,
+        role: Option(discord.Role, "Select a role to link", required=True),
+    ):
+
+        data = self.client.redis.get_linked("all", ctx.guild.id)
+
+        if str(role.id) not in data["reverse_roles"]:
+            data["reverse_roles"].append(str(role.id))
+
+            self.client.redis.update_linked("all", ctx.guild.id, data)
+
+            await ctx.respond(f"Added reverse link: `@{role.name}`")
+        else:
+            await ctx.respond(f"The role is already a reverse link.")
+
+    @reverse_commands.command(description="Use to remove reverse links", name="unlink")
+    @Permissions.has_permissions(administrator=True)
+    async def runlink(
+        self,
+        ctx: discord.ApplicationContext,
+        role: Option(discord.Role, "Select a role to link", required=True),
+    ):
+
+        data = self.client.redis.get_linked("all", ctx.guild.id)
+
+        if str(role.id) in data["reverse_roles"]:
+            try:
+                data["reverse_roles"].remove(str(role.id))
+
+                self.client.redis.update_linked("all", ctx.guild.id, data)
+
+                await ctx.respond(f"Removed reverse link: `@{role.name}`")
+            except:
+                pass
+        else:
+            await ctx.respond(f"The role is not a reverse link.")
 
 
 def setup(client: MyClient):

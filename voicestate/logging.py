@@ -9,8 +9,95 @@ class Logging:
     def __init__(self, client: MyClient):
         self.client = client
 
+    def construct_embed(
+        self,
+        voice_changed: dict[str, list],
+        stage_changed: dict[str, list],
+        category_changed: dict[str, list],
+        all_changed: dict[str, list] | None = None,
+        perm_changed: dict[str, list] | None = None,
+    ):
+        added_content = ""
+        removed_content = ""
+
+        # Voice
+        if voice_changed["added"]:
+            added_content += "Channel: "
+            for role in voice_changed["added"]:
+                added_content += role.mention + " "
+            added_content += "\n"
+        if voice_changed["removed"]:
+            removed_content += "Channel: "
+            for role in voice_changed["removed"]:
+                removed_content += role.mention + " "
+            removed_content += "\n"
+
+        # Stage
+        if stage_changed["added"]:
+            added_content += "Channel: "
+            for role in stage_changed["added"]:
+                added_content += role.mention + " "
+            added_content += "\n"
+        if stage_changed["removed"]:
+            removed_content += "Channel: "
+            for role in stage_changed["removed"]:
+                removed_content += role.mention + " "
+            removed_content += "\n"
+
+        # Category
+        if category_changed["added"]:
+            added_content += "Category: "
+            for role in category_changed["added"]:
+                added_content += role.mention + " "
+            added_content += "\n"
+        if category_changed["removed"]:
+            removed_content += "Category: "
+            for role in category_changed["removed"]:
+                removed_content += role.mention + " "
+            removed_content += "\n"
+
+        # All
+        if all_changed:
+            if all_changed["added"]:
+                added_content += "All: "
+                for role in all_changed["added"]:
+                    added_content += role.mention + " "
+                added_content += "\n"
+            if all_changed["removed"]:
+                removed_content += "All: "
+                for role in all_changed["removed"]:
+                    removed_content += role.mention + " "
+                removed_content += "\n"
+
+        # Permanent
+        if perm_changed:
+            if perm_changed["added"]:
+                added_content += "Permissions: "
+                for role in perm_changed["added"]:
+                    added_content += role.mention + " "
+                added_content += "\n"
+            if perm_changed["removed"]:
+                removed_content += "Permissions: "
+                for role in perm_changed["removed"]:
+                    removed_content += role.mention + " "
+                removed_content += "\n"
+
+        if added_content:
+            added_content = added_content[:-1]  # Removes trailing newline
+        if removed_content:
+            removed_content = removed_content[:-1]
+
+        return added_content, removed_content
+
     async def log_join(
-        self, after: discord.VoiceState, member: discord.Member, v, s, c, a, p
+        self,
+        after: discord.VoiceState,
+        member: discord.Member,
+        voice_changed: dict[str, list],
+        stage_changed: dict[str, list],
+        category_changed: dict[str, list],
+        all_changed: dict[str, list],
+        perm_changed: dict[str, list],
     ):
         data = self.client.redis.get_guild_data(member.guild.id)
 
@@ -32,50 +119,35 @@ class Logging:
                     icon_url=member.avatar.url,
                 )
 
-                va = ""
+                added_content, removed_content = self.construct_embed(
+                    voice_changed,
+                    stage_changed,
+                    category_changed,
+                    all_changed,
+                    perm_changed,
+                )
 
-                if v:
-                    va += "Channel: "
-                    for role in v:
-                        va += role.mention + " "
-                    va += "\n"
-
-                if s:
-                    va += "Channel: "
-                    for role in s:
-                        va += role.mention + " "
-                    va += "\n"
-
-                if c:
-                    va += "Category: "
-                    for role in c:
-                        va += role.mention + " "
-                    va += "\n"
-
-                if a:
-                    va += "All: "
-                    for role in a:
-                        va += role.mention + " "
-                    va += "\n"
-
-                if p:
-                    va += "Permanent: "
-                    for role in p:
-                        va += role.mention + " "
-                    va += "\n"
-
-                if va:
-                    va = va[:-1]  # Removes trailing newline
-
-                if v or s or c or a or p:
-                    logging_embed.add_field(name="Roles Added:", value=va, inline=False)
+                if added_content:
+                    logging_embed.add_field(
+                        name="Roles Added:", value=added_content, inline=False
+                    )
+                if removed_content:
+                    logging_embed.add_field(
+                        name="Roles Removed:", value=removed_content, inline=False
+                    )
 
                 await channel.send(embed=logging_embed)
             except:
                 return
 
     async def log_leave(
-        self, before: discord.VoiceState, member: discord.Member, v, s, c, a
+        self,
+        before: discord.VoiceState,
+        member: discord.Member,
+        voice_changed: dict[str, list],
+        stage_changed: dict[str, list],
+        category_changed: dict[str, list],
+        all_changed: dict[str, list],
     ):
         data = self.client.redis.get_guild_data(member.guild.id)
 
@@ -95,38 +167,20 @@ class Logging:
                     icon_url=member.avatar.url,
                 )
 
-                va = ""
+                added_content, removed_content = self.construct_embed(
+                    voice_changed,
+                    stage_changed,
+                    category_changed,
+                    all_changed,
+                )
 
-                if v:
-                    va += "Channel: "
-                    for role in v:
-                        va += role.mention + " "
-                    va += "\n"
-
-                if s:
-                    va += "Channel: "
-                    for role in s:
-                        va += role.mention + " "
-                    va += "\n"
-
-                if c:
-                    va += "Category: "
-                    for role in c:
-                        va += role.mention + " "
-                    va += "\n"
-
-                if a:
-                    va += "All: "
-                    for role in a:
-                        va += role.mention + " "
-                    va += "\n"
-
-                if va:
-                    va = va[:-1]  # Removes trailing newline
-
-                if v or s or c or a:
+                if added_content:
                     logging_embed.add_field(
-                        name="Roles Removed:", value=va, inline=False
+                        name="Roles Added:", value=added_content, inline=False
+                    )
+                if removed_content:
+                    logging_embed.add_field(
+                        name="Roles Removed:", value=removed_content, inline=False
                     )
 
                 await channel.send(embed=logging_embed)
@@ -138,12 +192,8 @@ class Logging:
         before: discord.VoiceState,
         after: discord.VoiceState,
         member: discord.Member,
-        v,
-        s,
-        c,
-        v2,
-        s2,
-        c2,
+        leave_roles_changed: tuple,
+        join_roles_changed: tuple,
     ):
         data = self.client.redis.get_guild_data(member.guild.id)
 
@@ -163,60 +213,59 @@ class Logging:
                     icon_url=member.avatar.url,
                 )
 
-                va = ""
+                (
+                    voice_changed,
+                    stage_changed,
+                    category_changed,
+                    all_changed,
+                ) = leave_roles_changed
 
-                if v:
-                    va += "Channel: "
-                    for role in v:
-                        va += role.mention + " "
-                    va += "\n"
+                added_content, removed_content = self.construct_embed(
+                    voice_changed,
+                    stage_changed,
+                    category_changed,
+                )
 
-                if s:
-                    va += "Channel: "
-                    for role in s:
-                        va += role.mention + " "
-                    va += "\n"
-
-                if c:
-                    va += "Category: "
-                    for role in c:
-                        va += role.mention + " "
-                    va += "\n"
-
-                if va:
-                    va = va[:-1]  # Removes trailing newline
-
-                if v or s or c:
+                if added_content:
                     logging_embed.add_field(
-                        name="Roles Removed:", value=va, inline=False
+                        name="Roles Added From Leave:",
+                        value=added_content,
+                        inline=False,
+                    )
+                if removed_content:
+                    logging_embed.add_field(
+                        name="Roles Removed From Leave:",
+                        value=removed_content,
+                        inline=False,
                     )
 
-                va = ""
+                (
+                    voice_changed,
+                    stage_changed,
+                    category_changed,
+                    all_changed,
+                    perm_changed,
+                ) = join_roles_changed
 
-                if v2:
-                    va += "Channel: "
-                    for role in v2:
-                        va += role.mention + " "
-                    va += "\n"
+                added_content, removed_content = self.construct_embed(
+                    voice_changed,
+                    stage_changed,
+                    category_changed,
+                    perm_changed=perm_changed,
+                )
 
-                if s2:
-                    va += "Channel: "
-                    for role in s2:
-                        va += role.mention + " "
-                    va += "\n"
-
-                if c2:
-                    va += "Category: "
-                    for role in c2:
-                        va += role.mention + " "
-                    va += "\n"
-
-                if va:
-                    va = va[:-1]  # Removes trailing newline
-
-                if v or s or c:
-                    logging_embed.add_field(name="Roles Added:", value=va, inline=False)
+                if added_content:
+                    logging_embed.add_field(
+                        name="Roles Added From Join:", value=added_content, inline=False
+                    )
+                if removed_content:
+                    logging_embed.add_field(
+                        name="Roles Removed From Join:",
+                        value=removed_content,
+                        inline=False,
+                    )
 
                 await channel.send(embed=logging_embed)
+
             except:
                 return
