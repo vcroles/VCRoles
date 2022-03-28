@@ -59,8 +59,12 @@ class VoiceGen(commands.Cog):
             name=voice_channel_name, category=category
         )
 
+        overwrites = {
+            ctx.guild.default_role: discord.PermissionOverwrite(send_messages=False)
+        }
+
         interface_channel = await ctx.guild.create_text_channel(
-            name=interface_channel_name, category=category
+            name=interface_channel_name, category=category, overwrites=overwrites
         )
 
         interface_embed = discord.Embed(
@@ -115,11 +119,6 @@ class VoiceGen(commands.Cog):
         }
 
         self.client.redis.update_generator(ctx.guild.id, data)
-
-        overwrites = {
-            ctx.guild.default_role: discord.PermissionOverwrite(send_messages=False)
-        }
-        await interface_channel.edit(overwrites=overwrites)
 
         creation_embed = discord.Embed(
             color=discord.Color.green(),
