@@ -214,7 +214,8 @@ class Advanced(commands.Cog):
         self,
         ctx: discord.ApplicationContext,
         attachment: Option(
-            discord.Attachment, "Select a valid link file", required=True
+            discord.Attachment,
+            "Select a valid link file",
         ),
     ):
         """

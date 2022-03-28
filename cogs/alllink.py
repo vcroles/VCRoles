@@ -24,7 +24,10 @@ class AllLink(commands.Cog):
     async def link(
         self,
         ctx: discord.ApplicationContext,
-        role: Option(discord.Role, "Select a role to link", required=True),
+        role: Option(
+            discord.Role,
+            "Select a role to link",
+        ),
     ):
 
         data = self.client.redis.get_linked("all", ctx.guild.id)
@@ -47,7 +50,7 @@ class AllLink(commands.Cog):
     async def unlink(
         self,
         ctx: discord.ApplicationContext,
-        role: Option(discord.Role, "Select a role to link", required=True),
+        role: Option(discord.Role, "Select a role to link"),
     ):
 
         data = self.client.redis.get_linked("all", ctx.guild.id)
@@ -113,7 +116,6 @@ class AllLink(commands.Cog):
         suffix: Option(
             str,
             "The suffix to add to your username when joining any channel",
-            required=True,
         ),
     ):
         data = self.client.redis.get_linked("all", ctx.guild.id)
@@ -138,7 +140,7 @@ class AllLink(commands.Cog):
     async def rlink(
         self,
         ctx: discord.ApplicationContext,
-        role: Option(discord.Role, "Select a role to link", required=True),
+        role: Option(discord.Role, "Select a role to link"),
     ):
 
         data = self.client.redis.get_linked("all", ctx.guild.id)
@@ -157,7 +159,7 @@ class AllLink(commands.Cog):
     async def runlink(
         self,
         ctx: discord.ApplicationContext,
-        role: Option(discord.Role, "Select a role to link", required=True),
+        role: Option(discord.Role, "Select a role to link"),
     ):
 
         data = self.client.redis.get_linked("all", ctx.guild.id)
