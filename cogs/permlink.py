@@ -135,7 +135,7 @@ class PermLink(commands.Cog):
         name="link",
     )
     @Permissions.has_permissions(administrator=True)
-    async def rlink(
+    async def reverse_link(
         self,
         ctx: discord.ApplicationContext,
         channel: Option(discord.VoiceChannel, "Select a channel to link"),
@@ -167,7 +167,7 @@ class PermLink(commands.Cog):
         name="unlink",
     )
     @Permissions.has_permissions(administrator=True)
-    async def runlink(
+    async def reverse_unlink(
         self,
         ctx: discord.ApplicationContext,
         channel: Option(discord.VoiceChannel, "Select a channel to link"),

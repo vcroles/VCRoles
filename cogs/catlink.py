@@ -132,7 +132,7 @@ class CatLink(commands.Cog):
         description="DEPRECATED Use to add a reverse role link", name="link"
     )
     @Permissions.has_permissions(administrator=True)
-    async def rlink(
+    async def reverse_link(
         self,
         ctx: discord.ApplicationContext,
         channel: Option(discord.CategoryChannel, "Select a category for the rule"),
@@ -163,7 +163,7 @@ class CatLink(commands.Cog):
         name="unlink",
     )
     @Permissions.has_permissions(administrator=True)
-    async def runlink(
+    async def reverse_unlink(
         self,
         ctx: discord.ApplicationContext,
         channel: Option(discord.CategoryChannel, "Select a category to link"),

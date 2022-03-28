@@ -166,7 +166,7 @@ class Linking(commands.Cog):
 
     @reverse_commands.command(description="Use to add a reverse role link", name="link")
     @Permissions.has_permissions(administrator=True)
-    async def rlink(
+    async def reverse_link(
         self,
         ctx: discord.ApplicationContext,
         channel: Option(
@@ -207,7 +207,7 @@ class Linking(commands.Cog):
         description="Use to remove a reverse role link", name="unlink"
     )
     @Permissions.has_permissions(administrator=True)
-    async def runlink(
+    async def reverse_unlink(
         self,
         ctx: discord.ApplicationContext,
         channel: Option(

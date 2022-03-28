@@ -132,7 +132,7 @@ class StageLink(commands.Cog):
         description="DEPRECATED Use to reverse roles in a stage channel", name="link"
     )
     @Permissions.has_permissions(administrator=True)
-    async def rlink(
+    async def reverse_link(
         self,
         ctx: discord.ApplicationContext,
         channel: Option(discord.StageChannel, "Select a stage channel to link"),
@@ -163,7 +163,7 @@ class StageLink(commands.Cog):
         name="unlink",
     )
     @Permissions.has_permissions(administrator=True)
-    async def runlink(
+    async def reverse_unlink(
         self,
         ctx: discord.ApplicationContext,
         channel: Option(discord.StageChannel, "Select a stage channel to link"),
