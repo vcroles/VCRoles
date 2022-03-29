@@ -62,12 +62,12 @@ class Utils(commands.Cog):
 
         embed.add_field(
             name="Server Count",
-            value=f"{self.client.user.name} is in {guilds} servers",
+            value=f"{self.client.user.name} is in {guilds:,} servers",
             inline=False,
         )
         embed.add_field(
             name="Statistics",
-            value=f"{total_members} members\n{text} text channels\n{voice} voice channels",
+            value=f"{total_members:,} members\n{text:,} text channels\n{voice:,} voice channels",
         )
         embed.add_field(
             name="Shard Info",
