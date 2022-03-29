@@ -52,8 +52,16 @@ class Utils(commands.Cog):
     async def about(self, ctx: ApplicationContext):
         embed = discord.Embed(title="About:", colour=discord.Colour.blue())
 
+        total_commands = 0
+        total_roles_changed = 0
+        counters = self.client.redis.r.hgetall("counters")
+        for key, value in counters.items():
+            if key.decode("utf-8") not in ["roles_added", "roles_removed"]:
+                total_commands += int(value.decode("utf-8"))
+            elif key.decode("utf-8") in ["roles_added", "roles_removed"]:
+                total_roles_changed += int(value.decode("utf-8"))
+
         total_members = 0
-        text = 0
         voice = 0
         guilds = 0
         for guild in self.client.guilds:
@@ -63,9 +71,7 @@ class Utils(commands.Cog):
 
             total_members += guild.member_count
             for channel in guild.channels:
-                if isinstance(channel, discord.TextChannel):
-                    text += 1
-                elif isinstance(channel, discord.VoiceChannel):
+                if isinstance(channel, discord.VoiceChannel):
                     voice += 1
 
         embed.add_field(
@@ -75,7 +81,7 @@ class Utils(commands.Cog):
         )
         embed.add_field(
             name="Statistics",
-            value=f"{total_members:,} members\n{text:,} text channels\n{voice:,} voice channels",
+            value=f"{total_members:,} total members\n{voice:,} voice channels\n{total_commands:,} commands used\n{total_roles_changed:,} roles changed",
         )
         embed.add_field(
             name="Shard Info",
