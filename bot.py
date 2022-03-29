@@ -36,7 +36,15 @@ class MyClient(commands.AutoShardedBot):
         self.persistent_views_added = False
 
     def incr_counter(self, cmd_name: str):
+        """Increments the counter for a command"""
         self.redis.r.hincrby("counters", cmd_name, 1)
+
+    def incr_role_counter(self, action: str, count: int = 1):
+        """
+        action: `add` or `remove`.
+        Increments the counter for roles added or removed
+        """
+        self.redis.r.hincrby("counters", f"roles_{action}", count)
 
     async def on_ready(self):
         if not self.persistent_views_added:

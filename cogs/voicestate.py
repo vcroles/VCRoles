@@ -11,7 +11,7 @@ from voicestate.logging import Logging
 class VoiceState(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
-        self.all = All()
+        self.all = All(client)
         self.generator = Generator(client)
         self.logging = Logging(client)
 
@@ -258,6 +258,8 @@ class VoiceState(commands.Cog):
                     removed.append(role)
                 except:
                     pass
+            self.client.incr_role_counter("added", len(added))
+            self.client.incr_role_counter("removed", len(removed))
             return {"added": added, "removed": removed}
         return {"added": [], "removed": []}
 
@@ -294,6 +296,8 @@ class VoiceState(commands.Cog):
                     removed.append(role)
                 except:
                     pass
+            self.client.incr_role_counter("added", len(added))
+            self.client.incr_role_counter("removed", len(removed))
             return {"added": added, "removed": removed}
         return {"added": [], "removed": []}
 

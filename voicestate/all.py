@@ -1,9 +1,13 @@
 import discord
 
+from bot import MyClient
 from utils import add_suffix, remove_suffix
 
 
 class All:
+    def __init__(self, client: MyClient):
+        self.client = client
+
     async def join(
         self,
         data,
@@ -30,6 +34,8 @@ class All:
                 removed.append(role)
             except:
                 pass
+        self.client.incr_role_counter("added", len(added))
+        self.client.incr_role_counter("removed", len(removed))
         return {"added": added, "removed": removed}
 
     async def leave(
@@ -59,4 +65,6 @@ class All:
                 added.append(role)
             except:
                 pass
+        self.client.incr_role_counter("added", len(added))
+        self.client.incr_role_counter("removed", len(removed))
         return {"added": added, "removed": removed}
