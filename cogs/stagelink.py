@@ -23,10 +23,8 @@ class StageLink(commands.Cog):
     async def link(
         self,
         ctx: discord.ApplicationContext,
-        channel: Option(
-            discord.StageChannel, "Select a stage channel to link", required=True
-        ),
-        role: Option(discord.Role, "Select a role to link", required=True),
+        channel: Option(discord.StageChannel, "Select a stage channel to link"),
+        role: Option(discord.Role, "Select a role to link"),
     ):
         data = self.client.redis.get_linked("stage", ctx.guild.id)
 
@@ -55,10 +53,8 @@ class StageLink(commands.Cog):
     async def unlink(
         self,
         ctx: discord.ApplicationContext,
-        channel: Option(
-            discord.StageChannel, "Select a stage channel to link", required=True
-        ),
-        role: Option(discord.Role, "Select a role to link", required=True),
+        channel: Option(discord.StageChannel, "Select a stage channel to link"),
+        role: Option(discord.Role, "Select a role to link"),
     ):
         data = self.client.redis.get_linked("stage", ctx.guild.id)
 
@@ -89,12 +85,8 @@ class StageLink(commands.Cog):
     async def add(
         self,
         ctx: discord.ApplicationContext,
-        channel: Option(
-            discord.StageChannel, "Select a stage channel to link", required=True
-        ),
-        suffix: Option(
-            str, "Enter a suffix to add to the end of usernames", required=True
-        ),
+        channel: Option(discord.StageChannel, "Select a stage channel to link"),
+        suffix: Option(str, "Enter a suffix to add to the end of usernames"),
     ):
         data = self.client.redis.get_linked("stage", ctx.guild.id)
 
@@ -118,9 +110,7 @@ class StageLink(commands.Cog):
     async def remove(
         self,
         ctx: discord.ApplicationContext,
-        channel: Option(
-            discord.StageChannel, "Select a stage channel to link", required=True
-        ),
+        channel: Option(discord.StageChannel, "Select a stage channel to link"),
     ):
         data = self.client.redis.get_linked("stage", ctx.guild.id)
 
@@ -142,13 +132,11 @@ class StageLink(commands.Cog):
         description="DEPRECATED Use to reverse roles in a stage channel", name="link"
     )
     @Permissions.has_permissions(administrator=True)
-    async def rlink(
+    async def reverse_link(
         self,
         ctx: discord.ApplicationContext,
-        channel: Option(
-            discord.StageChannel, "Select a stage channel to link", required=True
-        ),
-        role: Option(discord.Role, "Select a role to link", required=True),
+        channel: Option(discord.StageChannel, "Select a stage channel to link"),
+        role: Option(discord.Role, "Select a role to link"),
     ):
         data = self.client.redis.get_linked("stage", ctx.guild.id)
 
@@ -175,13 +163,11 @@ class StageLink(commands.Cog):
         name="unlink",
     )
     @Permissions.has_permissions(administrator=True)
-    async def runlink(
+    async def reverse_unlink(
         self,
         ctx: discord.ApplicationContext,
-        channel: Option(
-            discord.StageChannel, "Select a stage channel to link", required=True
-        ),
-        role: Option(discord.Role, "Select a role to link", required=True),
+        channel: Option(discord.StageChannel, "Select a stage channel to link"),
+        role: Option(discord.Role, "Select a role to link"),
     ):
         data = self.client.redis.get_linked("stage", ctx.guild.id)
 

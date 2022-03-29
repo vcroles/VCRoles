@@ -23,10 +23,8 @@ class CatLink(commands.Cog):
     async def link(
         self,
         ctx: discord.ApplicationContext,
-        channel: Option(
-            discord.CategoryChannel, "Select a category to link", required=True
-        ),
-        role: Option(discord.Role, "Select a role to link", required=True),
+        channel: Option(discord.CategoryChannel, "Select a category to link"),
+        role: Option(discord.Role, "Select a role to link"),
     ):
 
         data = self.client.redis.get_linked("category", ctx.guild.id)
@@ -56,10 +54,8 @@ class CatLink(commands.Cog):
     async def unlink(
         self,
         ctx: discord.ApplicationContext,
-        channel: Option(
-            discord.CategoryChannel, "Select a category to link", required=True
-        ),
-        role: Option(discord.Role, "Select a role to link", required=True),
+        channel: Option(discord.CategoryChannel, "Select a category to link"),
+        role: Option(discord.Role, "Select a role to link"),
     ):
 
         data = self.client.redis.get_linked("category", ctx.guild.id)
@@ -91,10 +87,8 @@ class CatLink(commands.Cog):
     async def add(
         self,
         ctx: discord.ApplicationContext,
-        channel: Option(
-            discord.CategoryChannel, "Select a category for the rule", required=True
-        ),
-        suffix: Option(str, "Add a suffix to the end of usernames", required=True),
+        channel: Option(discord.CategoryChannel, "Select a category for the rule"),
+        suffix: Option(str, "Add a suffix to the end of usernames"),
     ):
         data = self.client.redis.get_linked("category", ctx.guild.id)
 
@@ -116,9 +110,7 @@ class CatLink(commands.Cog):
     async def remove(
         self,
         ctx: discord.ApplicationContext,
-        channel: Option(
-            discord.CategoryChannel, "Select a category for the rule", required=True
-        ),
+        channel: Option(discord.CategoryChannel, "Select a category for the rule"),
     ):
         data = self.client.redis.get_linked("category", ctx.guild.id)
 
@@ -140,13 +132,11 @@ class CatLink(commands.Cog):
         description="DEPRECATED Use to add a reverse role link", name="link"
     )
     @Permissions.has_permissions(administrator=True)
-    async def rlink(
+    async def reverse_link(
         self,
         ctx: discord.ApplicationContext,
-        channel: Option(
-            discord.CategoryChannel, "Select a category for the rule", required=True
-        ),
-        role: Option(discord.Role, "Select a role to link", required=True),
+        channel: Option(discord.CategoryChannel, "Select a category for the rule"),
+        role: Option(discord.Role, "Select a role to link"),
     ):
         data = self.client.redis.get_linked("category", ctx.guild.id)
 
@@ -173,13 +163,11 @@ class CatLink(commands.Cog):
         name="unlink",
     )
     @Permissions.has_permissions(administrator=True)
-    async def runlink(
+    async def reverse_unlink(
         self,
         ctx: discord.ApplicationContext,
-        channel: Option(
-            discord.CategoryChannel, "Select a category to link", required=True
-        ),
-        role: Option(discord.Role, "Select a role to link", required=True),
+        channel: Option(discord.CategoryChannel, "Select a category to link"),
+        role: Option(discord.Role, "Select a role to link"),
     ):
 
         data = self.client.redis.get_linked("category", ctx.guild.id)

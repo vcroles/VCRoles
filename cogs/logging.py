@@ -15,7 +15,7 @@ class Logging(commands.Cog):
     async def logging(
         self,
         ctx: discord.ApplicationContext,
-        enabled: Option(bool, "Enabled?", required=True),
+        enabled: Option(bool, "Enabled?"),
         channel: Option(discord.TextChannel, "Logging channel:", required=False),
     ):
         if enabled == True and not channel:

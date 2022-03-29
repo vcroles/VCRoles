@@ -1,5 +1,10 @@
 import discord
 
+INVITE_URL = "https://discord.com/api/oauth2/authorize?client_id=775025797034541107&permissions=300944400&scope=bot%20applications.commands"
+DISCORD_URL = "https://discord.gg/yHU6qcgNPy"
+WEBSITE_URL = "https://www.vcroles.com"
+TOPGG_URL = "https://top.gg/bot/775025797034541107"
+
 
 class Invite(discord.ui.View):
     """
@@ -13,7 +18,7 @@ class Invite(discord.ui.View):
             discord.ui.Button(
                 style=discord.ButtonStyle.url,
                 label="Invite the bot",
-                url="https://discord.com/api/oauth2/authorize?client_id=775025797034541107&permissions=300944400&scope=bot%20applications.commands",
+                url=INVITE_URL,
             )
         )
 
@@ -30,7 +35,7 @@ class Discord(discord.ui.View):
             discord.ui.Button(
                 style=discord.ButtonStyle.url,
                 label="Support Server",
-                url="https://discord.gg/yHU6qcgNPy",
+                url=DISCORD_URL,
             )
         )
 
@@ -47,7 +52,7 @@ class Website(discord.ui.View):
             discord.ui.Button(
                 style=discord.ButtonStyle.url,
                 label="Website",
-                url="https://www.vcroles.com",
+                url=WEBSITE_URL,
             )
         )
 
@@ -64,7 +69,7 @@ class TopGG(discord.ui.View):
             discord.ui.Button(
                 style=discord.ButtonStyle.url,
                 label="Top.gg",
-                url="https://top.gg/bot/775025797034541107",
+                url=TOPGG_URL,
             )
         )
 
@@ -85,7 +90,7 @@ class Combination(discord.ui.View):
             discord.ui.Button(
                 style=discord.ButtonStyle.url,
                 label="Website",
-                url="https://www.vcroles.com",
+                url=WEBSITE_URL,
             )
         )
 
@@ -93,7 +98,7 @@ class Combination(discord.ui.View):
             discord.ui.Button(
                 style=discord.ButtonStyle.url,
                 label="Invite the bot",
-                url="https://discord.com/api/oauth2/authorize?client_id=775025797034541107&permissions=300944400&scope=bot%20applications.commands",
+                url=INVITE_URL,
             )
         )
 
@@ -101,7 +106,7 @@ class Combination(discord.ui.View):
             discord.ui.Button(
                 style=discord.ButtonStyle.url,
                 label="Support Server",
-                url="https://discord.gg/yHU6qcgNPy",
+                url=DISCORD_URL,
             )
         )
 
@@ -109,6 +114,6 @@ class Combination(discord.ui.View):
             discord.ui.Button(
                 style=discord.ButtonStyle.url,
                 label="Top.gg",
-                url="https://top.gg/bot/775025797034541107",
+                url=TOPGG_URL,
             )
         )

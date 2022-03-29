@@ -23,9 +23,8 @@ class Linking(commands.Cog):
         channel: Option(
             (discord.CategoryChannel, discord.VoiceChannel, discord.StageChannel),
             "Select a channel to link",
-            required=True,
         ),
-        role: Option(discord.Role, "Select a role to link", required=True),
+        role: Option(discord.Role, "Select a role to link"),
     ):
 
         if isinstance(channel, discord.CategoryChannel):
@@ -63,9 +62,8 @@ class Linking(commands.Cog):
         channel: Option(
             (discord.CategoryChannel, discord.VoiceChannel, discord.StageChannel),
             "Select a channel to link",
-            required=True,
         ),
-        role: Option(discord.Role, "Select a role to link", required=True),
+        role: Option(discord.Role, "Select a role to link"),
     ):
 
         if isinstance(channel, discord.CategoryChannel):
@@ -109,9 +107,8 @@ class Linking(commands.Cog):
         channel: Option(
             (discord.CategoryChannel, discord.VoiceChannel, discord.StageChannel),
             "Select a channel to link",
-            required=True,
         ),
-        suffix: Option(str, "Add a suffix to the end of usernames", required=True),
+        suffix: Option(str, "Add a suffix to the end of usernames"),
     ):
 
         if isinstance(channel, discord.CategoryChannel):
@@ -142,7 +139,6 @@ class Linking(commands.Cog):
         channel: Option(
             (discord.CategoryChannel, discord.VoiceChannel, discord.StageChannel),
             "Select a channel to link",
-            required=True,
         ),
     ):
 
@@ -170,15 +166,14 @@ class Linking(commands.Cog):
 
     @reverse_commands.command(description="Use to add a reverse role link", name="link")
     @Permissions.has_permissions(administrator=True)
-    async def rlink(
+    async def reverse_link(
         self,
         ctx: discord.ApplicationContext,
         channel: Option(
             (discord.CategoryChannel, discord.VoiceChannel, discord.StageChannel),
             "Select a channel to link",
-            required=True,
         ),
-        role: Option(discord.Role, "Select a role to link", required=True),
+        role: Option(discord.Role, "Select a role to link"),
     ):
 
         if isinstance(channel, discord.CategoryChannel):
@@ -212,15 +207,14 @@ class Linking(commands.Cog):
         description="Use to remove a reverse role link", name="unlink"
     )
     @Permissions.has_permissions(administrator=True)
-    async def runlink(
+    async def reverse_unlink(
         self,
         ctx: discord.ApplicationContext,
         channel: Option(
             (discord.CategoryChannel, discord.VoiceChannel, discord.StageChannel),
             "Select a channel to link",
-            required=True,
         ),
-        role: Option(discord.Role, "Select a role to link", required=True),
+        role: Option(discord.Role, "Select a role to link"),
     ):
 
         if isinstance(channel, discord.CategoryChannel):

@@ -24,7 +24,10 @@ class AllLink(commands.Cog):
     async def link(
         self,
         ctx: discord.ApplicationContext,
-        role: Option(discord.Role, "Select a role to link", required=True),
+        role: Option(
+            discord.Role,
+            "Select a role to link",
+        ),
     ):
 
         data = self.client.redis.get_linked("all", ctx.guild.id)
@@ -47,7 +50,7 @@ class AllLink(commands.Cog):
     async def unlink(
         self,
         ctx: discord.ApplicationContext,
-        role: Option(discord.Role, "Select a role to link", required=True),
+        role: Option(discord.Role, "Select a role to link"),
     ):
 
         data = self.client.redis.get_linked("all", ctx.guild.id)
@@ -113,7 +116,6 @@ class AllLink(commands.Cog):
         suffix: Option(
             str,
             "The suffix to add to your username when joining any channel",
-            required=True,
         ),
     ):
         data = self.client.redis.get_linked("all", ctx.guild.id)
@@ -135,10 +137,10 @@ class AllLink(commands.Cog):
 
     @reverse_commands.command(description="Use to add reverse links", name="link")
     @Permissions.has_permissions(administrator=True)
-    async def rlink(
+    async def reverse_link(
         self,
         ctx: discord.ApplicationContext,
-        role: Option(discord.Role, "Select a role to link", required=True),
+        role: Option(discord.Role, "Select a role to link"),
     ):
 
         data = self.client.redis.get_linked("all", ctx.guild.id)
@@ -154,10 +156,10 @@ class AllLink(commands.Cog):
 
     @reverse_commands.command(description="Use to remove reverse links", name="unlink")
     @Permissions.has_permissions(administrator=True)
-    async def runlink(
+    async def reverse_unlink(
         self,
         ctx: discord.ApplicationContext,
-        role: Option(discord.Role, "Select a role to link", required=True),
+        role: Option(discord.Role, "Select a role to link"),
     ):
 
         data = self.client.redis.get_linked("all", ctx.guild.id)

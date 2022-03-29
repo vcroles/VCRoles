@@ -1,6 +1,11 @@
 import json
+from typing import Callable, TypeVar
 
+import discord
 import redis
+from discord.ext.commands import Context, MissingPermissions, check
+
+T = TypeVar("T")
 
 
 class RedisUtils:
@@ -15,19 +20,16 @@ class RedisUtils:
             "reverse_roles": [],
         }
 
-    def list_to_str(self, l: list) -> str:
-        return json.dumps(l)
+    def to_str(self, data) -> str:
+        """Convert data `dict|list` to JSON `string`"""
+        return json.dumps(data)
 
-    def str_to_list(self, s: str) -> list:
+    def from_str(self, s: str) -> dict:
+        """Convert JSON `string` to data `dict|list`"""
         return json.loads(s)
 
-    def dict_to_str(self, d: dict) -> str:
-        return json.dumps(d)
-
-    def str_to_dict(self, s: bytes) -> dict:
-        return json.loads(s.decode("utf-8"))
-
-    def decode(self, s: bytes) -> str:
+    def _decode(self, s: bytes) -> str:
+        """Decode bytes to string"""
         return s.decode("utf-8")
 
     def guild_remove(self, guild_id: int):
@@ -38,7 +40,7 @@ class RedisUtils:
         if r_data:
             data = {}
             for key, value in r_data.items():
-                data[self.decode(key)] = self.decode(value)
+                data[self._decode(key)] = self._decode(value)
             return data
         else:
             return {
@@ -55,7 +57,7 @@ class RedisUtils:
     def get_linked(self, type: str, guild_id: int) -> dict:
         r_data = self.r.hget(f"{guild_id}:linked", type)
         if r_data:
-            data = self.str_to_dict(r_data)
+            data = self.from_str(self._decode(r_data))
 
             if type == "all":
                 if "suffix" not in data:
@@ -89,16 +91,16 @@ class RedisUtils:
             return {"format": self.DATA_FORMAT_VER}
 
     def update_linked(self, type: str, guild_id: int, data: dict):
-        self.r.hset(f"{guild_id}:linked", type, self.dict_to_str(data))
+        self.r.hset(f"{guild_id}:linked", type, self.to_str(data))
 
     def get_generator(self, guild_id: int) -> dict:
         r_data = self.r.hgetall(f"{guild_id}:gen")
         if r_data:
             data = {}
             for key, value in r_data.items():
-                data[self.decode(key)] = self.decode(value)
-                if self.decode(key) == "interface":
-                    data[key] = self.str_to_list(data[self.decode(key)])
+                data[self._decode(key)] = self._decode(value)
+                if self._decode(key) == "interface":
+                    data[key] = self.from_str(data[self._decode(key)])
             return data
         else:
             return {
@@ -116,15 +118,7 @@ class RedisUtils:
                 self.r.hset(f"{guild_id}:gen", key, data[key])
 
     def update_gen_open(self, guild_id: int, data: list):
-        self.r.hset(f"{guild_id}:gen", "open", self.list_to_str(data))
-
-
-from typing import Callable, TypeVar
-
-import discord
-from discord.ext.commands import Context, MissingPermissions, check
-
-T = TypeVar("T")
+        self.r.hset(f"{guild_id}:gen", "open", self.to_str(data))
 
 
 class Permissions:
