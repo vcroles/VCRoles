@@ -44,19 +44,35 @@ class Utils(commands.Cog):
     async def about(self, ctx: ApplicationContext):
         embed = discord.Embed(title="About:", colour=discord.Colour.blue())
 
+        total_members = 0
+        text = 0
+        voice = 0
+        guilds = 0
+        for guild in self.client.guilds:
+            guilds += 1
+            if guild.unavailable:
+                continue
+
+            total_members += guild.member_count
+            for channel in guild.channels:
+                if isinstance(channel, discord.TextChannel):
+                    text += 1
+                elif isinstance(channel, discord.VoiceChannel):
+                    voice += 1
+
         embed.add_field(
             name="Server Count",
-            value=f"{self.client.user.name} is in {len(self.client.guilds)} servers",
+            value=f"{self.client.user.name} is in {guilds} servers",
             inline=False,
         )
-        try:
-            embed.add_field(
-                name="Shard Info",
-                value=f"Shard {ctx.guild.shard_id}/{len(self.client.shards)}",
-            )
-        except:
-            pass
-
+        embed.add_field(
+            name="Statistics",
+            value=f"{total_members} members\n{text} text channels\n{voice} voice channels",
+        )
+        embed.add_field(
+            name="Shard Info",
+            value=f"This is shard {ctx.guild.shard_id if ctx.guild else 0}\nThere are {len(self.client.shards)} shards",
+        )
         embed.add_field(
             name="Authors",
             value=f"cde#4572 [CDE90](https://github.com/CDE90) and SamHartland#9376 [DrWackyBob](https://github.com/DrWackyBob)",
