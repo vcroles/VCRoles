@@ -43,6 +43,8 @@ class Logging(commands.Cog):
             except:
                 await ctx.respond("Unable to disable logging")
 
+        return self.client.incr_counter("logging")
+
 
 def setup(client: MyClient):
     client.add_cog(Logging(client))

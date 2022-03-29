@@ -147,6 +147,8 @@ class GenInterface(commands.Cog):
         await self.lock(ctx.author)
         await ctx.respond("Generator locked.", ephemeral=True)
 
+        return self.client.incr_counter("interface_lock")
+
     @interface_commands.command(
         name="unlock", description="Unlock your generated voice channel"
     )
@@ -162,6 +164,8 @@ class GenInterface(commands.Cog):
 
         await self.unlock(ctx.author)
         await ctx.respond("Generator unlocked.", ephemeral=True)
+
+        return self.client.incr_counter("interface_unlock")
 
     @interface_commands.command(
         name="hide", description="Hide your generated voice channel"
@@ -179,6 +183,8 @@ class GenInterface(commands.Cog):
         await self.hide(ctx.author)
         await ctx.respond("Generator hidden.", ephemeral=True)
 
+        return self.client.incr_counter("interface_hide")
+
     @interface_commands.command(
         name="unhide", description="Unhide your generated voice channel"
     )
@@ -194,6 +200,8 @@ class GenInterface(commands.Cog):
 
         await self.unhide(ctx.author)
         await ctx.respond("Generator unhidden.", ephemeral=True)
+
+        return self.client.incr_counter("interface_unhide")
 
     @interface_commands.command(
         name="increase", description="Increase your generated voice channel user limit"
@@ -211,6 +219,8 @@ class GenInterface(commands.Cog):
         await self.increase_limit(ctx.author)
         await ctx.respond("Generator limit increased.", ephemeral=True)
 
+        return self.client.incr_counter("interface_increase")
+
     @interface_commands.command(
         name="decrease", description="Decrease your generated voice channel user limit"
     )
@@ -226,6 +236,8 @@ class GenInterface(commands.Cog):
 
         await self.decrease_limit(ctx.author)
         await ctx.respond("Generator limit decreased.", ephemeral=True)
+
+        return self.client.incr_counter("interface_decrease")
 
 
 def setup(client: MyClient):

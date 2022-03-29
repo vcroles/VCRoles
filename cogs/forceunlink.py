@@ -47,6 +47,8 @@ class UnLink(commands.Cog):
 
         await ctx.respond(f"Any found links to {channel_id} have been removed.")
 
+        return self.client.incr_counter("forceunlink")
+
 
 def setup(client: MyClient):
     client.add_cog(UnLink(client))

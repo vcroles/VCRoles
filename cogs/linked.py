@@ -93,6 +93,8 @@ class Linked(commands.Cog):
         else:
             await ctx.respond("Nothing is linked")
 
+        return self.client.incr_counter("linked")
+
 
 def setup(client: MyClient):
     client.add_cog(Linked(client))

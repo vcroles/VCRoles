@@ -21,11 +21,15 @@ class Utils(commands.Cog):
     ):
         await ctx.respond(f"{channel.mention}")
 
+        return self.client.incr_counter("mention")
+
     @slash_command(description="Gets an invite to the support server")
     async def discord(self, ctx: discord.ApplicationContext):
         await ctx.respond(
             content="To join our support server, click the link below", view=Discord()
         )
+
+        return self.client.incr_counter("discord")
 
     @slash_command(description="Gets an invite for the bot")
     async def invite(self, ctx):
@@ -34,11 +38,15 @@ class Utils(commands.Cog):
             view=Invite(),
         )
 
+        return self.client.incr_counter("invite")
+
     @slash_command(description="Gets a link to the bot's Top.gg page")
     async def topgg(self, ctx):
         await ctx.respond(
             content="To visit the bot's Top.gg, click the link below", view=TopGG()
         )
+
+        return self.client.incr_counter("topgg")
 
     @slash_command(description="Gets info about the bot")
     async def about(self, ctx: ApplicationContext):
@@ -84,6 +92,8 @@ class Utils(commands.Cog):
 
         await ctx.respond(embed=embed, view=Combination())
 
+        return self.client.incr_counter("about")
+
     @slash_command(description="Help Command")
     async def help(self, ctx):
         embed = discord.Embed(
@@ -92,6 +102,8 @@ class Utils(commands.Cog):
             colour=discord.Colour.light_grey(),
         )
         await ctx.respond(embed=embed, view=Website())
+
+        return self.client.incr_counter("help")
 
 
 def setup(client: MyClient):

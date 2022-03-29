@@ -35,6 +35,9 @@ class MyClient(commands.AutoShardedBot):
         self.redis = RedisUtils(r)
         self.persistent_views_added = False
 
+    def incr_counter(self, cmd_name: str):
+        self.redis.r.hincrby("counters", cmd_name, 1)
+
     async def on_ready(self):
         if not self.persistent_views_added:
             self.add_view(Interface(self.redis))

@@ -51,6 +51,8 @@ class PermLink(commands.Cog):
         else:
             await ctx.respond(f"The channel and role are already linked.")
 
+        return self.client.incr_counter("perm_link")
+
     @perm_commands.command(
         description='Use to unlink a "permanent" channel from a role'
     )
@@ -84,6 +86,8 @@ class PermLink(commands.Cog):
             except:
                 pass
 
+        return self.client.incr_counter("perm_unlink")
+
     @suffix_commands.command(
         description="Use to set a suffix to add to the end of usernames"
     )
@@ -107,6 +111,8 @@ class PermLink(commands.Cog):
 
         await ctx.respond(f"Added suffix rule of `{suffix}` for {channel.mention}")
 
+        return self.client.incr_counter("perm_suffix_add")
+
     @suffix_commands.command(description="Use to remove a suffix rule from a channel")
     @Permissions.has_permissions(administrator=True)
     async def remove(
@@ -129,6 +135,8 @@ class PermLink(commands.Cog):
         self.client.redis.update_linked("permanent", ctx.guild.id, data)
 
         await ctx.respond(f"Removed suffix rule for {channel.mention}")
+
+        return self.client.incr_counter("perm_suffix_remove")
 
     @reverse_commands.command(
         description="Use to reverse roles",
@@ -162,6 +170,8 @@ class PermLink(commands.Cog):
         else:
             await ctx.respond(f"The channel and role are already linked.")
 
+        return self.client.incr_counter("perm_reverse_link")
+
     @reverse_commands.command(
         description="Use to unlink a reverse role",
         name="unlink",
@@ -179,8 +189,7 @@ class PermLink(commands.Cog):
         try:
             data[str(channel.id)]
         except:
-            await ctx.respond(f"The channel and role are not linked.")
-            return
+            return await ctx.respond(f"The channel and role are not linked.")
 
         if str(role.id) in data[str(channel.id)]["reverse_roles"]:
             try:
@@ -195,6 +204,8 @@ class PermLink(commands.Cog):
                 )
             except:
                 pass
+
+        return self.client.incr_counter("perm_reverse_unlink")
 
 
 def setup(client: MyClient):
