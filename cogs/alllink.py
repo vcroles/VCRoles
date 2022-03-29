@@ -45,6 +45,8 @@ class AllLink(commands.Cog):
         else:
             await ctx.respond(f"The channel and role are already linked.")
 
+        return self.client.incr_counter("all_link")
+
     @all_commands.command(description="Use to unlink all channels from a role")
     @Permissions.has_permissions(administrator=True)
     async def unlink(
@@ -66,6 +68,8 @@ class AllLink(commands.Cog):
                 pass
         else:
             await ctx.respond(f"The channel and role are not linked.")
+
+        return self.client.incr_counter("all_unlink")
 
     @exception_commands.command(description="Use to create an exception to alllink")
     @Permissions.has_permissions(administrator=True)
@@ -89,6 +93,8 @@ class AllLink(commands.Cog):
         except:
             await ctx.respond(f"Unable to add exception")
 
+        return self.client.incr_counter("all_add_exception")
+
     @exception_commands.command(description="Use to create an exception to alllink")
     @Permissions.has_permissions(administrator=True)
     async def remove(
@@ -108,6 +114,8 @@ class AllLink(commands.Cog):
         else:
             await ctx.respond(f"Please select a valid exception channel")
 
+        return self.client.incr_counter("all_remove_exception")
+
     @suffix_commands.command(description="Use to add a suffix to users")
     @Permissions.has_permissions(administrator=True)
     async def add(
@@ -126,6 +134,8 @@ class AllLink(commands.Cog):
             f"When members join any channel, their username will be appended with `{suffix}`"
         )
 
+        return self.client.incr_counter("all_add_suffix")
+
     @suffix_commands.command(description="Use to remove a username suffix rule")
     @Permissions.has_permissions(administrator=True)
     async def remove(self, ctx: discord.ApplicationContext):
@@ -134,6 +144,8 @@ class AllLink(commands.Cog):
         self.client.redis.update_linked("all", ctx.guild.id, data)
 
         await ctx.respond("Removed the username suffix rule")
+
+        return self.client.incr_counter("all_remove_suffix")
 
     @reverse_commands.command(description="Use to add reverse links", name="link")
     @Permissions.has_permissions(administrator=True)
@@ -153,6 +165,8 @@ class AllLink(commands.Cog):
             await ctx.respond(f"Added reverse link: `@{role.name}`")
         else:
             await ctx.respond(f"The role is already a reverse link.")
+
+        return self.client.incr_counter("all_reverse_link")
 
     @reverse_commands.command(description="Use to remove reverse links", name="unlink")
     @Permissions.has_permissions(administrator=True)
@@ -175,6 +189,8 @@ class AllLink(commands.Cog):
                 pass
         else:
             await ctx.respond(f"The role is not a reverse link.")
+
+        return self.client.incr_counter("all_reverse_unlink")
 
 
 def setup(client: MyClient):

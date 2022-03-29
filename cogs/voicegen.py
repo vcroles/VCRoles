@@ -127,6 +127,8 @@ class VoiceGen(commands.Cog):
         )
         await ctx.respond(embed=creation_embed)
 
+        return self.client.incr_counter("voice_generator_create")
+
     @generator_commands.command(
         description="A command to remove a voice channel generator"
     )
@@ -156,6 +158,8 @@ class VoiceGen(commands.Cog):
             description=f"The channel will now no longer act as a voice channel generator",
         )
         await ctx.respond(embed=embed)
+
+        return self.client.incr_counter("voice_generator_remove")
 
 
 def setup(client: MyClient):

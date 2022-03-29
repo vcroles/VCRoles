@@ -2,7 +2,7 @@ import asyncio
 import os
 
 import discord
-from discord.commands import Option, SlashCommandGroup, slash_command
+from discord.commands import Option, SlashCommandGroup
 from discord.ext import commands
 from gtts import gTTS
 from mutagen.mp3 import MP3
@@ -130,6 +130,8 @@ class TTS(commands.Cog):
             else:
                 await ctx.respond("You don't have the required role to use TTS")
 
+        return self.client.incr_counter("tts_play")
+
     @tts_commands.command(
         description="Stops the current TTS message & Makes the bot leave the voice channel"
     )
@@ -142,13 +144,15 @@ class TTS(commands.Cog):
                     description="The current TTS message has been stopped.",
                 )
                 await ctx.respond(embed=embed)
-                return
+                return self.client.incr_counter("tts_stop")
 
         embed = discord.Embed(
             colour=discord.Color.green(),
             description="There are no TTS messages being read at the minute",
         )
         await ctx.respond(embed=embed)
+
+        return self.client.incr_counter("tts_stop")
 
     @tts_commands.command(
         description="Used to enable/disable TTS & set a required role"
@@ -176,6 +180,8 @@ class TTS(commands.Cog):
         await ctx.respond(
             f"TTS settings updated: Enabled {enabled}, Role {role}, Leave {leave}"
         )
+
+        return self.client.incr_counter("tts_setup")
 
 
 def setup(client: MyClient):

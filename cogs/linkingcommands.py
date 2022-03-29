@@ -54,6 +54,8 @@ class Linking(commands.Cog):
         else:
             await ctx.respond(f"The channel and role are already linked.")
 
+        return self.client.incr_counter("link")
+
     @slash_command(description="Use to unlink a channel from a role")
     @Permissions.has_permissions(administrator=True)
     async def unlink(
@@ -99,6 +101,8 @@ class Linking(commands.Cog):
         else:
             await ctx.respond(f"The channel and role are not linked.")
 
+        return self.client.incr_counter("unlink")
+
     @suffix_commands.command(description="Use to set a suffix for a channel")
     @Permissions.has_permissions(administrator=True)
     async def add(
@@ -130,6 +134,8 @@ class Linking(commands.Cog):
         self.client.redis.update_linked(channel_type, ctx.guild.id, data)
 
         await ctx.respond(f"Set the suffix for {channel.mention} to `{suffix}`")
+
+        return self.client.incr_counter("add_suffix")
 
     @suffix_commands.command(description="Use to remove a suffix for a channel")
     @Permissions.has_permissions(administrator=True)
@@ -163,6 +169,8 @@ class Linking(commands.Cog):
         self.client.redis.update_linked(channel_type, ctx.guild.id, data)
 
         await ctx.respond(f"Removed the suffix for {channel.mention}")
+
+        return self.client.incr_counter("remove_suffix")
 
     @reverse_commands.command(description="Use to add a reverse role link", name="link")
     @Permissions.has_permissions(administrator=True)
@@ -202,6 +210,8 @@ class Linking(commands.Cog):
                 await ctx.send(f"Please ensure my highest role is above `@{role.name}`")
         else:
             await ctx.respond(f"The channel and role are already linked.")
+
+        return self.client.incr_counter("reverse_link")
 
     @reverse_commands.command(
         description="Use to remove a reverse role link", name="unlink"
@@ -249,6 +259,8 @@ class Linking(commands.Cog):
 
         else:
             await ctx.respond(f"The channel and role are not linked.")
+
+        return self.client.incr_counter("reverse_unlink")
 
 
 def setup(client: MyClient):

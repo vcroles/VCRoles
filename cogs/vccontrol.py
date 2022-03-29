@@ -58,6 +58,8 @@ class VCControl(commands.Cog):
         )
         await ctx.respond(embed=embed)
 
+        return self.client.incr_counter("vc_mute")
+
     @control_commands.command(description="Deafens everyone in a voice channel")
     @Permissions.has_permissions(administrator=True)
     async def deafen(
@@ -94,6 +96,8 @@ class VCControl(commands.Cog):
         )
         await ctx.respond(embed=embed)
 
+        return self.client.incr_counter("vc_deafen")
+
     @control_commands.command(description="Unmutes everyone in a voice channel")
     @Permissions.has_permissions(administrator=True)
     async def unmute(self, ctx: discord.ApplicationContext):
@@ -115,6 +119,8 @@ class VCControl(commands.Cog):
         )
         await ctx.respond(embed=embed)
 
+        return self.client.incr_counter("vc_unmute")
+
     @control_commands.command(description="Undeafens everyone in a voice channel")
     @Permissions.has_permissions(administrator=True)
     async def undeafen(self, ctx: discord.ApplicationContext):
@@ -135,6 +141,8 @@ class VCControl(commands.Cog):
             description=f"Successfully undeafened in {vc.mention}",
         )
         await ctx.respond(embed=embed)
+
+        return self.client.incr_counter("vc_undeafen")
 
 
 def setup(client: MyClient):

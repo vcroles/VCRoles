@@ -21,11 +21,15 @@ class Utils(commands.Cog):
     ):
         await ctx.respond(f"{channel.mention}")
 
+        return self.client.incr_counter("mention")
+
     @slash_command(description="Gets an invite to the support server")
     async def discord(self, ctx: discord.ApplicationContext):
         await ctx.respond(
             content="To join our support server, click the link below", view=Discord()
         )
+
+        return self.client.incr_counter("discord")
 
     @slash_command(description="Gets an invite for the bot")
     async def invite(self, ctx):
@@ -34,18 +38,30 @@ class Utils(commands.Cog):
             view=Invite(),
         )
 
+        return self.client.incr_counter("invite")
+
     @slash_command(description="Gets a link to the bot's Top.gg page")
     async def topgg(self, ctx):
         await ctx.respond(
             content="To visit the bot's Top.gg, click the link below", view=TopGG()
         )
 
+        return self.client.incr_counter("topgg")
+
     @slash_command(description="Gets info about the bot")
     async def about(self, ctx: ApplicationContext):
         embed = discord.Embed(title="About:", colour=discord.Colour.blue())
 
+        total_commands = 0
+        total_roles_changed = 0
+        counters = self.client.redis.r.hgetall("counters")
+        for key, value in counters.items():
+            if key.decode("utf-8") not in ["roles_added", "roles_removed"]:
+                total_commands += int(value.decode("utf-8"))
+            elif key.decode("utf-8") in ["roles_added", "roles_removed"]:
+                total_roles_changed += int(value.decode("utf-8"))
+
         total_members = 0
-        text = 0
         voice = 0
         guilds = 0
         for guild in self.client.guilds:
@@ -55,9 +71,7 @@ class Utils(commands.Cog):
 
             total_members += guild.member_count
             for channel in guild.channels:
-                if isinstance(channel, discord.TextChannel):
-                    text += 1
-                elif isinstance(channel, discord.VoiceChannel):
+                if isinstance(channel, discord.VoiceChannel):
                     voice += 1
 
         embed.add_field(
@@ -67,7 +81,7 @@ class Utils(commands.Cog):
         )
         embed.add_field(
             name="Statistics",
-            value=f"{total_members:,} members\n{text:,} text channels\n{voice:,} voice channels",
+            value=f"{total_members:,} total members\n{voice:,} voice channels\n{total_commands:,} commands used\n{total_roles_changed:,} roles changed",
         )
         embed.add_field(
             name="Shard Info",
@@ -84,6 +98,8 @@ class Utils(commands.Cog):
 
         await ctx.respond(embed=embed, view=Combination())
 
+        return self.client.incr_counter("about")
+
     @slash_command(description="Help Command")
     async def help(self, ctx):
         embed = discord.Embed(
@@ -92,6 +108,8 @@ class Utils(commands.Cog):
             colour=discord.Colour.light_grey(),
         )
         await ctx.respond(embed=embed, view=Website())
+
+        return self.client.incr_counter("help")
 
 
 def setup(client: MyClient):

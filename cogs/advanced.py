@@ -246,6 +246,8 @@ class Advanced(commands.Cog):
 
         await ctx.respond("Done")
 
+        return self.client.incr_counter("advanced")
+
     @slash_command()
     @Permissions.has_permissions(administrator=True)
     async def export(self, ctx: discord.ApplicationContext):
@@ -269,6 +271,8 @@ class Advanced(commands.Cog):
             file = discord.File(f, "data.json")
 
         await ctx.respond("Here is the exported data.", file=file)
+
+        return self.client.incr_counter("export")
 
 
 def setup(client: MyClient):
