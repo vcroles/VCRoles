@@ -1,4 +1,5 @@
 import asyncio
+import datetime as dt
 import json
 import logging
 import os
@@ -193,18 +194,18 @@ async def sync_commands(ctx):
     await ctx.send("Done!")
 
 
-@tasks.loop(minutes=1)
+@tasks.loop(time=[dt.time(hour=12, minute=0), dt.time(hour=0, minute=0)])
 async def reminder():
-    if time.strftime("%H:%M") in ["00:00", "12:00"]:
-        await client.send_reminder()
+    print("Reminder")
+    await client.send_reminder()
 
-        with open("guilds.json", "r") as f:
-            data = json.load(f)
+    with open("guilds.json", "r") as f:
+        data = json.load(f)
 
-        data[datetime.utcnow().strftime("%H:%M %d/%m/%Y")] = len(client.guilds)
+    data[datetime.utcnow().strftime("%H:%M %d/%m/%Y")] = len(client.guilds)
 
-        with open("guilds.json", "w") as f:
-            json.dump(data, f)
+    with open("guilds.json", "w") as f:
+        json.dump(data, f)
 
 
 @reminder.before_loop
