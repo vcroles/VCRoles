@@ -5,6 +5,5 @@ guilds.json
 **/*.pyc
 __pycache__/
 tts/
-old_data/
-old_linked/
 exports/
+config.py

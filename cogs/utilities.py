@@ -1,6 +1,7 @@
+from typing import Union
+
 import discord
-from discord import ApplicationContext
-from discord.commands import Option, slash_command
+from discord import Interaction, app_commands
 from discord.ext import commands
 
 from bot import MyClient
@@ -11,45 +12,44 @@ class Utils(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
-    @slash_command(description="Use to mention a channel in chat")
+    @app_commands.command(description="Use to mention a channel in chat")
+    @app_commands.describe(channel="Channel to mention:")
     async def mention(
         self,
-        ctx,
-        channel: Option(
-            (discord.VoiceChannel, discord.StageChannel), "select a channel"
-        ),
+        interaction: Interaction,
+        channel: Union[discord.VoiceChannel, discord.StageChannel],
     ):
-        await ctx.respond(f"{channel.mention}")
+        await interaction.response.send_message(f"{channel.mention}")
 
         return self.client.incr_counter("mention")
 
-    @slash_command(description="Gets an invite to the support server")
-    async def discord(self, ctx: discord.ApplicationContext):
-        await ctx.respond(
+    @app_commands.command(description="Gets an invite to the support server")
+    async def discord(self, interaction: discord.Interaction):
+        await interaction.response.send_message(
             content="To join our support server, click the link below", view=Discord()
         )
 
         return self.client.incr_counter("discord")
 
-    @slash_command(description="Gets an invite for the bot")
-    async def invite(self, ctx):
-        await ctx.respond(
+    @app_commands.command(description="Gets an invite for the bot")
+    async def invite(self, interaction: Interaction):
+        await interaction.response.send_message(
             content="To invite the bot, use the link below",
             view=Invite(),
         )
 
         return self.client.incr_counter("invite")
 
-    @slash_command(description="Gets a link to the bot's Top.gg page")
-    async def topgg(self, ctx):
-        await ctx.respond(
+    @app_commands.command(description="Gets a link to the bot's Top.gg page")
+    async def topgg(self, interaction: Interaction):
+        await interaction.response.send_message(
             content="To visit the bot's Top.gg, click the link below", view=TopGG()
         )
 
         return self.client.incr_counter("topgg")
 
-    @slash_command(description="Gets info about the bot")
-    async def about(self, ctx: ApplicationContext):
+    @app_commands.command(description="Gets info about the bot")
+    async def about(self, interaction: Interaction):
         embed = discord.Embed(title="About:", colour=discord.Colour.blue())
 
         total_commands = 0
@@ -85,7 +85,7 @@ class Utils(commands.Cog):
         )
         embed.add_field(
             name="Shard Info",
-            value=f"This is shard {ctx.guild.shard_id if ctx.guild else 0}\nThere are {len(self.client.shards)} shards",
+            value=f"This is shard {interaction.guild.shard_id if interaction.guild else 0}\nThere are {len(self.client.shards)} shards",
         )
         embed.add_field(
             name="Authors",
@@ -96,21 +96,21 @@ class Utils(commands.Cog):
             name=f"{self.client.user}", icon_url=self.client.user.avatar.url
         )
 
-        await ctx.respond(embed=embed, view=Combination())
+        await interaction.response.send_message(embed=embed, view=Combination())
 
         return self.client.incr_counter("about")
 
-    @slash_command(description="Help Command")
-    async def help(self, ctx):
+    @app_commands.command(description="Help Command")
+    async def help(self, interaction: Interaction):
         embed = discord.Embed(
             title="VC Roles Help",
             description="We have moved our help page to https://www.vcroles.com where you can find a list of the bot's commands, how to use them, a basic setup guide and more!",
             colour=discord.Colour.light_grey(),
         )
-        await ctx.respond(embed=embed, view=Website())
+        await interaction.response.send_message(embed=embed, view=Website())
 
         return self.client.incr_counter("help")
 
 
-def setup(client: MyClient):
-    client.add_cog(Utils(client))
+async def setup(client: MyClient):
+    await client.add_cog(Utils(client))

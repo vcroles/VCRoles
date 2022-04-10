@@ -1,5 +1,5 @@
 import discord
-from discord.commands import slash_command
+from discord import app_commands
 from discord.ext import commands
 
 from bot import MyClient
@@ -11,7 +11,7 @@ class Linked(commands.Cog):
         self.client = client
 
     def construct_linked_content(
-        self, data: dict, ctx: discord.ApplicationContext
+        self, data: dict, interaction: discord.Interaction
     ) -> str:
         content = ""
         for channel_id, channel_data in data.items():
@@ -20,13 +20,15 @@ class Linked(commands.Cog):
             try:
                 channel = self.client.get_channel(int(channel_id))
                 content += f"{channel.mention}: "
-                content += self.iterate_links(channel_data, ctx)
+                content += self.iterate_links(channel_data, interaction)
             except:
                 content += f"Not Found - ID `{channel_id}`\n"
 
         return content
 
-    def iterate_links(self, channel_data: dict, ctx: discord.ApplicationContext) -> str:
+    def iterate_links(
+        self, channel_data: dict, interaction: discord.Interaction
+    ) -> str:
         """
         Iterates through:
         - Roles
@@ -36,13 +38,13 @@ class Linked(commands.Cog):
         content = ""
         for role_id in channel_data["roles"]:
             try:
-                role = ctx.guild.get_role(int(role_id))
+                role = interaction.guild.get_role(int(role_id))
                 content += f"{role.mention}, "
             except:
                 pass
         for role_id in channel_data["reverse_roles"]:
             try:
-                role = ctx.guild.get_role(int(role_id))
+                role = interaction.guild.get_role(int(role_id))
                 content += f"R{role.mention}, "
             except:
                 pass
@@ -50,28 +52,33 @@ class Linked(commands.Cog):
         content = content.removesuffix(", ") + "\n"
         return content
 
-    @slash_command(description="Displays the linked roles, channels & categories")
+    @app_commands.command(
+        description="Displays the linked roles, channels & categories"
+    )
     @Permissions.has_permissions(administrator=True)
-    async def linked(self, ctx: discord.ApplicationContext):
+    async def linked(self, interaction: discord.Interaction):
 
         linked_embed = discord.Embed(
             colour=discord.Colour.blue(),
-            title=f"The linked roles, channels & categories in {ctx.guild.name}:",
+            title=f"The linked roles, channels & categories in {interaction.guild.name}:",
             description="Note: \n- R before a role indicates a reverse link\n- Text like `this` shows linked suffixes",
         )
 
         for channel_type in ["Voice", "Stage", "Category", "Permanent"]:
             content = self.construct_linked_content(
-                self.client.redis.get_linked(channel_type.lower(), ctx.guild.id), ctx
+                self.client.redis.get_linked(
+                    channel_type.lower(), interaction.guild_id
+                ),
+                interaction,
             )
             if content:
                 linked_embed.add_field(
                     name=f"{channel_type} Channels:", value=content, inline=False
                 )
 
-        all_dict = self.client.redis.get_linked("all", ctx.guild.id)
+        all_dict = self.client.redis.get_linked("all", interaction.guild_id)
 
-        all_content = self.iterate_links(all_dict, ctx)
+        all_content = self.iterate_links(all_dict, interaction)
 
         if "except" in all_dict:
             if len(all_dict["except"]) > 0:
@@ -89,12 +96,12 @@ class Linked(commands.Cog):
             )
 
         if len(linked_embed.fields) > 0:
-            await ctx.respond(embed=linked_embed)
+            await interaction.response.send_message(embed=linked_embed)
         else:
-            await ctx.respond("Nothing is linked")
+            await interaction.response.send_message("Nothing is linked")
 
         return self.client.incr_counter("linked")
 
 
-def setup(client: MyClient):
-    client.add_cog(Linked(client))
+async def setup(client: MyClient):
+    await client.add_cog(Linked(client))

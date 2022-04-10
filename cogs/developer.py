@@ -5,9 +5,6 @@ from discord.ext import commands
 
 from bot import MyClient
 
-with open("Data/config.json", "r") as f:
-    config = json.load(f)
-
 
 class Dev(commands.Cog):
     def __init__(self, client: MyClient):
@@ -111,5 +108,5 @@ class Dev(commands.Cog):
         await ctx.channel.send(file=discord.File(f"error.log"))
 
 
-def setup(client: MyClient):
-    client.add_cog(Dev(client))
+async def setup(client: MyClient):
+    await client.add_cog(Dev(client))

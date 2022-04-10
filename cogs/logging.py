@@ -1,5 +1,7 @@
+from typing import Optional
+
 import discord
-from discord.commands import Option, slash_command
+from discord import app_commands
 from discord.ext import commands
 
 from bot import MyClient
@@ -10,41 +12,49 @@ class Logging(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
-    @slash_command(description="Used to enable disable logging, in a channel.")
+    @app_commands.command(description="Used to enable disable logging, in a channel.")
     @Permissions.has_permissions(administrator=True)
+    @app_commands.describe(
+        enabled="Enter 'true' to enable or 'false' to disable",
+        channel="Logging channel:",
+    )
     async def logging(
         self,
-        ctx: discord.ApplicationContext,
-        enabled: Option(bool, "Enabled?"),
-        channel: Option(discord.TextChannel, "Logging channel:", required=False),
+        interaction: discord.Interaction,
+        enabled: bool,
+        channel: Optional[discord.TextChannel] = None,
     ):
         if enabled == True and not channel:
-            channel = ctx.channel
+            channel = interaction.channel
         if enabled == True and channel:
             try:
-                data = self.client.redis.get_guild_data(ctx.guild.id)
+                data = self.client.redis.get_guild_data(interaction.guild_id)
 
                 data["logging"] = str(channel.id)
 
-                self.client.redis.update_guild_data(ctx.guild.id, data)
+                self.client.redis.update_guild_data(interaction.guild_id, data)
 
-                await ctx.respond(f"Successfully enabled logging in {channel.mention}")
+                await interaction.response.send_message(
+                    f"Successfully enabled logging in {channel.mention}"
+                )
             except:
-                await ctx.respond(f"Unable to enable logging")
+                await interaction.response.send_message(f"Unable to enable logging")
         elif enabled == False:
             try:
-                data = self.client.redis.get_guild_data(ctx.guild.id)
+                data = self.client.redis.get_guild_data(interaction.guild_id)
 
                 data["logging"] = "None"
 
-                self.client.redis.update_guild_data(ctx.guild.id, data)
+                self.client.redis.update_guild_data(interaction.guild_id, data)
 
-                await ctx.respond(f"Successfully disabled logging")
+                await interaction.response.send_message(
+                    f"Successfully disabled logging"
+                )
             except:
-                await ctx.respond("Unable to disable logging")
+                await interaction.response.send_message("Unable to disable logging")
 
         return self.client.incr_counter("logging")
 
 
-def setup(client: MyClient):
-    client.add_cog(Logging(client))
+async def setup(client: MyClient):
+    await client.add_cog(Logging(client))

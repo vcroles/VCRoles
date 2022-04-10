@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import os
@@ -6,13 +7,12 @@ from datetime import datetime
 
 import discord
 import redis
+from discord import app_commands
 from discord.ext import commands, tasks
 
+import config
 from utils import RedisUtils
 from views.interface import Interface
-
-with open("Data/config.json", "r") as f:
-    config = json.load(f)
 
 logger = logging.getLogger("discord")
 logger.setLevel(logging.INFO)
@@ -27,10 +27,10 @@ class MyClient(commands.AutoShardedBot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         r = redis.Redis(
-            host=config["REDIS"]["HOST"],
-            port=config["REDIS"]["PORT"],
-            db=config["REDIS"]["DB"],
-            password=config["REDIS"]["PASSWORD"],
+            host=config.REDIS.HOST,
+            port=config.REDIS.PORT,
+            db=config.REDIS.DB,
+            password=config.REDIS.PASSWORD,
         )
         self.redis = RedisUtils(r)
         self.persistent_views_added = False
@@ -67,32 +67,13 @@ class MyClient(commands.AutoShardedBot):
     async def on_guild_remove(self, guild: discord.Guild):
         self.redis.guild_remove(guild.id)
 
-    async def on_application_command_error(
-        self, ctx: discord.ApplicationContext, error
-    ):
-
-        if isinstance(error, commands.MissingPermissions):
-            await ctx.respond(
-                "You do not have the required permissions to use this command.",
-                ephemeral=True,
-            )
-
-        elif isinstance(error, commands.NotOwner):
-            await ctx.respond("This is a developer only command.", ephemeral=True)
-
-        elif isinstance(error, AttributeError):
-            return
-
-        else:
-            return
-
     async def on_command_error(self, ctx, error):
         return
 
     async def on_error(self, event, *args, **kwargs):
         with open("error.log", "a") as f:
             f.write(
-                f"{datetime.utcnow().strftime('%m/%d/%Y, %H:%M:%S')} {event}: {str(args).encode('utf-8')}: {str(kwargs).encode('utf-8')}\n"
+                f"{datetime.utcnow().strftime('%m/%d/%Y, %H:%M:%S')} {event}: {str(args).encode('utf-8')=}: {str(kwargs).encode('utf-8')=}\n"
             )
 
     async def on_guild_channel_delete(self, channel: discord.abc.GuildChannel):
@@ -151,14 +132,14 @@ client.remove_command("help")
 try:
     import topgg
 
-    dbl_token = config["DBL_TOKEN"]
+    dbl_token = config.DBL.TOKEN
     client.topggpy = topgg.DBLClient(
         client, dbl_token, autopost=True, post_shard_count=True
     )
     client.topgg_webhook = topgg.WebhookManager(client).dbl_webhook(
-        "/dbl", config["DBL_WEBHOOK_PASS"]
+        "/dbl", config.DBL.WEBHOOK_PASSWORD
     )
-    client.topgg_webhook.run(config["DBL_WEBHOOK_PORT"])
+    client.topgg_webhook.run(config.DBL.WEBHOOK_PORT)
 except ImportError:
     print("Top.gg integration not found.")
 
@@ -188,37 +169,28 @@ async def on_dbl_vote(data):
         print(data)
 
 
-# COMMANDS
+@client.tree.error
+async def on_command_error(
+    interaction: discord.Interaction,
+    command: app_commands.Command,
+    error: app_commands.AppCommandError,
+):
+    if isinstance(error, app_commands.MissingPermissions):
+        await interaction.response.send_message(
+            "You do not have the required permissions to use this command.",
+            ephemeral=True,
+        )
 
-# DEV Commands
-@client.command(description="DEVELOPER COMMAND")
+    else:
+        return
+
+
+@client.command()
 @commands.is_owner()
-async def load(ctx, extension: str):
-    try:
-        client.load_extension(f"cogs.{extension}")
-        await ctx.send(f"Successfully loaded {extension}")
-    except:
-        await ctx.send(f"Failed while loading {extension}")
-
-
-@client.command(description="DEVELOPER COMMAND")
-@commands.is_owner()
-async def unload(ctx, extension: str):
-    try:
-        client.unload_extension(f"cogs.{extension}")
-        await ctx.send(f"Successfully unloaded {extension}")
-    except:
-        await ctx.send(f"Failed while unloading {extension}")
-
-
-@client.command(description="DEVELOPER COMMAND")
-@commands.is_owner()
-async def reload(ctx, extension: str):
-    try:
-        client.reload_extension(f"cogs.{extension}")
-        await ctx.send(f"Successfully reloaded {extension}")
-    except:
-        await ctx.send(f"Failed while reloading {extension}")
+async def sync_commands(ctx):
+    await ctx.send("Syncing commands...")
+    await client.tree.sync()
+    await ctx.send("Done!")
 
 
 @tasks.loop(minutes=1)
@@ -240,14 +212,7 @@ async def before_reminder():
     await client.wait_until_ready()
 
 
-if __name__ == "__main__":
-
-    # Adding Extensions
-
-    for filename in os.listdir("cogs"):
-        if filename.endswith(".py"):
-            client.load_extension(f"cogs.{filename[:-3]}")
-            print(f"Loaded extension: {filename[:-3]}")
+async def main():
 
     # Removing TTS files
 
@@ -270,11 +235,23 @@ if __name__ == "__main__":
 
     try:
         with open("guilds.json", "r") as f:
-            data = json.load(f)
+            json.load(f)
     except FileNotFoundError:
         with open("guilds.json", "w") as f:
             json.dump({}, f)
 
-    # Running the bot.
+    async with client:
 
-    client.run(config["BOT_TOKEN"])
+        # Adding Extensions
+
+        for filename in os.listdir("cogs"):
+            if filename.endswith(".py"):
+                await client.load_extension(f"cogs.{filename[:-3]}")
+                print(f"Loaded extension: {filename[:-3]}")
+
+        await client.start(config.BOT_TOKEN)
+
+
+if __name__ == "__main__":
+
+    asyncio.run(main())

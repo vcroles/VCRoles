@@ -302,5 +302,5 @@ class VoiceState(commands.Cog):
         return {"added": [], "removed": []}
 
 
-def setup(client: MyClient):
-    client.add_cog(VoiceState(client))
+async def setup(client: MyClient):
+    await client.add_cog(VoiceState(client))

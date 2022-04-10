@@ -1,7 +1,7 @@
 import json
 
 import discord
-from discord.commands import SlashCommandGroup
+from discord import app_commands
 from discord.ext import commands
 
 from bot import MyClient
@@ -11,9 +11,11 @@ class GenInterface(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
-    interface_commands = SlashCommandGroup("interface", "Interface commands")
+    interface_commands = app_commands.Group(
+        name="interface", description="Interface commands"
+    )
 
-    async def in_voice_channel(self, data, user: discord.Member, guild: discord.Guild):
+    async def in_voice_channel(self, data, user: discord.Member):
 
         try:
             user.voice
@@ -53,7 +55,7 @@ class GenInterface(commands.Cog):
         guild = self.client.get_guild(payload.guild_id)
         user = await guild.fetch_member(payload.user_id)
 
-        in_voice = await self.in_voice_channel(data, user, guild)
+        in_voice = await self.in_voice_channel(data, user)
 
         if not in_voice:
             try:
@@ -134,111 +136,115 @@ class GenInterface(commands.Cog):
     @interface_commands.command(
         name="lock", description="Lock your generated voice channel"
     )
-    async def lock_interface(self, ctx: discord.ApplicationContext):
-        data = self.client.redis.get_generator(ctx.guild.id)
+    async def lock_interface(self, interaction: discord.Interaction):
+        data = self.client.redis.get_generator(interaction.guild_id)
 
-        in_vc = await self.in_voice_channel(data, ctx.author, ctx.guild)
+        in_vc = await self.in_voice_channel(data, interaction.user)
         if not in_vc:
-            await ctx.respond(
+            await interaction.response.send_message(
                 "You must be in a generator voice channel to use this command.",
                 ephemeral=True,
             )
 
-        await self.lock(ctx.author)
-        await ctx.respond("Generator locked.", ephemeral=True)
+        await self.lock(interaction.user)
+        await interaction.response.send_message("Generator locked.", ephemeral=True)
 
         return self.client.incr_counter("interface_lock")
 
     @interface_commands.command(
         name="unlock", description="Unlock your generated voice channel"
     )
-    async def unlock_interface(self, ctx: discord.ApplicationContext):
-        data = self.client.redis.get_generator(ctx.guild.id)
+    async def unlock_interface(self, interaction: discord.Interaction):
+        data = self.client.redis.get_generator(interaction.guild_id)
 
-        in_vc = await self.in_voice_channel(data, ctx.author, ctx.guild)
+        in_vc = await self.in_voice_channel(data, interaction.user)
         if not in_vc:
-            await ctx.respond(
+            await interaction.response.send_message(
                 "You must be in a generator voice channel to use this command.",
                 ephemeral=True,
             )
 
-        await self.unlock(ctx.author)
-        await ctx.respond("Generator unlocked.", ephemeral=True)
+        await self.unlock(interaction.user)
+        await interaction.response.send_message("Generator unlocked.", ephemeral=True)
 
         return self.client.incr_counter("interface_unlock")
 
     @interface_commands.command(
         name="hide", description="Hide your generated voice channel"
     )
-    async def hide_interface(self, ctx: discord.ApplicationContext):
-        data = self.client.redis.get_generator(ctx.guild.id)
+    async def hide_interface(self, interaction: discord.Interaction):
+        data = self.client.redis.get_generator(interaction.guild_id)
 
-        in_vc = await self.in_voice_channel(data, ctx.author, ctx.guild)
+        in_vc = await self.in_voice_channel(data, interaction.user)
         if not in_vc:
-            await ctx.respond(
+            await interaction.response.send_message(
                 "You must be in a generator voice channel to use this command.",
                 ephemeral=True,
             )
 
-        await self.hide(ctx.author)
-        await ctx.respond("Generator hidden.", ephemeral=True)
+        await self.hide(interaction.user)
+        await interaction.response.send_message("Generator hidden.", ephemeral=True)
 
         return self.client.incr_counter("interface_hide")
 
     @interface_commands.command(
         name="unhide", description="Unhide your generated voice channel"
     )
-    async def unhide_interface(self, ctx: discord.ApplicationContext):
-        data = self.client.redis.get_generator(ctx.guild.id)
+    async def unhide_interface(self, interaction: discord.Interaction):
+        data = self.client.redis.get_generator(interaction.guild_id)
 
-        in_vc = await self.in_voice_channel(data, ctx.author, ctx.guild)
+        in_vc = await self.in_voice_channel(data, interaction.user)
         if not in_vc:
-            await ctx.respond(
+            await interaction.response.send_message(
                 "You must be in a generator voice channel to use this command.",
                 ephemeral=True,
             )
 
-        await self.unhide(ctx.author)
-        await ctx.respond("Generator unhidden.", ephemeral=True)
+        await self.unhide(interaction.user)
+        await interaction.response.send_message("Generator unhidden.", ephemeral=True)
 
         return self.client.incr_counter("interface_unhide")
 
     @interface_commands.command(
         name="increase", description="Increase your generated voice channel user limit"
     )
-    async def increase_limit_interface(self, ctx: discord.ApplicationContext):
-        data = self.client.redis.get_generator(ctx.guild.id)
+    async def increase_limit_interface(self, interaction: discord.Interaction):
+        data = self.client.redis.get_generator(interaction.guild_id)
 
-        in_vc = await self.in_voice_channel(data, ctx.author, ctx.guild)
+        in_vc = await self.in_voice_channel(data, interaction.user)
         if not in_vc:
-            await ctx.respond(
+            await interaction.response.send_message(
                 "You must be in a generator voice channel to use this command.",
                 ephemeral=True,
             )
 
-        await self.increase_limit(ctx.author)
-        await ctx.respond("Generator limit increased.", ephemeral=True)
+        await self.increase_limit(interaction.user)
+        await interaction.response.send_message(
+            "Generator limit increased.", ephemeral=True
+        )
 
         return self.client.incr_counter("interface_increase")
 
     @interface_commands.command(
         name="decrease", description="Decrease your generated voice channel user limit"
     )
-    async def decrease_limit_interface(self, ctx: discord.ApplicationContext):
-        data = self.client.redis.get_generator(ctx.guild.id)
+    async def decrease_limit_interface(self, interaction: discord.Interaction):
+        data = self.client.redis.get_generator(interaction.guild_id)
 
-        in_vc = await self.in_voice_channel(data, ctx.author, ctx.guild)
+        in_vc = await self.in_voice_channel(data, interaction.user)
         if not in_vc:
-            await ctx.respond(
+            await interaction.response.send_message(
                 "You must be in a generator voice channel to use this command.",
                 ephemeral=True,
             )
 
-        await self.decrease_limit(ctx.author)
-        await ctx.respond("Generator limit decreased.", ephemeral=True)
+        await self.decrease_limit(interaction.user)
+        await interaction.response.send_message(
+            "Generator limit decreased.", ephemeral=True
+        )
 
         return self.client.incr_counter("interface_decrease")
 
 
-def setup(client: MyClient):
-    client.add_cog(GenInterface(client))
+async def setup(client: MyClient):
+    await client.add_cog(GenInterface(client))
