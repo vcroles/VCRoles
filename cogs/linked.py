@@ -52,11 +52,10 @@ class Linked(commands.Cog):
         content = content.removesuffix(", ") + "\n"
         return content
 
-    @app_commands.command(
-        description="Displays the linked roles, channels & categories"
-    )
+    @app_commands.command()
     @Permissions.has_permissions(administrator=True)
     async def linked(self, interaction: discord.Interaction):
+        """Displays the linked roles, channels & categories"""
 
         linked_embed = discord.Embed(
             colour=discord.Colour.blue(),

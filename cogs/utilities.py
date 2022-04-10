@@ -12,27 +12,30 @@ class Utils(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
-    @app_commands.command(description="Use to mention a channel in chat")
+    @app_commands.command()
     @app_commands.describe(channel="Channel to mention:")
     async def mention(
         self,
         interaction: Interaction,
         channel: Union[discord.VoiceChannel, discord.StageChannel],
     ):
+        """Use to mention a channel in chat"""
         await interaction.response.send_message(f"{channel.mention}")
 
         return self.client.incr_counter("mention")
 
-    @app_commands.command(description="Gets an invite to the support server")
+    @app_commands.command()
     async def discord(self, interaction: discord.Interaction):
+        """Use to get an invite to the support server"""
         await interaction.response.send_message(
             content="To join our support server, click the link below", view=Discord()
         )
 
         return self.client.incr_counter("discord")
 
-    @app_commands.command(description="Gets an invite for the bot")
+    @app_commands.command()
     async def invite(self, interaction: Interaction):
+        """Use to get an invite for the bot"""
         await interaction.response.send_message(
             content="To invite the bot, use the link below",
             view=Invite(),
@@ -40,16 +43,18 @@ class Utils(commands.Cog):
 
         return self.client.incr_counter("invite")
 
-    @app_commands.command(description="Gets a link to the bot's Top.gg page")
+    @app_commands.command()
     async def topgg(self, interaction: Interaction):
+        """Use to get a link to the bot's Top.gg page"""
         await interaction.response.send_message(
             content="To visit the bot's Top.gg, click the link below", view=TopGG()
         )
 
         return self.client.incr_counter("topgg")
 
-    @app_commands.command(description="Gets info about the bot")
+    @app_commands.command()
     async def about(self, interaction: Interaction):
+        """Use to get info about the bot"""
         embed = discord.Embed(title="About:", colour=discord.Colour.blue())
 
         total_commands = 0
@@ -100,8 +105,9 @@ class Utils(commands.Cog):
 
         return self.client.incr_counter("about")
 
-    @app_commands.command(description="Help Command")
+    @app_commands.command()
     async def help(self, interaction: Interaction):
+        """Use to get help about the bot"""
         embed = discord.Embed(
             title="VC Roles Help",
             description="We have moved our help page to https://www.vcroles.com where you can find a list of the bot's commands, how to use them, a basic setup guide and more!",

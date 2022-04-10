@@ -26,7 +26,7 @@ class VCControl(commands.Cog):
                 mem.append(await interaction.guild.fetch_member(user_id))
         return mem
 
-    @control_commands.command(description="Mutes everyone in a voice channel")
+    @control_commands.command()
     @Permissions.has_permissions(administrator=True)
     @app_commands.describe(who="Who to mute:")
     async def mute(
@@ -34,6 +34,7 @@ class VCControl(commands.Cog):
         interaction: discord.Interaction,
         who: Optional[Literal["everyone", "everyone but me"]] = "everyone but me",
     ):
+        """Mutes everyone in a voice channel"""
         if interaction.user.voice and interaction.user.voice.channel:
             vc = interaction.user.voice.channel
 
@@ -62,7 +63,7 @@ class VCControl(commands.Cog):
 
         return self.client.incr_counter("vc_mute")
 
-    @control_commands.command(description="Deafens everyone in a voice channel")
+    @control_commands.command()
     @Permissions.has_permissions(administrator=True)
     @app_commands.describe(who="Who to deafen:")
     async def deafen(
@@ -70,6 +71,7 @@ class VCControl(commands.Cog):
         interaction: discord.Interaction,
         who: Optional[Literal["everyone", "everyone but me"]] = "everyone but me",
     ):
+        """Deafens everyone in a voice channel"""
         if interaction.user.voice and interaction.user.voice.channel:
             vc = interaction.user.voice.channel
 
@@ -98,9 +100,10 @@ class VCControl(commands.Cog):
 
         return self.client.incr_counter("vc_deafen")
 
-    @control_commands.command(description="Unmutes everyone in a voice channel")
+    @control_commands.command()
     @Permissions.has_permissions(administrator=True)
     async def unmute(self, interaction: discord.Interaction):
+        """Unmutes everyone in a voice channel"""
         if interaction.user.voice and interaction.user.voice.channel:
             vc = interaction.user.voice.channel
 
@@ -123,9 +126,10 @@ class VCControl(commands.Cog):
 
         return self.client.incr_counter("vc_unmute")
 
-    @control_commands.command(description="Undeafens everyone in a voice channel")
+    @control_commands.command()
     @Permissions.has_permissions(administrator=True)
     async def undeafen(self, interaction: discord.Interaction):
+        """Undeafens everyone in a voice channel"""
         if interaction.user.voice and interaction.user.voice.channel:
             vc = interaction.user.voice.channel
 

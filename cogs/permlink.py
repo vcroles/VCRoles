@@ -24,9 +24,7 @@ class PermLink(commands.Cog):
         name="reverse", description="Reverse roles", parent=perm_commands
     )
 
-    @perm_commands.command(
-        description="Use to link all a channel and a role (after leaving channel, user will keep role)"
-    )
+    @perm_commands.command()
     @Permissions.has_permissions(administrator=True)
     @app_commands.describe(
         channel="Select a channel to link", role="Select a role to link"
@@ -37,6 +35,7 @@ class PermLink(commands.Cog):
         channel: Union[discord.VoiceChannel, discord.StageChannel],
         role: discord.Role,
     ):
+        """Use to link a channel and a role (after leaving channel, user will keep role)"""
 
         data = self.client.redis.get_linked("permanent", interaction.guild_id)
 
@@ -66,9 +65,7 @@ class PermLink(commands.Cog):
 
         return self.client.incr_counter("perm_link")
 
-    @perm_commands.command(
-        description='Use to unlink a "permanent" channel from a role'
-    )
+    @perm_commands.command()
     @Permissions.has_permissions(administrator=True)
     @app_commands.describe(
         channel="Select a channel to unlink", role="Select a role to unlink"
@@ -79,6 +76,7 @@ class PermLink(commands.Cog):
         channel: Union[discord.VoiceChannel, discord.StageChannel],
         role: discord.Role,
     ):
+        """Use to unlink a "permanent" channel from a role"""
 
         data = self.client.redis.get_linked("permanent", interaction.guild_id)
 
@@ -106,9 +104,7 @@ class PermLink(commands.Cog):
 
         return self.client.incr_counter("perm_unlink")
 
-    @suffix_commands.command(
-        description="Use to set a suffix to add to the end of usernames"
-    )
+    @suffix_commands.command()
     @Permissions.has_permissions(administrator=True)
     @app_commands.describe(
         channel="Select a channel to set a suffix for",
@@ -120,6 +116,7 @@ class PermLink(commands.Cog):
         channel: Union[discord.VoiceChannel, discord.StageChannel],
         suffix: str,
     ):
+        """Use to set a suffix to add to the end of usernames"""
         data = self.client.redis.get_linked("permanent", interaction.guild_id)
 
         try:
@@ -137,7 +134,7 @@ class PermLink(commands.Cog):
 
         return self.client.incr_counter("perm_suffix_add")
 
-    @suffix_commands.command(description="Use to remove a suffix rule from a channel")
+    @suffix_commands.command()
     @Permissions.has_permissions(administrator=True)
     @app_commands.describe(channel="Select a channel to remove a suffix rule from")
     async def remove(
@@ -145,6 +142,7 @@ class PermLink(commands.Cog):
         interaction: discord.Interaction,
         channel: Union[discord.VoiceChannel, discord.StageChannel],
     ):
+        """Use to remove a suffix rule from a channel"""
         data = self.client.redis.get_linked("permanent", interaction.guild_id)
 
         try:
@@ -168,7 +166,6 @@ class PermLink(commands.Cog):
         return self.client.incr_counter("perm_suffix_remove")
 
     @reverse_commands.command(
-        description="Use to reverse roles",
         name="link",
     )
     @Permissions.has_permissions(administrator=True)
@@ -181,6 +178,7 @@ class PermLink(commands.Cog):
         channel: Union[discord.VoiceChannel, discord.StageChannel],
         role: discord.Role,
     ):
+        """Use to reverse link a channel and a role"""
 
         data = self.client.redis.get_linked("permanent", interaction.guild_id)
 
@@ -211,7 +209,6 @@ class PermLink(commands.Cog):
         return self.client.incr_counter("perm_reverse_link")
 
     @reverse_commands.command(
-        description="Use to unlink a reverse role",
         name="unlink",
     )
     @Permissions.has_permissions(administrator=True)
@@ -224,6 +221,7 @@ class PermLink(commands.Cog):
         channel: Union[discord.VoiceChannel, discord.StageChannel],
         role: discord.Role,
     ):
+        """Use to unlink a reverse role"""
 
         data = self.client.redis.get_linked("permanent", interaction.guild_id)
 

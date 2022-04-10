@@ -133,10 +133,9 @@ class GenInterface(commands.Cog):
         if user_limit > 0:
             await user.voice.channel.edit(user_limit=user_limit - 1)
 
-    @interface_commands.command(
-        name="lock", description="Lock your generated voice channel"
-    )
+    @interface_commands.command(name="lock")
     async def lock_interface(self, interaction: discord.Interaction):
+        """Lock your generated voice channel"""
         data = self.client.redis.get_generator(interaction.guild_id)
 
         in_vc = await self.in_voice_channel(data, interaction.user)
@@ -152,9 +151,10 @@ class GenInterface(commands.Cog):
         return self.client.incr_counter("interface_lock")
 
     @interface_commands.command(
-        name="unlock", description="Unlock your generated voice channel"
+        name="unlock",
     )
     async def unlock_interface(self, interaction: discord.Interaction):
+        """Unlock your generated voice channel"""
         data = self.client.redis.get_generator(interaction.guild_id)
 
         in_vc = await self.in_voice_channel(data, interaction.user)
@@ -170,9 +170,10 @@ class GenInterface(commands.Cog):
         return self.client.incr_counter("interface_unlock")
 
     @interface_commands.command(
-        name="hide", description="Hide your generated voice channel"
+        name="hide",
     )
     async def hide_interface(self, interaction: discord.Interaction):
+        """Hide your generated voice channel"""
         data = self.client.redis.get_generator(interaction.guild_id)
 
         in_vc = await self.in_voice_channel(data, interaction.user)
@@ -187,10 +188,9 @@ class GenInterface(commands.Cog):
 
         return self.client.incr_counter("interface_hide")
 
-    @interface_commands.command(
-        name="unhide", description="Unhide your generated voice channel"
-    )
+    @interface_commands.command(name="show")
     async def unhide_interface(self, interaction: discord.Interaction):
+        """Show your generated voice channel"""
         data = self.client.redis.get_generator(interaction.guild_id)
 
         in_vc = await self.in_voice_channel(data, interaction.user)
@@ -206,9 +206,10 @@ class GenInterface(commands.Cog):
         return self.client.incr_counter("interface_unhide")
 
     @interface_commands.command(
-        name="increase", description="Increase your generated voice channel user limit"
+        name="increase",
     )
     async def increase_limit_interface(self, interaction: discord.Interaction):
+        """Increase your generated voice channel user limit"""
         data = self.client.redis.get_generator(interaction.guild_id)
 
         in_vc = await self.in_voice_channel(data, interaction.user)
@@ -225,10 +226,9 @@ class GenInterface(commands.Cog):
 
         return self.client.incr_counter("interface_increase")
 
-    @interface_commands.command(
-        name="decrease", description="Decrease your generated voice channel user limit"
-    )
+    @interface_commands.command(name="decrease")
     async def decrease_limit_interface(self, interaction: discord.Interaction):
+        """Decrease your generated voice channel user limit"""
         data = self.client.redis.get_generator(interaction.guild_id)
 
         in_vc = await self.in_voice_channel(data, interaction.user)

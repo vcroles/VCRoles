@@ -12,7 +12,7 @@ class Logging(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
-    @app_commands.command(description="Used to enable disable logging, in a channel.")
+    @app_commands.command()
     @Permissions.has_permissions(administrator=True)
     @app_commands.describe(
         enabled="Enter 'true' to enable or 'false' to disable",
@@ -24,6 +24,7 @@ class Logging(commands.Cog):
         enabled: bool,
         channel: Optional[discord.TextChannel] = None,
     ):
+        """Used to enable or disable logging in a channel."""
         if enabled == True and not channel:
             channel = interaction.channel
         if enabled == True and channel:

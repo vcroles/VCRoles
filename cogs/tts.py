@@ -46,9 +46,7 @@ class TTS(commands.Cog):
 
     tts_commands = app_commands.Group(name="tts", description="Text To Speech commands")
 
-    @tts_commands.command(
-        description="Used to make the bot read a message in a voice channel"
-    )
+    @tts_commands.command()
     @app_commands.describe(
         message="Enter the message you want to read",
         language="Enter the language you want to use (Default: English `en: English`)",
@@ -61,6 +59,7 @@ class TTS(commands.Cog):
         language: Optional[tts_langs] = "en: English",
         leave: Optional[bool] = True,
     ):
+        """Used to make the bot read a message in a voice channel"""
         index = language.find(":")
         language_code = language[0:index]
 
@@ -135,10 +134,9 @@ class TTS(commands.Cog):
 
         return self.client.incr_counter("tts_play")
 
-    @tts_commands.command(
-        description="Stops the current TTS message & Makes the bot leave the voice channel"
-    )
+    @tts_commands.command()
     async def stop(self, interaction: discord.Interaction):
+        """Stops the current TTS message & Makes the bot leave the voice channel"""
         for x in self.client.voice_clients:
             if x.guild.id == interaction.guild_id and interaction.guild_id:
                 await x.disconnect()
@@ -157,9 +155,7 @@ class TTS(commands.Cog):
 
         return self.client.incr_counter("tts_stop")
 
-    @tts_commands.command(
-        description="Used to enable/disable TTS & set a required role"
-    )
+    @tts_commands.command()
     @Permissions.has_permissions(administrator=True)
     @app_commands.describe(
         enabled="Whether or not TTS is enabled in this server",
@@ -173,6 +169,7 @@ class TTS(commands.Cog):
         role: Optional[discord.Role] = None,
         leave: Optional[bool] = True,
     ):
+        """Used to enable/disable TTS & set a required role"""
         data = self.client.redis.get_guild_data(interaction.guild_id)
 
         data["tts:enabled"] = str(enabled)
