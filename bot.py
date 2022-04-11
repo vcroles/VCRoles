@@ -131,7 +131,7 @@ client = MyClient(intents=intents, command_prefix=commands.when_mentioned_or("#"
 client.remove_command("help")
 
 try:
-    import topgg
+    import topgg  # type: ignore
 
     dbl_token = config.DBL.TOKEN
     client.topggpy = topgg.DBLClient(

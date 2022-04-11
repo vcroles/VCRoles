@@ -19,11 +19,10 @@ class VCControl(commands.Cog):
     async def get_members(self, interaction: discord.Interaction):
         mem = []
         for user_id, state in interaction.guild._voice_states.items():
-            if (
-                state.channel == interaction.user.voice.channel
-                or state.channel.id == interaction.user.voice.channel.id
-            ):
-                mem.append(await interaction.guild.fetch_member(user_id))
+            if state.channel and state.channel.id == interaction.user.voice.channel.id:
+                member = await interaction.guild.fetch_member(user_id)
+                if member is not None:
+                    mem.append(member)
         return mem
 
     @control_commands.command()
