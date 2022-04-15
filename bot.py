@@ -160,20 +160,6 @@ intents = discord.Intents(messages=True, guilds=True, reactions=True, voice_stat
 client = MyClient(intents=intents, command_prefix=commands.when_mentioned_or("#"))
 client.remove_command("help")
 
-try:
-    import topgg  # type: ignore
-
-    dbl_token = config.DBL.TOKEN
-    client.topggpy = topgg.DBLClient(
-        client, dbl_token, autopost=True, post_shard_count=True
-    )
-    client.topgg_webhook = topgg.WebhookManager(client).dbl_webhook(
-        "/dbl", config.DBL.WEBHOOK_PASSWORD
-    )
-    client.topgg_webhook.run(config.DBL.WEBHOOK_PORT)
-except ImportError:
-    print("Top.gg integration not found.")
-
 
 @client.event
 async def on_autopost_success():
@@ -265,6 +251,19 @@ async def main():
             json.dump({}, f)
 
     async with client:
+        try:
+            import topgg  # type: ignore
+
+            dbl_token = config.DBL.TOKEN
+            client.topggpy = topgg.DBLClient(
+                client, dbl_token, autopost=True, post_shard_count=True
+            )
+            client.topgg_webhook = topgg.WebhookManager(client).dbl_webhook(
+                "/dbl", config.DBL.WEBHOOK_PASSWORD
+            )
+            client.topgg_webhook.run(config.DBL.WEBHOOK_PORT)
+        except ImportError:
+            print("Top.gg integration not found.")
 
         # Adding Extensions
 
