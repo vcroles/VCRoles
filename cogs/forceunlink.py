@@ -1,54 +1,56 @@
 import discord
-from discord.commands import Option, slash_command
+from discord import app_commands
 from discord.ext import commands
 
 from bot import MyClient
-from utils import Permissions
 
 
 class UnLink(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
-    @slash_command(
-        description="Use to remove any channel/category from all links (Using ID)"
-    )
-    @Permissions.has_permissions(administrator=True)
+    @app_commands.command()
+    @app_commands.describe(channel_id="Enter the channel ID")
     async def forceunlink(
         self,
-        ctx: discord.ApplicationContext,
-        channel_id: Option(str, "Enter the channel ID"),
+        interaction: discord.Interaction,
+        channel_id: str,
     ):
+        """Use to remove any channel/category from all links (Using ID)"""
+        await self.client._has_permissions(interaction, administrator=True)
 
-        data = self.client.redis.get_linked("voice", ctx.guild.id)
-        if str(channel_id) in data:
-            del data[str(channel_id)]
-            self.client.redis.update_linked("voice", ctx.guild.id, data)
+        channel_id = channel_id.strip()
+        data = self.client.redis.get_linked("voice", interaction.guild_id)
+        if channel_id in data:
+            del data[channel_id]
+            self.client.redis.update_linked("voice", interaction.guild_id, data)
 
-        data = self.client.redis.get_linked("permanent", ctx.guild.id)
-        if str(channel_id) in data:
-            del data[str(channel_id)]
-            self.client.redis.update_linked("permanent", ctx.guild.id, data)
+        data = self.client.redis.get_linked("permanent", interaction.guild_id)
+        if channel_id in data:
+            del data[channel_id]
+            self.client.redis.update_linked("permanent", interaction.guild_id, data)
 
-        data = self.client.redis.get_linked("all", ctx.guild.id)
-        if str(channel_id) in data["except"]:
-            data["except"].remove(str(channel_id))
-            self.client.redis.update_linked("all", ctx.guild.id, data)
+        data = self.client.redis.get_linked("all", interaction.guild_id)
+        if channel_id in data["except"]:
+            data["except"].remove(channel_id)
+            self.client.redis.update_linked("all", interaction.guild_id, data)
 
-        data = self.client.redis.get_linked("stage", ctx.guild.id)
-        if str(channel_id) in data:
-            del data[str(channel_id)]
-            self.client.redis.update_linked("stage", ctx.guild.id, data)
+        data = self.client.redis.get_linked("stage", interaction.guild_id)
+        if channel_id in data:
+            del data[channel_id]
+            self.client.redis.update_linked("stage", interaction.guild_id, data)
 
-        data = self.client.redis.get_linked("category", ctx.guild.id)
-        if str(channel_id) in data:
-            del data[str(channel_id)]
-            self.client.redis.update_linked("category", ctx.guild.id, data)
+        data = self.client.redis.get_linked("category", interaction.guild_id)
+        if channel_id in data:
+            del data[channel_id]
+            self.client.redis.update_linked("category", interaction.guild_id, data)
 
-        await ctx.respond(f"Any found links to {channel_id} have been removed.")
+        await interaction.response.send_message(
+            f"Any found links to {channel_id} have been removed."
+        )
 
         return self.client.incr_counter("forceunlink")
 
 
-def setup(client: MyClient):
-    client.add_cog(UnLink(client))
+async def setup(client: MyClient):
+    await client.add_cog(UnLink(client))

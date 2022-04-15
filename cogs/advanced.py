@@ -1,12 +1,13 @@
+import asyncio
 import json
 
+import aiohttp
 import discord
 import requests
-from discord.commands import Option, slash_command
+from discord import app_commands
 from discord.ext import commands
 
 from bot import MyClient
-from utils import Permissions
 
 
 class Advanced(commands.Cog):
@@ -15,7 +16,6 @@ class Advanced(commands.Cog):
 
     async def parse_initial(
         self,
-        ctx: discord.ApplicationContext,
         data: dict[str, dict],
         guild: discord.Guild,
     ):
@@ -27,14 +27,13 @@ class Advanced(commands.Cog):
                 )
             elif key in ["category", "stage", "permanent", "voice"]:
                 # Check data
-                await self.parse_channels(ctx, value, key, guild)
+                asyncio.create_task(self.parse_channels(value, key, guild))
             elif key == "all":
                 # Check data
-                await self.parse_links(ctx, value, key, guild)
+                asyncio.create_task(self.parse_links(value, key, guild))
 
     async def parse_channels(
         self,
-        ctx: discord.ApplicationContext,
         data: dict,
         key: str,
         guild: discord.Guild,
@@ -104,11 +103,10 @@ class Advanced(commands.Cog):
                     }
                 self.client.redis.update_linked(key, guild.id, linked_data)
 
-                await self.parse_links(ctx, links, key, guild, channel)
+                asyncio.create_task(self.parse_links(links, key, guild, channel))
 
     async def parse_links(
         self,
-        ctx: discord.ApplicationContext,
         data: dict,
         key: str,
         guild: discord.Guild,
@@ -131,6 +129,7 @@ class Advanced(commands.Cog):
 
         # Check data
         for linktype, value in data.items():
+            assert isinstance(linktype, str)
             if linktype.startswith("!") and linktype.endswith(
                 ("roles", "reverse_roles", "suffix")
             ):
@@ -156,9 +155,6 @@ class Advanced(commands.Cog):
                         if role.startswith("!"):
                             # Unlink role
                             try:
-                                # linked_data_edit[linktype].remove(
-                                #     role.removeprefix("!")
-                                # )
                                 # role is id
                                 int(role.removeprefix("!"))
                             except:
@@ -208,72 +204,73 @@ class Advanced(commands.Cog):
                 )
                 self.client.redis.update_linked(key, guild.id, linked_data)
 
-    @slash_command()
-    @Permissions.has_permissions(administrator=True)
+    @app_commands.command()
+    @app_commands.describe(attachment="Select a JSON file to use")
     async def advanced(
         self,
-        ctx: discord.ApplicationContext,
-        attachment: Option(
-            discord.Attachment,
-            "Select a valid link file",
-        ),
+        interaction: discord.Interaction,
+        attachment: discord.Attachment,
     ):
         """
         Command for advanced users. Allows you to add/remove/edit a large number of links at once.
-        """  ### Needs to be able to parse json successfully to extract data to be added/edited/removed
-        await ctx.defer()
-        if not ctx.guild:
-            return await ctx.respond("This command can only be used in a server.")
+        """
+        await self.client._has_permissions(interaction, administrator=True)
+        await interaction.response.defer()
+        if not interaction.guild:
+            return await interaction.followup.send(
+                "This command can only be used in a server."
+            )
         if not attachment.content_type.startswith("application/json"):
-            return await ctx.respond("Incorrect JSON format")
+            return await interaction.followup.send("Incorrect JSON format")
 
         try:
-            # data = requests.request("GET", attachment.url).json()
-            data = requests.get(attachment.url).json()
+            async with aiohttp.ClientSession() as session:
+                async with session.get(attachment.url) as response:
+                    data = await response.json()
         except json.decoder.JSONDecodeError:
-            return await ctx.respond("Incorrect JSON format")
+            return await interaction.followup.send("Incorrect JSON format")
         except requests.JSONDecodeError:
-            return await ctx.respond("Incorrect JSON format")
+            return await interaction.followup.send("Incorrect JSON format")
         except:
-            return await ctx.respond("Unknown error")
+            return await interaction.followup.send("Unknown error")
 
         if not isinstance(data, dict):
-            return await ctx.respond("Incorrect JSON format")
+            return await interaction.followup.send("Incorrect JSON format")
 
-        guild = await self.client.fetch_guild(ctx.guild.id)
+        guild = await self.client.fetch_guild(interaction.guild_id)
 
-        await self.parse_initial(ctx, data, guild)
+        await self.parse_initial(data, guild)
 
-        await ctx.respond("Done")
+        await interaction.followup.send("Done")
 
         return self.client.incr_counter("advanced")
 
-    @slash_command()
-    @Permissions.has_permissions(administrator=True)
-    async def export(self, ctx: discord.ApplicationContext):
+    @app_commands.command()
+    async def export(self, interaction: discord.Interaction):
         """
         Command for advanced users. Allows you to export all links to a file.
         """
-        await ctx.defer()
-        if not ctx.guild:
-            return await ctx.respond("This command can only be used in a server.")
-
-        guild = await self.client.fetch_guild(ctx.guild.id)
+        await self.client._has_permissions(interaction, administrator=True)
+        await interaction.response.defer()
+        if not interaction.guild:
+            return await interaction.followup.send(
+                "This command can only be used in a server."
+            )
 
         data = {}
         for type in ["all", "category", "permanent", "stage", "voice"]:
-            data[type] = self.client.redis.get_linked(type, guild.id)
+            data[type] = self.client.redis.get_linked(type, interaction.guild_id)
 
-        with open(f"exports/{ctx.guild.id}.json", "w") as f:
+        with open(f"exports/{interaction.guild_id}.json", "w") as f:
             json.dump(data, f, indent=4)
 
-        with open(f"exports/{ctx.guild.id}.json", "rb") as f:
+        with open(f"exports/{interaction.guild_id}.json", "rb") as f:
             file = discord.File(f, "data.json")
 
-        await ctx.respond("Here is the exported data.", file=file)
+        await interaction.followup.send("Here is the exported data.", file=file)
 
         return self.client.incr_counter("export")
 
 
-def setup(client: MyClient):
-    client.add_cog(Advanced(client))
+async def setup(client: MyClient):
+    await client.add_cog(Advanced(client))

@@ -1,3 +1,5 @@
+import asyncio
+
 import discord
 from discord.ext import commands
 
@@ -71,8 +73,16 @@ class VoiceState(commands.Cog):
 
         # Changing
         elif before.channel != after.channel:
-            leave_roles_changed = await self.leave(member, before, after)
-            join_roles_changed = await self.join(member, before, after)
+            leave_roles_changed_task = asyncio.create_task(
+                self.leave(member, before, after)
+            )
+            join_roles_changed_task = asyncio.create_task(
+                self.join(member, before, after)
+            )
+
+            leave_roles_changed, join_roles_changed = await asyncio.gather(
+                leave_roles_changed_task, join_roles_changed_task
+            )
 
             if leave_roles_changed and join_roles_changed:
                 await self.logging.log_change(
@@ -89,74 +99,64 @@ class VoiceState(commands.Cog):
         before: discord.VoiceState,
         after: discord.VoiceState,
     ):
-        voice_changed = (
-            stage_changed
-        ) = category_changed = all_changed = perm_changed = {
-            "added": [],
-            "removed": [],
-        }
+        voice_changed_task = asyncio.create_task(
+            self.handle_join(
+                self.client.redis.get_linked("voice", member.guild.id),
+                member,
+                after.channel.id,
+            )
+        )
 
-        try:
-            after.channel.type
-        except:
-            return
+        stage_changed_task = asyncio.create_task(
+            self.handle_join(
+                self.client.redis.get_linked("stage", member.guild.id),
+                member,
+                after.channel.id,
+            )
+        )
 
-        if isinstance(after.channel, discord.VoiceChannel):
-            try:
-                voice_changed = await self.handle_join(
-                    self.client.redis.get_linked("voice", member.guild.id),
-                    member,
-                    after.channel.id,
-                    linktype="voice",
-                )
-            except:
-                pass
-
-        elif isinstance(after.channel, discord.StageChannel):
-            try:
-                stage_changed = await self.handle_join(
-                    self.client.redis.get_linked("stage", member.guild.id),
-                    member,
-                    after.channel.id,
-                    linktype="stage",
-                )
-            except:
-                pass
-
-        try:
-            category_changed = await self.handle_join(
+        category_changed_task = asyncio.create_task(
+            self.handle_join(
                 self.client.redis.get_linked("category", member.guild.id),
                 member,
                 after.channel.category.id,
-                linktype="category",
             )
-        except:
-            pass
+        )
 
-        try:
-            all_changed = await self.all.join(
+        all_changed_task = asyncio.create_task(
+            self.all.join(
                 self.client.redis.get_linked("all", member.guild.id),
                 member,
                 before,
                 after,
             )
-        except:
-            pass
+        )
 
-        try:
-            perm_changed = await self.handle_join(
+        perm_changed_task = asyncio.create_task(
+            self.handle_join(
                 self.client.redis.get_linked("permanent", member.guild.id),
                 member,
                 after.channel.id,
-                linktype="permanent",
             )
-        except:
-            pass
+        )
 
-        try:
-            await self.generator.join(member, before, after)
-        except:
-            pass
+        generator_task = asyncio.create_task(self.generator.join(member, before, after))
+
+        (
+            voice_changed,
+            stage_changed,
+            category_changed,
+            all_changed,
+            perm_changed,
+            gen,
+        ) = await asyncio.gather(
+            voice_changed_task,
+            stage_changed_task,
+            category_changed_task,
+            all_changed_task,
+            perm_changed_task,
+            generator_task,
+        )
 
         return (
             voice_changed,
@@ -172,71 +172,69 @@ class VoiceState(commands.Cog):
         before: discord.VoiceState,
         after: discord.VoiceState,
     ):
-        voice_changed = stage_changed = category_changed = all_changed = {
-            "added": [],
-            "removed": [],
-        }
-
-        try:
-            before.channel.type
-        except:
-            return
-
-        try:
-            all_changed = await self.all.leave(
+        all_changed_task = asyncio.create_task(
+            self.all.leave(
                 self.client.redis.get_linked("all", member.guild.id),
                 member,
                 before,
                 after,
             )
-        except:
-            pass
+        )
 
-        try:
-            category_changed = await self.handle_leave(
+        category_changed_task = asyncio.create_task(
+            self.handle_leave(
                 self.client.redis.get_linked("category", member.guild.id),
                 member,
                 before.channel.category.id,
-                linktype="category",
             )
-        except:
-            pass
+        )
 
-        if isinstance(before.channel, discord.StageChannel):
-            try:
-                stage_changed = await self.handle_leave(
-                    self.client.redis.get_linked("stage", member.guild.id),
-                    member,
-                    before.channel.id,
-                    linktype="stage",
-                )
-            except:
-                pass
+        stage_changed_task = asyncio.create_task(
+            self.handle_leave(
+                self.client.redis.get_linked("stage", member.guild.id),
+                member,
+                before.channel.id,
+            )
+        )
 
-        if isinstance(before.channel, discord.VoiceChannel):
-            try:
-                voice_changed = await self.handle_leave(
-                    self.client.redis.get_linked("voice", member.guild.id),
-                    member,
-                    before.channel.id,
-                    linktype="voice",
-                )
-            except:
-                pass
+        voice_changed_task = asyncio.create_task(
+            self.handle_leave(
+                self.client.redis.get_linked("voice", member.guild.id),
+                member,
+                before.channel.id,
+            )
+        )
 
-        try:
-            await self.generator.leave(member, before, after)
-        except:
-            pass
+        generator_task = asyncio.create_task(
+            self.generator.leave(member, before, after)
+        )
 
-        return (voice_changed, stage_changed, category_changed, all_changed)
+        (
+            all_changed,
+            category_changed,
+            stage_changed,
+            voice_changed,
+            gen,
+        ) = await asyncio.gather(
+            all_changed_task,
+            category_changed_task,
+            stage_changed_task,
+            voice_changed_task,
+            generator_task,
+        )
+
+        return (
+            voice_changed,
+            stage_changed,
+            category_changed,
+            all_changed,
+        )
 
     async def handle_join(
         self,
         data: dict,
         member: discord.Member,
         id,
-        linktype: str,
     ) -> dict[str, list]:
         if isinstance(id, int):
             id = str(id)
@@ -268,20 +266,13 @@ class VoiceState(commands.Cog):
         data: dict[str, dict],
         member: discord.Member,
         id,
-        linktype: str,
     ) -> dict[str, list]:
         if isinstance(id, int):
             id = str(id)
         if id in data:
-            await remove_suffix(
-                member, (data[id]["suffix"] if linktype != "all" else data["suffix"])
-            )
+            await remove_suffix(member, (data[id]["suffix"]))
             added = []
-            for i in (
-                data[id]["reverse_roles"]
-                if linktype != "all"
-                else data["reverse_roles"]
-            ):
+            for i in data[id]["reverse_roles"]:
                 try:
                     role = member.guild.get_role(int(i))
                     await member.add_roles(role, reason="Left voice channel")
@@ -289,7 +280,7 @@ class VoiceState(commands.Cog):
                 except:
                     pass
             removed = []
-            for i in data[id]["roles"] if linktype != "all" else data["roles"]:
+            for i in data[id]["roles"]:
                 try:
                     role = member.guild.get_role(int(i))
                     await member.remove_roles(role, reason="Left voice channel")
@@ -302,5 +293,5 @@ class VoiceState(commands.Cog):
         return {"added": [], "removed": []}
 
 
-def setup(client: MyClient):
-    client.add_cog(VoiceState(client))
+async def setup(client: MyClient):
+    await client.add_cog(VoiceState(client))

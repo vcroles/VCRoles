@@ -1,11 +1,12 @@
+import asyncio
 import json
+from typing import Optional
 
 import discord
-from discord.commands import Option, SlashCommandGroup
+from discord import app_commands
 from discord.ext import commands
 
 from bot import MyClient
-from utils import Permissions
 from views.interface import Interface
 
 
@@ -13,61 +14,60 @@ class VoiceGen(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
 
-    generator_commands = SlashCommandGroup("generator", "Generator channel commands")
-
-    @generator_commands.command(
-        description="A command to create a voice channel generator"
+    generator_commands = app_commands.Group(
+        name="generator", description="Generator channel commands"
     )
-    @Permissions.has_permissions(administrator=True)
+
+    @generator_commands.command()
     @commands.bot_has_permissions(manage_channels=True)
+    @app_commands.describe(
+        category_name="Name of generator category",
+        voice_channel_name="Name of voice channel",
+        interface_channel_name="Name of interface channel",
+    )
     async def create(
         self,
-        ctx: discord.ApplicationContext,
-        category_name: Option(
-            str, "Name of generator category", required=False, default="Voice Generator"
-        ),
-        voice_channel_name: Option(
-            str,
-            "Voice generator channel name",
-            required=False,
-            default="Voice Generator",
-        ),
-        interface_channel_name: Option(
-            str,
-            "Interface channel name",
-            required=False,
-            default="VC Roles Interface",
-        ),
+        interaction: discord.Interaction,
+        category_name: Optional[str] = "Voice Generator",
+        voice_channel_name: Optional[str] = "Voice Generator",
+        interface_channel_name: Optional[str] = "VC Roles Interface",
     ):
-        if ctx.guild:
-            assert isinstance(ctx.guild, discord.Guild)
-        else:
-            return await ctx.send("This command can only be used in a server")
-        await ctx.defer()
+        """Creates a voice channel generator"""
+        await self.client._has_permissions(interaction, administrator=True)
 
-        data = self.client.redis.get_generator(ctx.guild.id)
+        if interaction.guild:
+            assert isinstance(interaction.guild, discord.Guild)
+        else:
+            return await interaction.response.send_message(
+                "This command can only be used in a server"
+            )
+        asyncio.create_task(interaction.response.defer())
+
+        data = self.client.redis.get_generator(interaction.guild_id)
 
         try:
-            if data["interface"]["channel"] != "":
-                channel = self.client.get_channel(int(data["interface"]["channel"]))
-                msg = await channel.fetch_message(int(data["interface"]["msg_id"]))
-                view = discord.ui.View.from_message(msg)
-                view.clear_items()
-                await msg.edit(view=view)
+            data["interface"] = json.loads(data["interface"])
+            channel = self.client.get_channel(int(data["interface"]["channel"]))
+            msg = await channel.fetch_message(int(data["interface"]["msg_id"]))
+            view = discord.ui.View.from_message(msg)
+            view.clear_items()
+            asyncio.create_task(msg.edit(view=view))
         except:
             pass
 
-        category = await ctx.guild.create_category(name=category_name)
+        category = await interaction.guild.create_category(name=category_name)
 
-        voice_channel = await ctx.guild.create_voice_channel(
+        voice_channel = await interaction.guild.create_voice_channel(
             name=voice_channel_name, category=category
         )
 
         overwrites = {
-            ctx.guild.default_role: discord.PermissionOverwrite(send_messages=False)
+            interaction.guild.default_role: discord.PermissionOverwrite(
+                send_messages=False
+            )
         }
 
-        interface_channel = await ctx.guild.create_text_channel(
+        interface_channel = await interaction.guild.create_text_channel(
             name=interface_channel_name, category=category, overwrites=overwrites
         )
 
@@ -122,27 +122,26 @@ class VoiceGen(commands.Cog):
             },
         }
 
-        self.client.redis.update_generator(ctx.guild.id, data)
+        self.client.redis.update_generator(interaction.guild_id, data)
 
         creation_embed = discord.Embed(
             color=discord.Color.green(),
             title="**Voice Generator Setup**",
             description=f"The category **{category.name}**, voice channel {voice_channel.mention}, and interface channel {interface_channel.mention} have been created.\n Join the voice channel to generate a voice channel.",
         )
-        await ctx.respond(embed=creation_embed)
+        await interaction.followup.send(embed=creation_embed)
 
         return self.client.incr_counter("voice_generator_create")
 
-    @generator_commands.command(
-        description="A command to remove a voice channel generator"
-    )
-    @Permissions.has_permissions(administrator=True)
+    @generator_commands.command()
     @commands.bot_has_permissions(manage_channels=True)
-    async def remove(self, ctx: discord.ApplicationContext):
+    async def remove(self, interaction: discord.Interaction):
+        """Removes a voice channel generator"""
+        await self.client._has_permissions(interaction, administrator=True)
 
-        await ctx.defer()
+        asyncio.create_task(interaction.response.defer())
 
-        data = self.client.redis.get_generator(ctx.guild.id)
+        data = self.client.redis.get_generator(interaction.guild_id)
 
         try:
             data["interface"] = json.loads(data["interface"])
@@ -154,17 +153,17 @@ class VoiceGen(commands.Cog):
         except:
             pass
 
-        self.client.redis.r.delete(f"{ctx.guild.id}:gen")
+        self.client.redis.r.delete(f"{interaction.guild_id}:gen")
 
         embed = discord.Embed(
             color=discord.Color.green(),
             title="**Voice Generator Removal**",
             description=f"The channel will now no longer act as a voice channel generator",
         )
-        await ctx.respond(embed=embed)
+        await interaction.followup.send(embed=embed)
 
         return self.client.incr_counter("voice_generator_remove")
 
 
-def setup(client: MyClient):
-    client.add_cog(VoiceGen(client))
+async def setup(client: MyClient):
+    await client.add_cog(VoiceGen(client))

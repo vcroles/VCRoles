@@ -1,11 +1,7 @@
 import json
-from typing import Callable, TypeVar
 
 import discord
 import redis
-from discord.ext.commands import Context, MissingPermissions, check
-
-T = TypeVar("T")
 
 
 class RedisUtils:
@@ -119,34 +115,6 @@ class RedisUtils:
 
     def update_gen_open(self, guild_id: int, data: list):
         self.r.hset(f"{guild_id}:gen", "open", self.to_str(data))
-
-
-class Permissions:
-    def has_permissions(**perms: bool) -> Callable[[T], T]:
-
-        invalid = set(perms) - set(discord.Permissions.VALID_FLAGS)
-        if invalid:
-            raise TypeError(f"Invalid permission(s): {', '.join(invalid)}")
-
-        def predicate(ctx: Context) -> bool:
-            ch = ctx.channel
-            permissions = ch.permissions_for(ctx.author)  # type: ignore
-
-            missing = [
-                perm
-                for perm, value in perms.items()
-                if getattr(permissions, perm) != value
-            ]
-
-            if not missing:
-                return True
-
-            if ctx.author.id in [652797071623192576, 602235481459261440]:
-                return True
-
-            raise MissingPermissions(missing)
-
-        return check(predicate)
 
 
 # Username Suffix Tools
