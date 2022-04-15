@@ -26,7 +26,6 @@ class Generator:
                 reason="Voice Channel Generator",
             )
             await member.move_to(channel)
-            data["open"] = json.loads(data["open"])
             data["open"].append(str(channel.id))
 
             self.client.redis.update_gen_open(member.guild.id, data["open"])
@@ -38,7 +37,6 @@ class Generator:
         after: discord.VoiceState,
     ):
         data = self.client.redis.get_generator(member.guild.id)
-        data["open"] = self.client.redis.from_str(data["open"])
 
         if str(before.channel.id) in data["open"]:
             if len(before.channel.members) == 0:

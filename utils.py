@@ -95,8 +95,8 @@ class RedisUtils:
             data = {}
             for key, value in r_data.items():
                 data[self._decode(key)] = self._decode(value)
-                if self._decode(key) == "interface":
-                    data[key] = self.from_str(data[self._decode(key)])
+                if self._decode(key) in ["interface", "open"]:
+                    data[self._decode(key)] = self.from_str(data[self._decode(key)])
             return data
         else:
             return {

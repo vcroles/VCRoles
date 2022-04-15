@@ -99,7 +99,12 @@ class VoiceState(commands.Cog):
         before: discord.VoiceState,
         after: discord.VoiceState,
     ):
-        if isinstance(before.channel, discord.VoiceChannel):
+        try:
+            after.channel.type
+        except:
+            return
+
+        if isinstance(after.channel, discord.VoiceChannel):
             voice_changed_task = asyncio.create_task(
                 self.handle_join(
                     self.client.redis.get_linked("voice", member.guild.id),
@@ -110,7 +115,7 @@ class VoiceState(commands.Cog):
         else:
             voice_changed_task = asyncio.create_task(self.return_data())
 
-        if isinstance(before.channel, discord.StageChannel):
+        if isinstance(after.channel, discord.StageChannel):
             stage_changed_task = asyncio.create_task(
                 self.handle_join(
                     self.client.redis.get_linked("stage", member.guild.id),
@@ -121,7 +126,7 @@ class VoiceState(commands.Cog):
         else:
             stage_changed_task = asyncio.create_task(self.return_data())
 
-        if before.channel.category:
+        if after.channel.category:
             category_changed_task = asyncio.create_task(
                 self.handle_join(
                     self.client.redis.get_linked("category", member.guild.id),
@@ -181,6 +186,11 @@ class VoiceState(commands.Cog):
         before: discord.VoiceState,
         after: discord.VoiceState,
     ):
+        try:
+            before.channel.type
+        except:
+            return
+
         all_changed_task = asyncio.create_task(
             self.all.leave(
                 self.client.redis.get_linked("all", member.guild.id),
