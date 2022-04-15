@@ -99,29 +99,38 @@ class VoiceState(commands.Cog):
         before: discord.VoiceState,
         after: discord.VoiceState,
     ):
-        voice_changed_task = asyncio.create_task(
-            self.handle_join(
-                self.client.redis.get_linked("voice", member.guild.id),
-                member,
-                after.channel.id,
+        if isinstance(before.channel, discord.VoiceChannel):
+            voice_changed_task = asyncio.create_task(
+                self.handle_join(
+                    self.client.redis.get_linked("voice", member.guild.id),
+                    member,
+                    after.channel.id,
+                )
             )
-        )
+        else:
+            voice_changed_task = asyncio.create_task(self.return_data())
 
-        stage_changed_task = asyncio.create_task(
-            self.handle_join(
-                self.client.redis.get_linked("stage", member.guild.id),
-                member,
-                after.channel.id,
+        if isinstance(before.channel, discord.StageChannel):
+            stage_changed_task = asyncio.create_task(
+                self.handle_join(
+                    self.client.redis.get_linked("stage", member.guild.id),
+                    member,
+                    after.channel.id,
+                )
             )
-        )
+        else:
+            stage_changed_task = asyncio.create_task(self.return_data())
 
-        category_changed_task = asyncio.create_task(
-            self.handle_join(
-                self.client.redis.get_linked("category", member.guild.id),
-                member,
-                after.channel.category.id,
+        if before.channel.category:
+            category_changed_task = asyncio.create_task(
+                self.handle_join(
+                    self.client.redis.get_linked("category", member.guild.id),
+                    member,
+                    after.channel.category.id,
+                )
             )
-        )
+        else:
+            category_changed_task = asyncio.create_task(self.return_data())
 
         all_changed_task = asyncio.create_task(
             self.all.join(
@@ -181,29 +190,38 @@ class VoiceState(commands.Cog):
             )
         )
 
-        category_changed_task = asyncio.create_task(
-            self.handle_leave(
-                self.client.redis.get_linked("category", member.guild.id),
-                member,
-                before.channel.category.id,
+        if before.channel.category:
+            category_changed_task = asyncio.create_task(
+                self.handle_leave(
+                    self.client.redis.get_linked("category", member.guild.id),
+                    member,
+                    before.channel.category.id,
+                )
             )
-        )
+        else:
+            category_changed_task = asyncio.create_task(self.return_data())
 
-        stage_changed_task = asyncio.create_task(
-            self.handle_leave(
-                self.client.redis.get_linked("stage", member.guild.id),
-                member,
-                before.channel.id,
+        if isinstance(before.channel, discord.StageChannel):
+            stage_changed_task = asyncio.create_task(
+                self.handle_leave(
+                    self.client.redis.get_linked("stage", member.guild.id),
+                    member,
+                    before.channel.id,
+                )
             )
-        )
+        else:
+            stage_changed_task = asyncio.create_task(self.return_data())
 
-        voice_changed_task = asyncio.create_task(
-            self.handle_leave(
-                self.client.redis.get_linked("voice", member.guild.id),
-                member,
-                before.channel.id,
+        if isinstance(before.channel, discord.VoiceChannel):
+            voice_changed_task = asyncio.create_task(
+                self.handle_leave(
+                    self.client.redis.get_linked("voice", member.guild.id),
+                    member,
+                    before.channel.id,
+                )
             )
-        )
+        else:
+            voice_changed_task = asyncio.create_task(self.return_data())
 
         generator_task = asyncio.create_task(
             self.generator.leave(member, before, after)
@@ -290,6 +308,9 @@ class VoiceState(commands.Cog):
             self.client.incr_role_counter("added", len(added))
             self.client.incr_role_counter("removed", len(removed))
             return {"added": added, "removed": removed}
+        return {"added": [], "removed": []}
+
+    async def return_data(self):
         return {"added": [], "removed": []}
 
 
