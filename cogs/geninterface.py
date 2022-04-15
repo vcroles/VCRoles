@@ -15,7 +15,7 @@ class GenInterface(commands.Cog):
         name="interface", description="Interface commands"
     )
 
-    async def in_voice_channel(self, data, user: discord.Member):
+    async def in_voice_channel(self, data, user: discord.Member) -> bool:
 
         try:
             user.voice
@@ -140,7 +140,7 @@ class GenInterface(commands.Cog):
 
         in_vc = await self.in_voice_channel(data, interaction.user)
         if not in_vc:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 "You must be in a generator voice channel to use this command.",
                 ephemeral=True,
             )
@@ -159,7 +159,7 @@ class GenInterface(commands.Cog):
 
         in_vc = await self.in_voice_channel(data, interaction.user)
         if not in_vc:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 "You must be in a generator voice channel to use this command.",
                 ephemeral=True,
             )
@@ -178,7 +178,7 @@ class GenInterface(commands.Cog):
 
         in_vc = await self.in_voice_channel(data, interaction.user)
         if not in_vc:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 "You must be in a generator voice channel to use this command.",
                 ephemeral=True,
             )
@@ -195,7 +195,7 @@ class GenInterface(commands.Cog):
 
         in_vc = await self.in_voice_channel(data, interaction.user)
         if not in_vc:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 "You must be in a generator voice channel to use this command.",
                 ephemeral=True,
             )
@@ -214,7 +214,7 @@ class GenInterface(commands.Cog):
 
         in_vc = await self.in_voice_channel(data, interaction.user)
         if not in_vc:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 "You must be in a generator voice channel to use this command.",
                 ephemeral=True,
             )
@@ -233,7 +233,7 @@ class GenInterface(commands.Cog):
 
         in_vc = await self.in_voice_channel(data, interaction.user)
         if not in_vc:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 "You must be in a generator voice channel to use this command.",
                 ephemeral=True,
             )
