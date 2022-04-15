@@ -218,8 +218,7 @@ async def sync_commands(ctx):
 
 @tasks.loop(time=[dt.time(hour=12, minute=0), dt.time(hour=0, minute=0)])
 async def reminder():
-    print("Reminder")
-    await client.send_reminder()
+    task = asyncio.create_task(client.send_reminder())
 
     with open("guilds.json", "r") as f:
         data = json.load(f)
@@ -228,6 +227,8 @@ async def reminder():
 
     with open("guilds.json", "w") as f:
         json.dump(data, f)
+
+    await task
 
 
 @reminder.before_loop

@@ -51,7 +51,7 @@ class AllLink(commands.Cog):
 
             member = interaction.guild.get_member(self.client.user.id)
             if member.top_role.position < role.position:
-                await interaction.channel.send(
+                await interaction.followup.send(
                     f"Please ensure my highest role is above `@{role.name}`"
                 )
         else:

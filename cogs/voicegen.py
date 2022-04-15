@@ -1,3 +1,4 @@
+import asyncio
 import json
 from typing import Optional
 
@@ -41,7 +42,7 @@ class VoiceGen(commands.Cog):
             return await interaction.response.send_message(
                 "This command can only be used in a server"
             )
-        await interaction.response.defer()
+        asyncio.create_task(interaction.response.defer())
 
         data = self.client.redis.get_generator(interaction.guild_id)
 
@@ -51,7 +52,7 @@ class VoiceGen(commands.Cog):
             msg = await channel.fetch_message(int(data["interface"]["msg_id"]))
             view = discord.ui.View.from_message(msg)
             view.clear_items()
-            await msg.edit(view=view)
+            asyncio.create_task(msg.edit(view=view))
         except:
             pass
 
@@ -139,7 +140,7 @@ class VoiceGen(commands.Cog):
         """Removes a voice channel generator"""
         await self.client._has_permissions(interaction, administrator=True)
 
-        await interaction.response.defer()
+        asyncio.create_task(interaction.response.defer())
 
         data = self.client.redis.get_generator(interaction.guild_id)
 

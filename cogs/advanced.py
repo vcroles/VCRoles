@@ -1,3 +1,4 @@
+import asyncio
 import json
 
 import aiohttp
@@ -26,10 +27,10 @@ class Advanced(commands.Cog):
                 )
             elif key in ["category", "stage", "permanent", "voice"]:
                 # Check data
-                await self.parse_channels(value, key, guild)
+                asyncio.create_task(self.parse_channels(value, key, guild))
             elif key == "all":
                 # Check data
-                await self.parse_links(value, key, guild)
+                asyncio.create_task(self.parse_links(value, key, guild))
 
     async def parse_channels(
         self,
@@ -102,7 +103,7 @@ class Advanced(commands.Cog):
                     }
                 self.client.redis.update_linked(key, guild.id, linked_data)
 
-                await self.parse_links(links, key, guild, channel)
+                asyncio.create_task(self.parse_links(links, key, guild, channel))
 
     async def parse_links(
         self,
@@ -128,6 +129,7 @@ class Advanced(commands.Cog):
 
         # Check data
         for linktype, value in data.items():
+            assert isinstance(linktype, str)
             if linktype.startswith("!") and linktype.endswith(
                 ("roles", "reverse_roles", "suffix")
             ):
@@ -153,9 +155,6 @@ class Advanced(commands.Cog):
                         if role.startswith("!"):
                             # Unlink role
                             try:
-                                # linked_data_edit[linktype].remove(
-                                #     role.removeprefix("!")
-                                # )
                                 # role is id
                                 int(role.removeprefix("!"))
                             except:
@@ -228,7 +227,6 @@ class Advanced(commands.Cog):
             async with aiohttp.ClientSession() as session:
                 async with session.get(attachment.url) as response:
                     data = await response.json()
-            # data = requests.get(attachment.url).json()
         except json.decoder.JSONDecodeError:
             return await interaction.followup.send("Incorrect JSON format")
         except requests.JSONDecodeError:
@@ -239,7 +237,7 @@ class Advanced(commands.Cog):
         if not isinstance(data, dict):
             return await interaction.followup.send("Incorrect JSON format")
 
-        guild = await self.client.fetch_guild(interaction.guild.id)
+        guild = await self.client.fetch_guild(interaction.guild_id)
 
         await self.parse_initial(data, guild)
 
@@ -259,11 +257,9 @@ class Advanced(commands.Cog):
                 "This command can only be used in a server."
             )
 
-        guild = await self.client.fetch_guild(interaction.guild_id)
-
         data = {}
         for type in ["all", "category", "permanent", "stage", "voice"]:
-            data[type] = self.client.redis.get_linked(type, guild.id)
+            data[type] = self.client.redis.get_linked(type, interaction.guild_id)
 
         with open(f"exports/{interaction.guild_id}.json", "w") as f:
             json.dump(data, f, indent=4)

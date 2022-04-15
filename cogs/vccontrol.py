@@ -1,3 +1,4 @@
+import asyncio
 from typing import Literal, Optional
 
 import discord
@@ -15,7 +16,9 @@ class VCControl(commands.Cog):
         name="vc", description="Used to control voice channels"
     )
 
-    async def get_members(self, interaction: discord.Interaction):
+    async def get_members(
+        self, interaction: discord.Interaction
+    ) -> list[discord.Member]:
         mem = []
         for user_id, state in interaction.guild._voice_states.items():
             if state.channel and state.channel.id == interaction.user.voice.channel.id:
@@ -39,15 +42,16 @@ class VCControl(commands.Cog):
 
         mem = await self.get_members(interaction)
 
+        tasks = []
         if who == "everyone" and vc:
             for member in mem:
-                await member.edit(mute=True)
+                tasks.append(asyncio.create_task(member.edit(mute=True)))
         elif who == "everyone but me" and vc:
             for member in vc.members:
                 if member == interaction.user:
                     pass
                 else:
-                    await member.edit(mute=True)
+                    tasks.append(asyncio.create_task(member.edit(mute=True)))
         else:
             await interaction.response.send_message(
                 "Please ensure you are in a voice channel."
@@ -59,6 +63,8 @@ class VCControl(commands.Cog):
             description=f"Successfully muted in {vc.mention}",
         )
         await interaction.response.send_message(embed=embed)
+
+        await asyncio.gather(*tasks)
 
         return self.client.incr_counter("vc_mute")
 
@@ -77,15 +83,16 @@ class VCControl(commands.Cog):
 
         mem = await self.get_members(interaction)
 
+        tasks = []
         if who == "everyone" and vc:
             for member in mem:
-                await member.edit(deafen=True)
+                tasks.append(asyncio.create_task(member.edit(deafen=True)))
         elif who == "everyone but me" and vc:
             for member in vc.members:
                 if member == interaction.user:
                     pass
                 else:
-                    await member.edit(deafen=True)
+                    tasks.append(asyncio.create_task(member.edit(deafen=True)))
         else:
             await interaction.response.send_message(
                 "Please ensure you are in a voice channel."
@@ -97,6 +104,8 @@ class VCControl(commands.Cog):
             description=f"Successfully deafened in {vc.mention}",
         )
         await interaction.response.send_message(embed=embed)
+
+        await asyncio.gather(*tasks)
 
         return self.client.incr_counter("vc_deafen")
 
@@ -110,9 +119,10 @@ class VCControl(commands.Cog):
 
         mem = await self.get_members(interaction)
 
+        tasks = []
         if vc:
             for member in mem:
-                await member.edit(mute=False)
+                tasks.append(asyncio.create_task(member.edit(mute=False)))
         else:
             await interaction.response.send_message(
                 "Please ensure you are in a voice channel."
@@ -124,6 +134,8 @@ class VCControl(commands.Cog):
             description=f"Successfully unmuted in {vc.mention}",
         )
         await interaction.response.send_message(embed=embed)
+
+        await asyncio.gather(*tasks)
 
         return self.client.incr_counter("vc_unmute")
 
@@ -137,9 +149,10 @@ class VCControl(commands.Cog):
 
         mem = await self.get_members(interaction)
 
+        tasks = []
         if vc:
             for member in mem:
-                await member.edit(deafen=False)
+                tasks.append(asyncio.create_task(member.edit(deafen=False)))
         else:
             await interaction.response.send_message(
                 "Please ensure you are in a voice channel."
@@ -151,6 +164,8 @@ class VCControl(commands.Cog):
             description=f"Successfully undeafened in {vc.mention}",
         )
         await interaction.response.send_message(embed=embed)
+
+        await asyncio.gather(*tasks)
 
         return self.client.incr_counter("vc_undeafen")
 

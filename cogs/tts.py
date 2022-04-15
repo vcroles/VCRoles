@@ -66,15 +66,13 @@ class TTS(commands.Cog):
         data = self.client.redis.get_guild_data(interaction.guild_id)
 
         if data["tts:enabled"] == "False":
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 f"TTS isn't enabled in this server."
             )
-            return
         if len(message) > 250:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 f"The message is over the 250 character limit"
             )
-            return
         if data["tts:enabled"] == "True":
 
             try:
@@ -111,6 +109,7 @@ class TTS(commands.Cog):
                     )
                     await interaction.response.send_message(embed=embed)
 
+                    assert isinstance(vc, discord.VoiceClient)
                     player = vc.play(
                         discord.FFmpegPCMAudio(
                             source=f"tts/{interaction.guild_id}.mp3"
