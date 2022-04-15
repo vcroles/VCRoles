@@ -104,10 +104,10 @@ class RedisUtils:
             return data
         else:
             return {
-                "cat": "0",
-                "gen_id": "0",
+                "cat": "",
+                "gen_id": "",
                 "open": [],
-                "interface": {"channel": "0", "msg_id": "0"},
+                "interface": {"channel": "", "msg_id": ""},
             }
 
     def update_generator(self, guild_id: int, data: dict):

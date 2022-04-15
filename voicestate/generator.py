@@ -38,7 +38,7 @@ class Generator:
         after: discord.VoiceState,
     ):
         data = self.client.redis.get_generator(member.guild.id)
-        data["open"] = self.client.redis.str_to_list(data["open"])
+        data["open"] = self.client.redis.from_str(data["open"])
 
         if str(before.channel.id) in data["open"]:
             if len(before.channel.members) == 0:

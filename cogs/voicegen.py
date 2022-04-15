@@ -39,17 +39,21 @@ class VoiceGen(commands.Cog):
             default="VC Roles Interface",
         ),
     ):
+        if ctx.guild:
+            assert isinstance(ctx.guild, discord.Guild)
+        else:
+            return await ctx.send("This command can only be used in a server")
         await ctx.defer()
 
         data = self.client.redis.get_generator(ctx.guild.id)
 
         try:
-            data["interface"] = json.loads(data["interface"])
-            channel = self.client.get_channel(int(data["interface"]["channel"]))
-            msg = await channel.fetch_message(int(data["interface"]["msg_id"]))
-            view = discord.ui.View.from_message(msg)
-            view.clear_items()
-            await msg.edit(view=view)
+            if data["interface"]["channel"] != "":
+                channel = self.client.get_channel(int(data["interface"]["channel"]))
+                msg = await channel.fetch_message(int(data["interface"]["msg_id"]))
+                view = discord.ui.View.from_message(msg)
+                view.clear_items()
+                await msg.edit(view=view)
         except:
             pass
 
