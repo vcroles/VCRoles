@@ -10,7 +10,6 @@ from mutagen.mp3 import MP3
 
 from bot import MyClient
 
-
 tts_langs = Literal[
     "af: Afrikaans",
     "ar: Arabic",
