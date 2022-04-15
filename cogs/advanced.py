@@ -7,7 +7,6 @@ from discord import app_commands
 from discord.ext import commands
 
 from bot import MyClient
-from utils import Permissions
 
 
 class Advanced(commands.Cog):
@@ -208,7 +207,6 @@ class Advanced(commands.Cog):
 
     @app_commands.command()
     @app_commands.describe(attachment="Select a JSON file to use")
-    @Permissions.has_permissions(administrator=True)
     async def advanced(
         self,
         interaction: discord.Interaction,
@@ -216,7 +214,8 @@ class Advanced(commands.Cog):
     ):
         """
         Command for advanced users. Allows you to add/remove/edit a large number of links at once.
-        """  ### Needs to be able to parse json successfully to extract data to be added/edited/removed
+        """
+        await self.client._has_permissions(interaction, administrator=True)
         await interaction.response.defer()
         if not interaction.guild:
             return await interaction.followup.send(
@@ -249,11 +248,11 @@ class Advanced(commands.Cog):
         return self.client.incr_counter("advanced")
 
     @app_commands.command()
-    @Permissions.has_permissions(administrator=True)
     async def export(self, interaction: discord.Interaction):
         """
         Command for advanced users. Allows you to export all links to a file.
         """
+        await self.client._has_permissions(interaction, administrator=True)
         await interaction.response.defer()
         if not interaction.guild:
             return await interaction.followup.send(

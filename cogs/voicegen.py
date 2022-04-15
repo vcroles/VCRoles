@@ -6,7 +6,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from bot import MyClient
-from utils import Permissions
+
 from views.interface import Interface
 
 
@@ -19,7 +19,6 @@ class VoiceGen(commands.Cog):
     )
 
     @generator_commands.command()
-    @Permissions.has_permissions(administrator=True)
     @commands.bot_has_permissions(manage_channels=True)
     @app_commands.describe(
         category_name="Name of generator category",
@@ -34,6 +33,14 @@ class VoiceGen(commands.Cog):
         interface_channel_name: Optional[str] = "VC Roles Interface",
     ):
         """Creates a voice channel generator"""
+        await self.client._has_permissions(interaction, administrator=True)
+
+        if interaction.guild:
+            assert isinstance(interaction.guild, discord.Guild)
+        else:
+            return await interaction.response.send_message(
+                "This command can only be used in a server"
+            )
         await interaction.response.defer()
 
         data = self.client.redis.get_generator(interaction.guild_id)
@@ -127,10 +134,10 @@ class VoiceGen(commands.Cog):
         return self.client.incr_counter("voice_generator_create")
 
     @generator_commands.command()
-    @Permissions.has_permissions(administrator=True)
     @commands.bot_has_permissions(manage_channels=True)
     async def remove(self, interaction: discord.Interaction):
         """Removes a voice channel generator"""
+        await self.client._has_permissions(interaction, administrator=True)
 
         await interaction.response.defer()
 

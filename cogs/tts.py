@@ -9,7 +9,7 @@ from gtts import gTTS
 from mutagen.mp3 import MP3
 
 from bot import MyClient
-from utils import Permissions
+
 
 tts_langs = Literal[
     "af: Afrikaans",
@@ -156,7 +156,6 @@ class TTS(commands.Cog):
         return self.client.incr_counter("tts_stop")
 
     @tts_commands.command()
-    @Permissions.has_permissions(administrator=True)
     @app_commands.describe(
         enabled="Whether or not TTS is enabled in this server",
         role="The role required to use TTS (Default: None)",
@@ -170,6 +169,8 @@ class TTS(commands.Cog):
         leave: Optional[bool] = True,
     ):
         """Used to enable/disable TTS & set a required role"""
+        await self.client._has_permissions(interaction, administrator=True)
+
         data = self.client.redis.get_guild_data(interaction.guild_id)
 
         data["tts:enabled"] = str(enabled)

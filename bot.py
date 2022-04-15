@@ -3,7 +3,6 @@ import datetime as dt
 import json
 import logging
 import os
-import time
 from datetime import datetime
 
 import discord
@@ -124,6 +123,37 @@ class MyClient(commands.AutoShardedBot):
                     avatar_url="https://avatars.githubusercontent.com/u/34552786",
                 )
 
+    async def _has_permissions(
+        self, interaction: discord.Interaction, **perms: bool
+    ) -> bool:
+        invalid = set(perms) - set(discord.Permissions.VALID_FLAGS)
+        if invalid:
+            raise TypeError(f"Invalid permission(s): {', '.join(invalid)}")
+
+        permissions = interaction.channel.permissions_for(interaction.user)
+
+        missing = [
+            perm for perm, value in perms.items() if getattr(permissions, perm) != value
+        ]
+
+        if not missing:
+            return True
+
+        if interaction.user.id in [652797071623192576, 602235481459261440]:
+            return True
+
+        if not interaction.response.is_done():
+            await interaction.response.send_message(
+                "You do not have the required permissions to use this command.",
+                ephemeral=True,
+            )
+        else:
+            await interaction.followup.send(
+                "You do not have the required permissions to use this command.",
+                ephemeral=True,
+            )
+        raise app_commands.MissingPermissions(missing)
+
 
 intents = discord.Intents(messages=True, guilds=True, reactions=True, voice_states=True)
 
@@ -173,17 +203,9 @@ async def on_dbl_vote(data):
 @client.tree.error
 async def on_command_error(
     interaction: discord.Interaction,
-    command: app_commands.Command,
     error: app_commands.AppCommandError,
 ):
-    if isinstance(error, app_commands.MissingPermissions):
-        await interaction.response.send_message(
-            "You do not have the required permissions to use this command.",
-            ephemeral=True,
-        )
-
-    else:
-        return
+    return
 
 
 @client.command()

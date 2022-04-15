@@ -3,7 +3,6 @@ from discord import app_commands
 from discord.ext import commands
 
 from bot import MyClient
-from utils import Permissions
 
 
 class UnLink(commands.Cog):
@@ -11,7 +10,6 @@ class UnLink(commands.Cog):
         self.client = client
 
     @app_commands.command()
-    @Permissions.has_permissions(administrator=True)
     @app_commands.describe(channel_id="Enter the channel ID")
     async def forceunlink(
         self,
@@ -19,6 +17,8 @@ class UnLink(commands.Cog):
         channel_id: str,
     ):
         """Use to remove any channel/category from all links (Using ID)"""
+        await self.client._has_permissions(interaction, administrator=True)
+
         channel_id = channel_id.strip()
         data = self.client.redis.get_linked("voice", interaction.guild_id)
         if channel_id in data:

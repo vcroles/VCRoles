@@ -5,7 +5,6 @@ from discord import app_commands
 from discord.ext import commands
 
 from bot import MyClient
-from utils import Permissions
 
 
 class Logging(commands.Cog):
@@ -13,7 +12,6 @@ class Logging(commands.Cog):
         self.client = client
 
     @app_commands.command()
-    @Permissions.has_permissions(administrator=True)
     @app_commands.describe(
         enabled="Enter 'true' to enable or 'false' to disable",
         channel="Logging channel:",
@@ -25,6 +23,8 @@ class Logging(commands.Cog):
         channel: Optional[discord.TextChannel] = None,
     ):
         """Used to enable or disable logging in a channel."""
+        await self.client._has_permissions(interaction, administrator=True)
+
         if enabled == True and not channel:
             channel = interaction.channel
         if enabled == True and channel:

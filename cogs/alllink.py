@@ -5,7 +5,6 @@ from discord import app_commands
 from discord.ext import commands
 
 from bot import MyClient
-from utils import Permissions
 
 
 class AllLink(commands.Cog):
@@ -30,7 +29,6 @@ class AllLink(commands.Cog):
     )
 
     @all_commands.command()
-    @Permissions.has_permissions(administrator=True)
     @app_commands.describe(role="Select a role to link")
     async def link(
         self,
@@ -38,6 +36,7 @@ class AllLink(commands.Cog):
         role: discord.Role,
     ):
         """Use to link all channels with a role"""
+        await self.client._has_permissions(interaction, administrator=True)
 
         data = self.client.redis.get_linked("all", interaction.guild_id)
 
@@ -63,7 +62,6 @@ class AllLink(commands.Cog):
         return self.client.incr_counter("all_link")
 
     @all_commands.command()
-    @Permissions.has_permissions(administrator=True)
     @app_commands.describe(role="Select a role to unlink")
     async def unlink(
         self,
@@ -71,6 +69,7 @@ class AllLink(commands.Cog):
         role: discord.Role,
     ):
         """Use to unlink all channels from a role"""
+        await self.client._has_permissions(interaction, administrator=True)
 
         data = self.client.redis.get_linked("all", interaction.guild_id)
 
@@ -93,7 +92,6 @@ class AllLink(commands.Cog):
         return self.client.incr_counter("all_unlink")
 
     @exception_commands.command()
-    @Permissions.has_permissions(administrator=True)
     @app_commands.describe(channel="Select a channel to exclude")
     async def add(
         self,
@@ -101,6 +99,7 @@ class AllLink(commands.Cog):
         channel: Union[discord.VoiceChannel, discord.StageChannel],
     ):
         """Use to create an exception to the all link command"""
+        await self.client._has_permissions(interaction, administrator=True)
 
         data = self.client.redis.get_linked("all", interaction.guild_id)
 
@@ -123,7 +122,6 @@ class AllLink(commands.Cog):
         return self.client.incr_counter("all_add_exception")
 
     @exception_commands.command()
-    @Permissions.has_permissions(administrator=True)
     @app_commands.describe(channel="Select a channel to un-exclude")
     async def remove(
         self,
@@ -131,6 +129,7 @@ class AllLink(commands.Cog):
         channel: Union[discord.VoiceChannel, discord.StageChannel],
     ):
         """Use to remove an exception to the all link command"""
+        await self.client._has_permissions(interaction, administrator=True)
 
         data = self.client.redis.get_linked("all", interaction.guild_id)
 
@@ -150,7 +149,6 @@ class AllLink(commands.Cog):
         return self.client.incr_counter("all_remove_exception")
 
     @suffix_commands.command()
-    @Permissions.has_permissions(administrator=True)
     @app_commands.describe(
         suffix="The suffix to add to your username when joining any channel"
     )
@@ -160,6 +158,8 @@ class AllLink(commands.Cog):
         suffix: str,
     ):
         """Use to add a suffix to users"""
+        await self.client._has_permissions(interaction, administrator=True)
+
         data = self.client.redis.get_linked("all", interaction.guild_id)
         data["suffix"] = suffix
         self.client.redis.update_linked("all", interaction.guild_id, data)
@@ -171,9 +171,10 @@ class AllLink(commands.Cog):
         return self.client.incr_counter("all_add_suffix")
 
     @suffix_commands.command()
-    @Permissions.has_permissions(administrator=True)
     async def remove(self, interaction: discord.Interaction):
         """Use to remove a username suffix rule"""
+        await self.client._has_permissions(interaction, administrator=True)
+
         data = self.client.redis.get_linked("all", interaction.guild_id)
         data["suffix"] = ""
         self.client.redis.update_linked("all", interaction.guild_id, data)
@@ -183,7 +184,6 @@ class AllLink(commands.Cog):
         return self.client.incr_counter("all_remove_suffix")
 
     @reverse_commands.command(name="link")
-    @Permissions.has_permissions(administrator=True)
     @app_commands.describe(role="Select a role to reverse link")
     async def reverse_link(
         self,
@@ -191,6 +191,7 @@ class AllLink(commands.Cog):
         role: discord.Role,
     ):
         """Use to add a reverse link"""
+        await self.client._has_permissions(interaction, administrator=True)
 
         data = self.client.redis.get_linked("all", interaction.guild_id)
 
@@ -210,7 +211,6 @@ class AllLink(commands.Cog):
         return self.client.incr_counter("all_reverse_link")
 
     @reverse_commands.command(name="unlink")
-    @Permissions.has_permissions(administrator=True)
     @app_commands.describe(role="Select a role to un-reverse link")
     async def reverse_unlink(
         self,
@@ -218,6 +218,7 @@ class AllLink(commands.Cog):
         role: discord.Role,
     ):
         """Use to remove a reverse link"""
+        await self.client._has_permissions(interaction, administrator=True)
 
         data = self.client.redis.get_linked("all", interaction.guild_id)
 

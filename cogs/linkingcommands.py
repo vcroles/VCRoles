@@ -5,7 +5,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from bot import MyClient
-from utils import Permissions, handle_data_deletion
+from utils import handle_data_deletion
 
 
 class Linking(commands.Cog):
@@ -18,7 +18,6 @@ class Linking(commands.Cog):
     reverse_commands = app_commands.Group(name="reverse", description="Reverse roles")
 
     @app_commands.command()
-    @Permissions.has_permissions(administrator=True)
     @app_commands.describe(
         channel="Select a channel to link", role="Select a role to link"
     )
@@ -31,6 +30,7 @@ class Linking(commands.Cog):
         role: discord.Role,
     ):
         """Use to link a channel with a role"""
+        await self.client._has_permissions(interaction, administrator=True)
 
         if isinstance(channel, discord.CategoryChannel):
             channel_type = "category"
@@ -68,7 +68,6 @@ class Linking(commands.Cog):
         return self.client.incr_counter("link")
 
     @app_commands.command()
-    @Permissions.has_permissions(administrator=True)
     @app_commands.describe(
         channel="Select a channel to unlink", role="Select a role to unlink"
     )
@@ -81,6 +80,7 @@ class Linking(commands.Cog):
         role: discord.Role,
     ):
         """Use to unlink a channel from a role"""
+        await self.client._has_permissions(interaction, administrator=True)
 
         if isinstance(channel, discord.CategoryChannel):
             channel_type = "category"
@@ -124,7 +124,6 @@ class Linking(commands.Cog):
         return self.client.incr_counter("unlink")
 
     @suffix_commands.command()
-    @Permissions.has_permissions(administrator=True)
     @app_commands.describe(
         channel="Select a channel to link",
         suffix="Add a suffix to the end of usernames",
@@ -138,6 +137,7 @@ class Linking(commands.Cog):
         suffix: str,
     ):
         """Use to set a suffix for a channel"""
+        await self.client._has_permissions(interaction, administrator=True)
 
         if isinstance(channel, discord.CategoryChannel):
             channel_type = "category"
@@ -164,7 +164,6 @@ class Linking(commands.Cog):
         return self.client.incr_counter("add_suffix")
 
     @suffix_commands.command()
-    @Permissions.has_permissions(administrator=True)
     @app_commands.describe(channel="Select a channel to link")
     async def remove(
         self,
@@ -174,6 +173,7 @@ class Linking(commands.Cog):
         ],
     ):
         """Use to remove a suffix for a channel"""
+        await self.client._has_permissions(interaction, administrator=True)
 
         if isinstance(channel, discord.CategoryChannel):
             channel_type = "category"
@@ -204,7 +204,6 @@ class Linking(commands.Cog):
         return self.client.incr_counter("remove_suffix")
 
     @reverse_commands.command(name="link")
-    @Permissions.has_permissions(administrator=True)
     @app_commands.describe(
         channel="Select a channel to link", role="Select a role to link"
     )
@@ -217,6 +216,7 @@ class Linking(commands.Cog):
         role: discord.Role,
     ):
         """Use to add a reverse role link"""
+        await self.client._has_permissions(interaction, administrator=True)
 
         if isinstance(channel, discord.CategoryChannel):
             channel_type = "category"
@@ -254,7 +254,6 @@ class Linking(commands.Cog):
         return self.client.incr_counter("reverse_link")
 
     @reverse_commands.command(name="unlink")
-    @Permissions.has_permissions(administrator=True)
     @app_commands.describe(
         channel="Select a channel to link", role="Select a role to link"
     )
@@ -267,6 +266,7 @@ class Linking(commands.Cog):
         role: discord.Role,
     ):
         """Use to remove a reverse role link"""
+        await self.client._has_permissions(interaction, administrator=True)
 
         if isinstance(channel, discord.CategoryChannel):
             channel_type = "category"
