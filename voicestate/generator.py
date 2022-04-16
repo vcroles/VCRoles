@@ -39,7 +39,7 @@ class Generator:
         data = self.client.redis.get_generator(member.guild.id)
 
         if str(before.channel.id) in data["open"]:
-            if len(before.channel.members) == 0:
+            if not before.channel.members:
                 await before.channel.delete()
 
                 data["open"].remove(str(before.channel.id))

@@ -74,16 +74,13 @@ class AllLink(commands.Cog):
         data = self.client.redis.get_linked("all", interaction.guild_id)
 
         if str(role.id) in data["roles"]:
-            try:
-                data["roles"].remove(str(role.id))
+            data["roles"].remove(str(role.id))
 
-                self.client.redis.update_linked("all", interaction.guild_id, data)
+            self.client.redis.update_linked("all", interaction.guild_id, data)
 
-                await interaction.response.send_message(
-                    f"Unlinked all channels from role: `@{role.name}`"
-                )
-            except:
-                pass
+            await interaction.response.send_message(
+                f"Unlinked all channels from role: `@{role.name}`"
+            )
         else:
             await interaction.response.send_message(
                 f"The channel and role are not linked."

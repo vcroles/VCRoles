@@ -64,8 +64,7 @@ class GenInterface(commands.Cog):
                 await msg.remove_reaction(payload.emoji, user)
             except:
                 pass
-            finally:
-                return
+            return
 
         if payload.emoji.name == "🔒":
             await self.lock(user)

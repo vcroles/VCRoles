@@ -25,9 +25,9 @@ class Logging(commands.Cog):
         """Used to enable or disable logging in a channel."""
         await self.client._has_permissions(interaction, administrator=True)
 
-        if enabled == True and not channel:
+        if enabled and not channel:
             channel = interaction.channel
-        if enabled == True and channel:
+        if enabled and channel:
             try:
                 data = self.client.redis.get_guild_data(interaction.guild_id)
 
@@ -40,7 +40,7 @@ class Logging(commands.Cog):
                 )
             except:
                 await interaction.response.send_message(f"Unable to enable logging")
-        elif enabled == False:
+        elif not enabled:
             try:
                 data = self.client.redis.get_guild_data(interaction.guild_id)
 

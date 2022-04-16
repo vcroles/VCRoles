@@ -3,6 +3,7 @@ import datetime
 import discord
 
 from bot import MyClient
+from utils import ReturnData
 
 
 class Logging:
@@ -17,75 +18,74 @@ class Logging:
         all_changed: dict[str, list] = None,
         perm_changed: dict[str, list] = None,
     ):
-        added_content = ""
-        removed_content = ""
+
+        added_chunks = []
+        removed_chunks = []
 
         # Voice
         if voice_changed["added"]:
-            added_content += "Channel: "
+            added_chunks.append("Channel: ")
             for role in voice_changed["added"]:
-                added_content += role.mention + " "
-            added_content += "\n"
+                added_chunks.append(role.mention + " ")
+            added_chunks.append("\n")
         if voice_changed["removed"]:
-            removed_content += "Channel: "
+            removed_chunks.append("Channel: ")
             for role in voice_changed["removed"]:
-                removed_content += role.mention + " "
-            removed_content += "\n"
+                removed_chunks.append(role.mention + " ")
+            removed_chunks.append("\n")
 
         # Stage
         if stage_changed["added"]:
-            added_content += "Channel: "
+            added_chunks.append("Channel: ")
             for role in stage_changed["added"]:
-                added_content += role.mention + " "
-            added_content += "\n"
+                added_chunks.append(role.mention + " ")
+            added_chunks.append("\n")
         if stage_changed["removed"]:
-            removed_content += "Channel: "
+            removed_chunks.append("Channel: ")
             for role in stage_changed["removed"]:
-                removed_content += role.mention + " "
-            removed_content += "\n"
+                removed_chunks.append(role.mention + " ")
+            removed_chunks.append("\n")
 
         # Category
         if category_changed["added"]:
-            added_content += "Category: "
+            added_chunks.append("Category: ")
             for role in category_changed["added"]:
-                added_content += role.mention + " "
-            added_content += "\n"
+                added_chunks.append(role.mention + " ")
+            added_chunks.append("\n")
         if category_changed["removed"]:
-            removed_content += "Category: "
+            removed_chunks.append("Category: ")
             for role in category_changed["removed"]:
-                removed_content += role.mention + " "
-            removed_content += "\n"
+                removed_chunks.append(role.mention + " ")
+            removed_chunks.append("\n")
 
         # All
         if all_changed:
             if all_changed["added"]:
-                added_content += "All: "
+                added_chunks.append("All: ")
                 for role in all_changed["added"]:
-                    added_content += role.mention + " "
-                added_content += "\n"
+                    added_chunks.append(role.mention + " ")
+                added_chunks.append("\n")
             if all_changed["removed"]:
-                removed_content += "All: "
+                removed_chunks.append("All: ")
                 for role in all_changed["removed"]:
-                    removed_content += role.mention + " "
-                removed_content += "\n"
+                    removed_chunks.append(role.mention + " ")
+                removed_chunks.append("\n")
 
         # Permanent
         if perm_changed:
             if perm_changed["added"]:
-                added_content += "Permissions: "
+                added_chunks.append("Permanent: ")
                 for role in perm_changed["added"]:
-                    added_content += role.mention + " "
-                added_content += "\n"
+                    added_chunks.append(role.mention + " ")
+                added_chunks.append("\n")
             if perm_changed["removed"]:
-                removed_content += "Permissions: "
+                removed_chunks.append("Permanent: ")
                 for role in perm_changed["removed"]:
-                    removed_content += role.mention + " "
-                removed_content += "\n"
+                    removed_chunks.append(role.mention + " ")
+                removed_chunks.append("\n")
 
-        if added_content:
-            added_content = added_content[:-1]  # Removes trailing newline
-        if removed_content:
-            removed_content = removed_content[:-1]
+        added_content = "".join(added_chunks).strip()
+        removed_content = "".join(removed_chunks).strip()
 
         return added_content, removed_content
 
@@ -93,11 +93,7 @@ class Logging:
         self,
         after: discord.VoiceState,
         member: discord.Member,
-        voice_changed: dict[str, list],
-        stage_changed: dict[str, list],
-        category_changed: dict[str, list],
-        all_changed: dict[str, list],
-        perm_changed: dict[str, list],
+        roles_changed: ReturnData,
     ):
         data = self.client.redis.get_guild_data(member.guild.id)
 
@@ -108,7 +104,7 @@ class Logging:
                 if channel not in member.guild.channels:
                     return
                 logging_embed = discord.Embed(
-                    title=f"Member joined voice channel",
+                    title=f"Member joined {'voice' if isinstance(after.channel, discord.VoiceChannel) else 'stage' if isinstance(after.channel, discord.StageChannel) else ''} channel",
                     description=f"{member} joined {after.channel.mention}",
                     color=discord.Color.green(),
                     timestamp=datetime.datetime.utcnow(),
@@ -120,11 +116,11 @@ class Logging:
                 )
 
                 added_content, removed_content = self.construct_embed(
-                    voice_changed,
-                    stage_changed,
-                    category_changed,
-                    all_changed,
-                    perm_changed,
+                    roles_changed.voice_changed,
+                    roles_changed.stage_changed,
+                    roles_changed.category_changed,
+                    roles_changed.all_changed,
+                    roles_changed.perm_changed,
                 )
 
                 if added_content:
@@ -144,10 +140,7 @@ class Logging:
         self,
         before: discord.VoiceState,
         member: discord.Member,
-        voice_changed: dict[str, list],
-        stage_changed: dict[str, list],
-        category_changed: dict[str, list],
-        all_changed: dict[str, list],
+        roles_changed: ReturnData,
     ):
         data = self.client.redis.get_guild_data(member.guild.id)
 
@@ -156,7 +149,7 @@ class Logging:
                 channel = data["logging"]
                 channel = self.client.get_channel(int(channel))
                 logging_embed = discord.Embed(
-                    title=f"Member left voice channel",
+                    title=f"Member left {'voice' if isinstance(before.channel, discord.VoiceChannel) else 'stage' if isinstance(before.channel, discord.StageChannel) else ''} channel",
                     description=f"{member} left {before.channel.mention}",
                     color=discord.Color.red(),
                     timestamp=datetime.datetime.utcnow(),
@@ -168,10 +161,10 @@ class Logging:
                 )
 
                 added_content, removed_content = self.construct_embed(
-                    voice_changed,
-                    stage_changed,
-                    category_changed,
-                    all_changed,
+                    roles_changed.voice_changed,
+                    roles_changed.stage_changed,
+                    roles_changed.category_changed,
+                    roles_changed.all_changed,
                 )
 
                 if added_content:
@@ -192,8 +185,8 @@ class Logging:
         before: discord.VoiceState,
         after: discord.VoiceState,
         member: discord.Member,
-        leave_roles_changed: tuple,
-        join_roles_changed: tuple,
+        leave_roles_changed: ReturnData,
+        join_roles_changed: ReturnData,
     ):
         data = self.client.redis.get_guild_data(member.guild.id)
 
@@ -202,7 +195,7 @@ class Logging:
                 channel = data["logging"]
                 channel = self.client.get_channel(int(channel))
                 logging_embed = discord.Embed(
-                    title=f"Member moved voice channel",
+                    title=f"Member moved channel",
                     description=f"**Before:** {before.channel.mention}\n**+After:** {after.channel.mention}",
                     color=discord.Color.blue(),
                     timestamp=datetime.datetime.utcnow(),
@@ -213,17 +206,10 @@ class Logging:
                     icon_url=member.avatar.url,
                 )
 
-                (
-                    voice_changed,
-                    stage_changed,
-                    category_changed,
-                    all_changed,
-                ) = leave_roles_changed
-
                 added_content, removed_content = self.construct_embed(
-                    voice_changed,
-                    stage_changed,
-                    category_changed,
+                    leave_roles_changed.voice_changed,
+                    leave_roles_changed.stage_changed,
+                    leave_roles_changed.category_changed,
                 )
 
                 if added_content:
@@ -239,19 +225,11 @@ class Logging:
                         inline=False,
                     )
 
-                (
-                    voice_changed,
-                    stage_changed,
-                    category_changed,
-                    all_changed,
-                    perm_changed,
-                ) = join_roles_changed
-
                 added_content, removed_content = self.construct_embed(
-                    voice_changed,
-                    stage_changed,
-                    category_changed,
-                    perm_changed=perm_changed,
+                    join_roles_changed.voice_changed,
+                    join_roles_changed.stage_changed,
+                    join_roles_changed.category_changed,
+                    perm_changed=join_roles_changed.perm_changed,
                 )
 
                 if added_content:

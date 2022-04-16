@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 
 from bot import MyClient
-from utils import add_suffix, remove_suffix
+from utils import ReturnData, add_suffix, remove_suffix
 from voicestate.all import All
 from voicestate.generator import Generator
 from voicestate.logging import Logging
@@ -24,7 +24,7 @@ class VoiceState(commands.Cog):
         before: discord.VoiceState,
         after: discord.VoiceState,
     ):
-        if member.bot == True:
+        if member.bot:
             return
 
         # Joining
@@ -32,22 +32,10 @@ class VoiceState(commands.Cog):
             roles_changed = await self.join(member, before, after)
 
             if roles_changed:
-                (
-                    voice_changed,
-                    stage_changed,
-                    category_changed,
-                    all_changed,
-                    perm_changed,
-                ) = roles_changed
-
                 await self.logging.log_join(
                     after,
                     member,
-                    voice_changed,
-                    stage_changed,
-                    category_changed,
-                    all_changed,
-                    perm_changed,
+                    roles_changed,
                 )
 
         # Leaving
@@ -55,20 +43,10 @@ class VoiceState(commands.Cog):
             roles_changed = await self.leave(member, before, after)
 
             if roles_changed:
-                (
-                    voice_changed,
-                    stage_changed,
-                    category_changed,
-                    all_changed,
-                ) = roles_changed
-
                 await self.logging.log_leave(
                     before,
                     member,
-                    voice_changed,
-                    stage_changed,
-                    category_changed,
-                    all_changed,
+                    roles_changed,
                 )
 
         # Changing
@@ -98,7 +76,7 @@ class VoiceState(commands.Cog):
         member: discord.Member,
         before: discord.VoiceState,
         after: discord.VoiceState,
-    ):
+    ) -> ReturnData:
         try:
             after.channel.type
         except:
@@ -172,12 +150,13 @@ class VoiceState(commands.Cog):
             generator_task,
         )
 
-        return (
+        return ReturnData(
             voice_changed,
             stage_changed,
             category_changed,
             all_changed,
             perm_changed,
+            gen,
         )
 
     async def leave(
@@ -185,7 +164,7 @@ class VoiceState(commands.Cog):
         member: discord.Member,
         before: discord.VoiceState,
         after: discord.VoiceState,
-    ):
+    ) -> ReturnData:
         try:
             before.channel.type
         except:
@@ -251,11 +230,12 @@ class VoiceState(commands.Cog):
             generator_task,
         )
 
-        return (
+        return ReturnData(
             voice_changed,
             stage_changed,
             category_changed,
             all_changed,
+            gen_data=gen,
         )
 
     async def handle_join(

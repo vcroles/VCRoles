@@ -91,7 +91,7 @@ class TTS(commands.Cog):
                         for c in self.client.voice_clients:
                             if (
                                 c.channel == interaction.user.voice.channel
-                                and c.is_playing() == True
+                                and c.is_playing()
                             ):
                                 await interaction.response.send_message(
                                     f"Please wait for the current TTS message to finish"
@@ -116,7 +116,7 @@ class TTS(commands.Cog):
                         after=lambda e: 1 + 1,
                     )
                     await asyncio.sleep(audio.info.length + 1)
-                    if leave == True and data["tts:leave"] == "True":
+                    if leave and data["tts:leave"] == "True":
                         await vc.disconnect()
                     os.remove(f"tts/{interaction.guild_id}.mp3")
 

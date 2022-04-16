@@ -1,4 +1,5 @@
 import json
+from typing import NamedTuple
 
 import discord
 import redis
@@ -159,3 +160,17 @@ def handle_data_deletion(data: dict, channel_id: str) -> dict:
         data.pop(channel_id)
 
     return data
+
+
+# Vociestate return data
+
+
+class ReturnData(NamedTuple):
+    """Data to return from voicestate join/leave handling"""
+
+    voice_changed: dict[str, list] = {"added": [], "removed": []}
+    stage_changed: dict[str, list] = {"added": [], "removed": []}
+    category_changed: dict[str, list] = {"added": [], "removed": []}
+    all_changed: dict[str, list] = {"added": [], "removed": []}
+    perm_changed: dict[str, list] = None
+    gen_data: dict = None

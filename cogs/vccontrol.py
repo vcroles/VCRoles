@@ -42,21 +42,18 @@ class VCControl(commands.Cog):
 
         mem = await self.get_members(interaction)
 
-        tasks = []
         if who == "everyone" and vc:
-            for member in mem:
-                tasks.append(asyncio.create_task(member.edit(mute=True)))
+            tasks = [asyncio.create_task(member.edit(mute=True)) for member in mem]
         elif who == "everyone but me" and vc:
-            for member in vc.members:
-                if member == interaction.user:
-                    pass
-                else:
-                    tasks.append(asyncio.create_task(member.edit(mute=True)))
+            tasks = [
+                asyncio.create_task(member.edit(mute=True))
+                for member in mem
+                if member.id != interaction.user.id
+            ]
         else:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 "Please ensure you are in a voice channel."
             )
-            return
 
         embed = discord.Embed(
             colour=discord.Colour.dark_grey(),
@@ -83,21 +80,18 @@ class VCControl(commands.Cog):
 
         mem = await self.get_members(interaction)
 
-        tasks = []
         if who == "everyone" and vc:
-            for member in mem:
-                tasks.append(asyncio.create_task(member.edit(deafen=True)))
+            tasks = [asyncio.create_task(member.edit(deafen=True)) for member in mem]
         elif who == "everyone but me" and vc:
-            for member in vc.members:
-                if member == interaction.user:
-                    pass
-                else:
-                    tasks.append(asyncio.create_task(member.edit(deafen=True)))
+            tasks = [
+                asyncio.create_task(member.edit(deafen=True))
+                for member in mem
+                if member.id != interaction.user.id
+            ]
         else:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 "Please ensure you are in a voice channel."
             )
-            return
 
         embed = discord.Embed(
             colour=discord.Colour.dark_grey(),
@@ -119,15 +113,12 @@ class VCControl(commands.Cog):
 
         mem = await self.get_members(interaction)
 
-        tasks = []
         if vc:
-            for member in mem:
-                tasks.append(asyncio.create_task(member.edit(mute=False)))
+            tasks = [asyncio.create_task(member.edit(mute=False)) for member in mem]
         else:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 "Please ensure you are in a voice channel."
             )
-            return
 
         embed = discord.Embed(
             colour=discord.Colour.dark_grey(),
@@ -149,15 +140,12 @@ class VCControl(commands.Cog):
 
         mem = await self.get_members(interaction)
 
-        tasks = []
         if vc:
-            for member in mem:
-                tasks.append(asyncio.create_task(member.edit(deafen=False)))
+            tasks = [asyncio.create_task(member.edit(deafen=False)) for member in mem]
         else:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 "Please ensure you are in a voice channel."
             )
-            return
 
         embed = discord.Embed(
             colour=discord.Colour.dark_grey(),

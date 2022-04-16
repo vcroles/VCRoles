@@ -196,7 +196,7 @@ async def on_command_error(
 
 @client.command()
 @commands.is_owner()
-async def sync_commands(ctx):
+async def sync_commands(ctx: commands.Context):
     await ctx.send("Syncing commands...")
     await client.tree.sync()
     await ctx.send("Done!")

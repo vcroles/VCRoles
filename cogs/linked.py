@@ -12,18 +12,18 @@ class Linked(commands.Cog):
     def construct_linked_content(
         self, data: dict, interaction: discord.Interaction
     ) -> str:
-        content = ""
+        chunks = []
         for channel_id, channel_data in data.items():
             if channel_id == "format":
                 continue
             try:
                 channel = self.client.get_channel(int(channel_id))
-                content += f"{channel.mention}: "
-                content += self.iterate_links(channel_data, interaction)
+                chunks.append(f"{channel.mention}: ")
+                chunks.append(self.iterate_links(channel_data, interaction))
             except:
-                content += f"Not Found - ID `{channel_id}`\n"
+                chunks.append(f"Not Found - ID `{channel_id}`\n")
 
-        return content
+        return "".join(chunks)
 
     def iterate_links(
         self, channel_data: dict, interaction: discord.Interaction
@@ -34,20 +34,15 @@ class Linked(commands.Cog):
         - Reverse Roles
         - Suffix
         """
-        content = ""
+        chunks = []
         for role_id in channel_data["roles"]:
-            try:
-                role = interaction.guild.get_role(int(role_id))
-                content += f"{role.mention}, "
-            except:
-                pass
+            role = interaction.guild.get_role(int(role_id))
+            chunks.append(f"{role.mention if role else role_id}, ")
         for role_id in channel_data["reverse_roles"]:
-            try:
-                role = interaction.guild.get_role(int(role_id))
-                content += f"R{role.mention}, "
-            except:
-                pass
-        content += f"`{channel_data['suffix']}`" if channel_data["suffix"] else ""
+            role = interaction.guild.get_role(int(role_id))
+            chunks.append(f"R{role.mention if role else role_id}, ")
+        chunks.append(f"`{channel_data['suffix']}`" if channel_data["suffix"] else "")
+        content = "".join(chunks)
         content = content.removesuffix(", ") + "\n"
         return content
 
@@ -78,22 +73,23 @@ class Linked(commands.Cog):
 
         all_content = self.iterate_links(all_dict, interaction)
 
+        chunks = [all_content]
         if "except" in all_dict:
-            if len(all_dict["except"]) > 0:
-                all_content += "All-link exceptions: "
+            if all_dict["except"]:
+                chunks.append("All-link exceptions: ")
                 for exception_id in all_dict["except"]:
                     try:
                         channel = self.client.get_channel(int(exception_id))
-                        all_content += f"{channel.mention}, "
+                        chunks.append(f"{channel.mention}, ")
                     except:
-                        all_content += f"Not Found - ID `{exception_id}`"
-                all_content = all_content.removesuffix(", ")
+                        chunks.append(f"Not Found - ID `{exception_id}`")
+        all_content = "".join(chunks).removesuffix(", ")
         if all_content.strip():
             linked_embed.add_field(
                 name="All Link:", value=all_content.strip(), inline=False
             )
 
-        if len(linked_embed.fields) > 0:
+        if linked_embed.fields:
             await interaction.response.send_message(embed=linked_embed)
         else:
             await interaction.response.send_message("Nothing is linked")
