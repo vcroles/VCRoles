@@ -1,4 +1,5 @@
-from typing import Union
+from string import Template
+from typing import Optional, Union
 
 import discord
 from discord import Interaction, app_commands
@@ -13,14 +14,22 @@ class Utils(commands.Cog):
         self.client = client
 
     @app_commands.command()
-    @app_commands.describe(channel="Channel to mention:")
+    @app_commands.describe(
+        channel="Channel to mention:",
+        message="Message to send using $name and $mention variables:",
+    )
     async def mention(
         self,
         interaction: Interaction,
         channel: Union[discord.VoiceChannel, discord.StageChannel],
+        message: Optional[str] = "$mention",
     ):
         """Use to mention a channel in chat"""
-        await interaction.response.send_message(f"{channel.mention}")
+        await interaction.response.send_message(
+            Template(message).substitute(
+                name=channel.name, mention=channel.mention, channel=channel
+            )
+        )
 
         return self.client.incr_counter("mention")
 
