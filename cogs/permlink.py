@@ -31,7 +31,9 @@ class PermLink(commands.Cog):
     async def link(
         self,
         interaction: discord.Interaction,
-        channel: Union[discord.VoiceChannel, discord.StageChannel],
+        channel: Union[
+            discord.VoiceChannel, discord.StageChannel, discord.CategoryChannel
+        ],
         role: discord.Role,
     ):
         """Use to link a channel and a role (after leaving channel, user will keep role)"""
@@ -72,7 +74,9 @@ class PermLink(commands.Cog):
     async def unlink(
         self,
         interaction: discord.Interaction,
-        channel: Union[discord.VoiceChannel, discord.StageChannel],
+        channel: Union[
+            discord.VoiceChannel, discord.StageChannel, discord.CategoryChannel
+        ],
         role: discord.Role,
     ):
         """Use to unlink a "permanent" channel from a role"""
@@ -112,7 +116,9 @@ class PermLink(commands.Cog):
     async def add(
         self,
         interaction: discord.Interaction,
-        channel: Union[discord.VoiceChannel, discord.StageChannel],
+        channel: Union[
+            discord.VoiceChannel, discord.StageChannel, discord.CategoryChannel
+        ],
         suffix: str,
     ):
         """Use to set a suffix to add to the end of usernames"""
@@ -140,7 +146,9 @@ class PermLink(commands.Cog):
     async def remove(
         self,
         interaction: discord.Interaction,
-        channel: Union[discord.VoiceChannel, discord.StageChannel],
+        channel: Union[
+            discord.VoiceChannel, discord.StageChannel, discord.CategoryChannel
+        ],
     ):
         """Use to remove a suffix rule from a channel"""
         await self.client._has_permissions(interaction, administrator=True)
@@ -176,7 +184,9 @@ class PermLink(commands.Cog):
     async def reverse_link(
         self,
         interaction: discord.Interaction,
-        channel: Union[discord.VoiceChannel, discord.StageChannel],
+        channel: Union[
+            discord.VoiceChannel, discord.StageChannel, discord.CategoryChannel
+        ],
         role: discord.Role,
     ):
         """Use to reverse link a channel and a role"""
@@ -219,7 +229,9 @@ class PermLink(commands.Cog):
     async def reverse_unlink(
         self,
         interaction: discord.Interaction,
-        channel: Union[discord.VoiceChannel, discord.StageChannel],
+        channel: Union[
+            discord.VoiceChannel, discord.StageChannel, discord.CategoryChannel
+        ],
         role: discord.Role,
     ):
         """Use to unlink a reverse role"""

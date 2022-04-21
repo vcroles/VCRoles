@@ -132,6 +132,17 @@ class VoiceState(commands.Cog):
             )
         )
 
+        if after.channel.category:
+            perm_cat_changed_task = asyncio.create_task(
+                self.handle_join(
+                    self.client.redis.get_linked("permanent", member.guild.id),
+                    member,
+                    after.channel.category.id,
+                )
+            )
+        else:
+            perm_cat_changed_task = asyncio.create_task(self.return_data())
+
         generator_task = asyncio.create_task(self.generator.join(member, before, after))
 
         (
@@ -140,6 +151,7 @@ class VoiceState(commands.Cog):
             category_changed,
             all_changed,
             perm_changed,
+            perm_cat_changed,
             gen,
         ) = await asyncio.gather(
             voice_changed_task,
@@ -147,8 +159,12 @@ class VoiceState(commands.Cog):
             category_changed_task,
             all_changed_task,
             perm_changed_task,
+            perm_cat_changed_task,
             generator_task,
         )
+
+        perm_changed["added"].extend(perm_cat_changed["added"])
+        perm_changed["removed"].extend(perm_cat_changed["removed"])
 
         return ReturnData(
             voice_changed,
