@@ -4,9 +4,8 @@ App command checks for the bot.
 
 from typing import Callable, TypeVar
 
-from discord import app_commands, Interaction
+from discord import Interaction, app_commands
 from discord.app_commands.commands import Check
-
 
 T = TypeVar("T")
 

@@ -9,7 +9,7 @@ from gtts import gTTS
 from mutagen.mp3 import MP3
 
 from bot import MyClient
-from checks import check_any, is_owner, command_available
+from checks import check_any, command_available, is_owner
 
 tts_langs = Literal[
     "af: Afrikaans",
