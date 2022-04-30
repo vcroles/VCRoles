@@ -1,4 +1,4 @@
-import json
+from typing import Optional
 
 import discord
 from discord.ext import commands
@@ -12,75 +12,6 @@ class Dev(commands.Cog):
 
     @commands.command(description="DEVELOPER COMMAND")
     @commands.is_owner()
-    async def change_status(self, ctx, status=None, *, message: str = None):
-        try:
-            status = int(status)
-        except:
-            pass
-
-        if status == 1:
-            status_embed = discord.Embed(
-                colour=discord.Color.blue(),
-                title="__**Success**__",
-                description=f"Activity Type set to listening\nMessage set to {message}",
-            )
-            await self.client.change_presence(
-                activity=discord.Activity(
-                    type=discord.ActivityType.listening, name=message
-                )
-            )
-            await ctx.send(embed=status_embed)
-        elif status == 2:
-            status_embed = discord.Embed(
-                colour=discord.Color.blue(),
-                title="__**Success**__",
-                description=f"Activity Type set to Watching\nMessage set to {message}",
-            )
-            await self.client.change_presence(
-                activity=discord.Activity(
-                    type=discord.ActivityType.watching, name=message
-                )
-            )
-            await ctx.send(embed=status_embed)
-        elif status == 3:
-            status_embed = discord.Embed(
-                colour=discord.Color.blue(),
-                title="__**Success**__",
-                description=f"Activity Type set to Playing\nMessage set to {message}",
-            )
-            await self.client.change_presence(
-                activity=discord.Activity(
-                    type=discord.ActivityType.playing, name=message
-                )
-            )
-            await ctx.send(embed=status_embed)
-        elif status == None:
-            status_embed = discord.Embed(
-                colour=discord.Color.blue(),
-                title="__**Numbers For Status Changing**__",
-                description="Listening - 1 \nWatching - 2\nPlaying - 3\n Plain Genric one - 4",
-            )
-            await ctx.send(embed=status_embed)
-        elif status == 4:
-            status_embed = discord.Embed(
-                colour=discord.Color.blue(),
-                title="__**Success**__",
-                description="Activity Type set to Listening\nMessage set to /help - www.vcroles.com",
-            )
-            await self.client.change_presence(
-                activity=discord.Activity(
-                    type=discord.ActivityType.listening, name="/help - www.vcroles.com"
-                )
-            )
-            await ctx.send(embed=status_embed)
-
-    @commands.command(description="DEVELOPER COMMAND")
-    @commands.is_owner()
-    async def servernum(self, ctx):
-        await ctx.send(f"Bot is in {len(self.client.guilds)} servers")
-
-    @commands.command(description="DEVELOPER COMMAND")
-    @commands.is_owner()
     async def shards(self, ctx):
         shard_embed = discord.Embed(
             colour=discord.Colour.blue(),
@@ -88,11 +19,6 @@ class Dev(commands.Cog):
             description=f"There are {len(self.client.shards)} shards.\nThis is shard {ctx.guild.shard_id} - latency: {round(self.client.latency * 1000)} ms",
         )
         await ctx.send(embed=shard_embed)
-
-    @commands.command(description="DEVELOPER COMMAND")
-    @commands.is_owner()
-    async def coglist(self, ctx):
-        await ctx.send(f"The cogs are:\n{self.client.cogs.keys()}")
 
     @commands.command(description="DEVELOPER COMMAND")
     @commands.is_owner()
@@ -106,6 +32,33 @@ class Dev(commands.Cog):
         await ctx.send("Fetching Logs...")
         await ctx.channel.send(file=discord.File(f"discord.log"))
         await ctx.channel.send(file=discord.File(f"error.log"))
+
+    @commands.command(aliases=["sync"])
+    @commands.is_owner()
+    async def sync_commands(
+        self, ctx: commands.Context, guild_id: Optional[int] = None
+    ):
+        await ctx.reply("Syncing commands...")
+        if guild_id:
+            guild = discord.Object(id=guild_id)
+            self.client.tree.copy_global_to(guild=guild)
+            await self.client.tree.sync(guild=guild)
+        else:
+            await self.client.tree.sync()
+        await ctx.send("Done!")
+
+    @commands.command(aliases=["reset"])
+    @commands.is_owner()
+    async def reset_limit(self, ctx: commands.Context, user_id: int = None):
+        if user_id:
+            self.client.loop.create_task(
+                self.client.ar.execute_command("hdel", "commands", str(user_id))
+            )
+        else:
+            self.client.loop.create_task(
+                self.client.ar.execute_command("del", "commands")
+            )
+        await ctx.reply("Reset command limit!")
 
 
 async def setup(client: MyClient):

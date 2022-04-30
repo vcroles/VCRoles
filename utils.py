@@ -117,6 +117,10 @@ class RedisUtils:
     def update_gen_open(self, guild_id: int, data: list):
         self.r.hset(f"{guild_id}:gen", "open", self.to_str(data))
 
+    def get_user_cmd_count(self, user_id: int) -> int:
+        res = self.r.hget("commands", str(user_id))
+        return int(res) if res is not None else 0
+
 
 # Username Suffix Tools
 

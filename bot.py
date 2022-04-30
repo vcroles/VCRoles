@@ -3,16 +3,18 @@ import datetime as dt
 import json
 import logging
 import os
-from datetime import datetime
+from typing import Optional
 
 import discord
 import redis
+import redis.asyncio as aioredis
 from discord import app_commands
 from discord.ext import commands, tasks
 
 import config
 from utils import RedisUtils
 from views.interface import Interface
+from views.url import TopGG
 
 logger = logging.getLogger("discord")
 logger.setLevel(logging.INFO)
@@ -26,25 +28,26 @@ logger.addHandler(handler)
 class MyClient(commands.AutoShardedBot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        r = redis.Redis(
-            host=config.REDIS.HOST,
-            port=config.REDIS.PORT,
-            db=config.REDIS.DB,
-            password=config.REDIS.PASSWORD,
-        )
+        redis_url = f"redis://:{config.REDIS.PASSWORD}@{config.REDIS.HOST}:{config.REDIS.PORT}/{config.REDIS.DB}"
+        r = redis.from_url(redis_url)
+        self.ar = aioredis.from_url(redis_url)
         self.redis = RedisUtils(r)
         self.persistent_views_added = False
 
     def incr_counter(self, cmd_name: str):
         """Increments the counter for a command"""
-        self.redis.r.hincrby("counters", cmd_name, 1)
+        self.loop.create_task(
+            self.ar.execute_command("hincrby", "counters", cmd_name, 1)
+        )
 
     def incr_role_counter(self, action: str, count: int = 1):
         """
         action: `add` or `remove`.
         Increments the counter for roles added or removed
         """
-        self.redis.r.hincrby("counters", f"roles_{action}", count)
+        self.loop.create_task(
+            self.ar.execute_command("hincrby", "counters", f"roles_{action}", count)
+        )
 
     async def on_ready(self):
         if not self.persistent_views_added:
@@ -62,9 +65,18 @@ class MyClient(commands.AutoShardedBot):
         print(f"Bot is in {len(self.guilds)} guilds.")
         print("------")
 
+    async def setup_hook(self):
         reminder.start()
 
+    async def on_guild_join(self, guild: discord.Guild):
+        self.loop.create_task(
+            self.ar.execute_command("hincrby", "counters", "guilds_join", 1)
+        )
+
     async def on_guild_remove(self, guild: discord.Guild):
+        self.loop.create_task(
+            self.ar.execute_command("hincrby", "counters", "guilds_leave", 1)
+        )
         self.redis.guild_remove(guild.id)
 
     async def on_command_error(self, ctx, error):
@@ -114,8 +126,9 @@ class MyClient(commands.AutoShardedBot):
             if hook.channel.id == 869494079745056808 and hook.token:
                 embed = discord.Embed(
                     title="Vote for VC Roles Here",
-                    description="https://top.gg/bot/775025797034541107/vote/",
+                    description="Vote & get unlimited command usage!\nhttps://top.gg/bot/775025797034541107/vote/",
                     color=discord.Color.blue(),
+                    url="https://top.gg/bot/775025797034541107/vote/",
                 )
                 await hook.send(
                     embeds=[embed],
@@ -123,41 +136,10 @@ class MyClient(commands.AutoShardedBot):
                     avatar_url="https://avatars.githubusercontent.com/u/34552786",
                 )
 
-    async def _has_permissions(
-        self, interaction: discord.Interaction, **perms: bool
-    ) -> bool:
-        invalid = set(perms) - set(discord.Permissions.VALID_FLAGS)
-        if invalid:
-            raise TypeError(f"Invalid permission(s): {', '.join(invalid)}")
-
-        permissions = interaction.channel.permissions_for(interaction.user)
-
-        missing = [
-            perm for perm, value in perms.items() if getattr(permissions, perm) != value
-        ]
-
-        if not missing:
-            return True
-
-        if interaction.user.id in [652797071623192576, 602235481459261440]:
-            return True
-
-        if not interaction.response.is_done():
-            await interaction.response.send_message(
-                "You do not have the required permissions to use this command.",
-                ephemeral=True,
-            )
-        else:
-            await interaction.followup.send(
-                "You do not have the required permissions to use this command.",
-                ephemeral=True,
-            )
-        raise app_commands.MissingPermissions(missing)
-
 
 intents = discord.Intents(messages=True, guilds=True, reactions=True, voice_states=True)
 
-client = MyClient(intents=intents, command_prefix=commands.when_mentioned_or("#"))
+client = MyClient(intents=intents, command_prefix=commands.when_mentioned)
 client.remove_command("help")
 
 
@@ -170,13 +152,18 @@ async def on_autopost_success():
 
 @client.event
 async def on_dbl_vote(data):
-    user = await client.fetch_user(int(data["user"]))
     if data["type"] == "upvote":
+        client.loop.create_task(
+            client.ar.execute_command("hset", "commands", str(data["user"]), -10_000)
+        )
+
+        user = await client.fetch_user(int(data["user"]))
+
         channel = client.get_channel(947070091797856276)
         embed = discord.Embed(
             colour=discord.Colour.blue(),
             title=":tada: Top.gg Vote! :tada:",
-            description=f"{user.mention} ({user.name}) just voted for VC Roles on Top.gg!\n\nClick [here](https://top.gg/bot/775025797034541107/vote) to vote",
+            description=f"{user.mention} ({user.name}) just voted for VC Roles on Top.gg & received unlimited command usage for the rest of the day!\n\nClick [here](https://top.gg/bot/775025797034541107/vote) to vote",
             url="https://top.gg/bot/775025797034541107/vote",
         )
         embed.set_thumbnail(url=user.avatar.url)
@@ -191,20 +178,32 @@ async def on_command_error(
     interaction: discord.Interaction,
     error: app_commands.AppCommandError,
 ):
-    return
+    if isinstance(error, app_commands.MissingPermissions):
+        return await interaction.response.send_message(
+            "You do not have the required permissions to use this command.",
+            ephemeral=True,
+        )
+    if isinstance(error, app_commands.CheckFailure):
+        embed = discord.Embed(
+            title="Command Limit Reached",
+            description=f"You have reached your command limit for today, but **don't worry!** You can get **unlimited** command usage for the rest of the day by [voting for the bot on Top.gg!](https://top.gg/bot/775025797034541107/vote)",
+            colour=discord.Colour.brand_red(),
+            url="https://top.gg/bot/775025797034541107/vote",
+        )
+        embed.set_thumbnail(url=interaction.user.avatar.url)
+        embed.set_author(name=client.user.name, icon_url=client.user.avatar.url)
+        embed.set_footer(text="Thanks for using the bot!")
 
-
-@client.command()
-@commands.is_owner()
-async def sync_commands(ctx: commands.Context):
-    await ctx.send("Syncing commands...")
-    await client.tree.sync()
-    await ctx.send("Done!")
+        return await interaction.response.send_message(
+            embed=embed, ephemeral=True, view=TopGG()
+        )
+    else:
+        return
 
 
 @tasks.loop(time=[dt.time(hour=12, minute=0), dt.time(hour=0, minute=0)])
 async def reminder():
-    task = asyncio.create_task(client.send_reminder())
+    client.loop.create_task(client.send_reminder())
 
     with open("guilds.json", "r") as f:
         data = json.load(f)
@@ -214,7 +213,8 @@ async def reminder():
     with open("guilds.json", "w") as f:
         json.dump(data, f)
 
-    await task
+    if dt.datetime.utcnow().strftime("%H:%M") == "00:00":
+        client.loop.create_task(client.ar.execute_command("del", "commands"))
 
 
 @reminder.before_loop
