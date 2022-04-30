@@ -28,10 +28,6 @@ logger.addHandler(handler)
 class MyClient(commands.AutoShardedBot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        redis_url = f"redis://:{config.REDIS.PASSWORD}@{config.REDIS.HOST}:{config.REDIS.PORT}/{config.REDIS.DB}"
-        r = redis.from_url(redis_url)
-        self.ar = aioredis.from_url(redis_url)
-        self.redis = RedisUtils(r)
         self.persistent_views_added = False
 
     def incr_counter(self, cmd_name: str):
@@ -66,6 +62,11 @@ class MyClient(commands.AutoShardedBot):
         print("------")
 
     async def setup_hook(self):
+        redis_url = f"redis://:{config.REDIS.PASSWORD}@{config.REDIS.HOST}:{config.REDIS.PORT}/{config.REDIS.DB}"
+        r = redis.from_url(redis_url)
+        self.ar = aioredis.from_url(redis_url)
+        self.redis = RedisUtils(r)
+
         reminder.start()
 
     async def on_guild_join(self, guild: discord.Guild):
