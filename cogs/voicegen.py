@@ -1,4 +1,3 @@
-import asyncio
 import json
 from typing import Optional
 
@@ -7,6 +6,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from bot import MyClient
+from checks import check_any, is_owner, command_available
 from views.interface import Interface
 
 
@@ -25,6 +25,8 @@ class VoiceGen(commands.Cog):
         voice_channel_name="Name of voice channel",
         interface_channel_name="Name of interface channel",
     )
+    @check_any(command_available, is_owner)
+    @app_commands.checks.has_permissions(administrator=True)
     async def create(
         self,
         interaction: discord.Interaction,
@@ -33,7 +35,6 @@ class VoiceGen(commands.Cog):
         interface_channel_name: Optional[str] = "VC Roles Interface",
     ):
         """Creates a voice channel generator"""
-        await self.client._has_permissions(interaction, administrator=True)
 
         if interaction.guild:
             assert isinstance(interaction.guild, discord.Guild)
@@ -135,9 +136,10 @@ class VoiceGen(commands.Cog):
 
     @generator_commands.command()
     @commands.bot_has_permissions(manage_channels=True)
+    @check_any(command_available, is_owner)
+    @app_commands.checks.has_permissions(administrator=True)
     async def remove(self, interaction: discord.Interaction):
         """Removes a voice channel generator"""
-        await self.client._has_permissions(interaction, administrator=True)
 
         self.client.loop.create_task(interaction.response.defer())
 

@@ -6,6 +6,7 @@ from discord.ext import commands
 
 from bot import MyClient
 from utils import handle_data_deletion
+from checks import check_any, is_owner, command_available
 
 
 class PermLink(commands.Cog):
@@ -28,6 +29,8 @@ class PermLink(commands.Cog):
     @app_commands.describe(
         channel="Select a channel to link", role="Select a role to link"
     )
+    @check_any(command_available, is_owner)
+    @app_commands.checks.has_permissions(administrator=True)
     async def link(
         self,
         interaction: discord.Interaction,
@@ -37,7 +40,6 @@ class PermLink(commands.Cog):
         role: discord.Role,
     ):
         """Use to link a channel and a role (after leaving channel, user will keep role)"""
-        await self.client._has_permissions(interaction, administrator=True)
 
         data = self.client.redis.get_linked("permanent", interaction.guild_id)
 
@@ -71,6 +73,8 @@ class PermLink(commands.Cog):
     @app_commands.describe(
         channel="Select a channel to unlink", role="Select a role to unlink"
     )
+    @check_any(command_available, is_owner)
+    @app_commands.checks.has_permissions(administrator=True)
     async def unlink(
         self,
         interaction: discord.Interaction,
@@ -80,7 +84,6 @@ class PermLink(commands.Cog):
         role: discord.Role,
     ):
         """Use to unlink a "permanent" channel from a role"""
-        await self.client._has_permissions(interaction, administrator=True)
 
         data = self.client.redis.get_linked("permanent", interaction.guild_id)
 
@@ -113,6 +116,8 @@ class PermLink(commands.Cog):
         channel="Select a channel to set a suffix for",
         suffix="Suffix to add to the end of usernames",
     )
+    @check_any(command_available, is_owner)
+    @app_commands.checks.has_permissions(administrator=True)
     async def add(
         self,
         interaction: discord.Interaction,
@@ -122,7 +127,6 @@ class PermLink(commands.Cog):
         suffix: str,
     ):
         """Use to set a suffix to add to the end of usernames"""
-        await self.client._has_permissions(interaction, administrator=True)
 
         data = self.client.redis.get_linked("permanent", interaction.guild_id)
 
@@ -143,6 +147,8 @@ class PermLink(commands.Cog):
 
     @suffix_commands.command()
     @app_commands.describe(channel="Select a channel to remove a suffix rule from")
+    @check_any(command_available, is_owner)
+    @app_commands.checks.has_permissions(administrator=True)
     async def remove(
         self,
         interaction: discord.Interaction,
@@ -151,7 +157,6 @@ class PermLink(commands.Cog):
         ],
     ):
         """Use to remove a suffix rule from a channel"""
-        await self.client._has_permissions(interaction, administrator=True)
 
         data = self.client.redis.get_linked("permanent", interaction.guild_id)
 
@@ -181,6 +186,8 @@ class PermLink(commands.Cog):
     @app_commands.describe(
         channel="Select a channel to link", role="Select a role to link"
     )
+    @check_any(command_available, is_owner)
+    @app_commands.checks.has_permissions(administrator=True)
     async def reverse_link(
         self,
         interaction: discord.Interaction,
@@ -190,7 +197,6 @@ class PermLink(commands.Cog):
         role: discord.Role,
     ):
         """Use to reverse link a channel and a role"""
-        await self.client._has_permissions(interaction, administrator=True)
 
         data = self.client.redis.get_linked("permanent", interaction.guild_id)
 
@@ -226,6 +232,8 @@ class PermLink(commands.Cog):
     @app_commands.describe(
         channel="Select a channel to unlink", role="Select a role to unlink"
     )
+    @check_any(command_available, is_owner)
+    @app_commands.checks.has_permissions(administrator=True)
     async def reverse_unlink(
         self,
         interaction: discord.Interaction,
@@ -235,7 +243,6 @@ class PermLink(commands.Cog):
         role: discord.Role,
     ):
         """Use to unlink a reverse role"""
-        await self.client._has_permissions(interaction, administrator=True)
 
         data = self.client.redis.get_linked("permanent", interaction.guild_id)
 

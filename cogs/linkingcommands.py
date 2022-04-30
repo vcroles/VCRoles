@@ -6,6 +6,7 @@ from discord.ext import commands
 
 from bot import MyClient
 from utils import handle_data_deletion
+from checks import check_any, is_owner, command_available
 
 
 class Linking(commands.Cog):
@@ -21,6 +22,8 @@ class Linking(commands.Cog):
     @app_commands.describe(
         channel="Select a channel to link", role="Select a role to link"
     )
+    @check_any(command_available, is_owner)
+    @app_commands.checks.has_permissions(administrator=True)
     async def link(
         self,
         interaction: discord.Interaction,
@@ -30,7 +33,6 @@ class Linking(commands.Cog):
         role: discord.Role,
     ):
         """Use to link a channel with a role"""
-        await self.client._has_permissions(interaction, administrator=True)
 
         if isinstance(channel, discord.CategoryChannel):
             channel_type = "category"
@@ -71,6 +73,8 @@ class Linking(commands.Cog):
     @app_commands.describe(
         channel="Select a channel to unlink", role="Select a role to unlink"
     )
+    @check_any(command_available, is_owner)
+    @app_commands.checks.has_permissions(administrator=True)
     async def unlink(
         self,
         interaction: discord.Interaction,
@@ -80,7 +84,6 @@ class Linking(commands.Cog):
         role: discord.Role,
     ):
         """Use to unlink a channel from a role"""
-        await self.client._has_permissions(interaction, administrator=True)
 
         if isinstance(channel, discord.CategoryChannel):
             channel_type = "category"
@@ -128,6 +131,8 @@ class Linking(commands.Cog):
         channel="Select a channel to link",
         suffix="Add a suffix to the end of usernames",
     )
+    @check_any(command_available, is_owner)
+    @app_commands.checks.has_permissions(administrator=True)
     async def add(
         self,
         interaction: discord.Interaction,
@@ -137,7 +142,6 @@ class Linking(commands.Cog):
         suffix: str,
     ):
         """Use to set a suffix for a channel"""
-        await self.client._has_permissions(interaction, administrator=True)
 
         if isinstance(channel, discord.CategoryChannel):
             channel_type = "category"
@@ -165,6 +169,8 @@ class Linking(commands.Cog):
 
     @suffix_commands.command()
     @app_commands.describe(channel="Select a channel to link")
+    @check_any(command_available, is_owner)
+    @app_commands.checks.has_permissions(administrator=True)
     async def remove(
         self,
         interaction: discord.Interaction,
@@ -173,7 +179,6 @@ class Linking(commands.Cog):
         ],
     ):
         """Use to remove a suffix for a channel"""
-        await self.client._has_permissions(interaction, administrator=True)
 
         if isinstance(channel, discord.CategoryChannel):
             channel_type = "category"
@@ -207,6 +212,8 @@ class Linking(commands.Cog):
     @app_commands.describe(
         channel="Select a channel to link", role="Select a role to link"
     )
+    @check_any(command_available, is_owner)
+    @app_commands.checks.has_permissions(administrator=True)
     async def reverse_link(
         self,
         interaction: discord.Interaction,
@@ -216,7 +223,6 @@ class Linking(commands.Cog):
         role: discord.Role,
     ):
         """Use to add a reverse role link"""
-        await self.client._has_permissions(interaction, administrator=True)
 
         if isinstance(channel, discord.CategoryChannel):
             channel_type = "category"
@@ -257,6 +263,8 @@ class Linking(commands.Cog):
     @app_commands.describe(
         channel="Select a channel to link", role="Select a role to link"
     )
+    @check_any(command_available, is_owner)
+    @app_commands.checks.has_permissions(administrator=True)
     async def reverse_unlink(
         self,
         interaction: discord.Interaction,
@@ -266,7 +274,6 @@ class Linking(commands.Cog):
         role: discord.Role,
     ):
         """Use to remove a reverse role link"""
-        await self.client._has_permissions(interaction, administrator=True)
 
         if isinstance(channel, discord.CategoryChannel):
             channel_type = "category"

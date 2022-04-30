@@ -9,6 +9,7 @@ from gtts import gTTS
 from mutagen.mp3 import MP3
 
 from bot import MyClient
+from checks import check_any, is_owner, command_available
 
 tts_langs = Literal[
     "af: Afrikaans",
@@ -51,6 +52,7 @@ class TTS(commands.Cog):
         language="Enter the language you want to use (Default: English `en: English`)",
         leave="The bot leaves the voice channel after reading the message (Default: True)",
     )
+    @check_any(command_available, is_owner)
     async def play(
         self,
         interaction: discord.Interaction,
@@ -133,6 +135,7 @@ class TTS(commands.Cog):
         return self.client.incr_counter("tts_play")
 
     @tts_commands.command()
+    @check_any(command_available, is_owner)
     async def stop(self, interaction: discord.Interaction):
         """Stops the current TTS message & Makes the bot leave the voice channel"""
         for x in self.client.voice_clients:
@@ -159,6 +162,8 @@ class TTS(commands.Cog):
         role="The role required to use TTS (Default: None)",
         leave="Whether the bot leaves the voice channel after reading the message (Default: True)",
     )
+    @check_any(command_available, is_owner)
+    @app_commands.checks.has_permissions(administrator=True)
     async def setup(
         self,
         interaction: discord.Interaction,
@@ -167,7 +172,6 @@ class TTS(commands.Cog):
         leave: Optional[bool] = True,
     ):
         """Used to enable/disable TTS & set a required role"""
-        await self.client._has_permissions(interaction, administrator=True)
 
         data = self.client.redis.get_guild_data(interaction.guild_id)
 

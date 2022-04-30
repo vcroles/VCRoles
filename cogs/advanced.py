@@ -1,4 +1,3 @@
-import asyncio
 import json
 
 import aiohttp
@@ -8,6 +7,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from bot import MyClient
+from checks import check_any, is_owner, command_available
 
 
 class Advanced(commands.Cog):
@@ -208,6 +208,8 @@ class Advanced(commands.Cog):
 
     @app_commands.command()
     @app_commands.describe(attachment="Select a JSON file to use")
+    @check_any(command_available, is_owner)
+    @app_commands.checks.has_permissions(administrator=True)
     async def advanced(
         self,
         interaction: discord.Interaction,
@@ -216,7 +218,6 @@ class Advanced(commands.Cog):
         """
         Command for advanced users. Allows you to add/remove/edit a large number of links at once.
         """
-        await self.client._has_permissions(interaction, administrator=True)
         await interaction.response.defer()
         if not interaction.guild:
             return await interaction.followup.send(
@@ -248,11 +249,12 @@ class Advanced(commands.Cog):
         return self.client.incr_counter("advanced")
 
     @app_commands.command()
+    @check_any(command_available, is_owner)
+    @app_commands.checks.has_permissions(administrator=True)
     async def export(self, interaction: discord.Interaction):
         """
         Command for advanced users. Allows you to export all links to a file.
         """
-        await self.client._has_permissions(interaction, administrator=True)
         await interaction.response.defer()
         if not interaction.guild:
             return await interaction.followup.send(

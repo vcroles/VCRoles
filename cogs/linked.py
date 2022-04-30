@@ -3,6 +3,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from bot import MyClient
+from checks import check_any, is_owner, command_available
 
 
 class Linked(commands.Cog):
@@ -47,9 +48,10 @@ class Linked(commands.Cog):
         return content
 
     @app_commands.command()
+    @check_any(command_available, is_owner)
+    @app_commands.checks.has_permissions(administrator=True)
     async def linked(self, interaction: discord.Interaction):
         """Displays the linked roles, channels & categories"""
-        await self.client._has_permissions(interaction, administrator=True)
 
         linked_embed = discord.Embed(
             colour=discord.Colour.blue(),
