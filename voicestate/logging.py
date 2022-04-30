@@ -25,63 +25,69 @@ class Logging:
         # Voice
         if voice_changed["added"]:
             added_chunks.append("Channel: ")
-            for role in voice_changed["added"]:
-                added_chunks.append(role.mention + " ")
+            added_chunks.extend([role.mention + " " for role in voice_changed["added"]])
             added_chunks.append("\n")
         if voice_changed["removed"]:
             removed_chunks.append("Channel: ")
-            for role in voice_changed["removed"]:
-                removed_chunks.append(role.mention + " ")
+            removed_chunks.extend(
+                [role.mention + " " for role in voice_changed["removed"]]
+            )
             removed_chunks.append("\n")
 
         # Stage
         if stage_changed["added"]:
             added_chunks.append("Channel: ")
-            for role in stage_changed["added"]:
-                added_chunks.append(role.mention + " ")
+            added_chunks.extend([role.mention + " " for role in stage_changed["added"]])
             added_chunks.append("\n")
         if stage_changed["removed"]:
             removed_chunks.append("Channel: ")
-            for role in stage_changed["removed"]:
-                removed_chunks.append(role.mention + " ")
+            removed_chunks.extend(
+                [role.mention + " " for role in stage_changed["removed"]]
+            )
             removed_chunks.append("\n")
 
         # Category
         if category_changed["added"]:
             added_chunks.append("Category: ")
-            for role in category_changed["added"]:
-                added_chunks.append(role.mention + " ")
+            added_chunks.extend(
+                [role.mention + " " for role in category_changed["added"]]
+            )
             added_chunks.append("\n")
         if category_changed["removed"]:
             removed_chunks.append("Category: ")
-            for role in category_changed["removed"]:
-                removed_chunks.append(role.mention + " ")
+            removed_chunks.extend(
+                [role.mention + " " for role in category_changed["removed"]]
+            )
             removed_chunks.append("\n")
 
         # All
         if all_changed:
             if all_changed["added"]:
                 added_chunks.append("All: ")
-                for role in all_changed["added"]:
-                    added_chunks.append(role.mention + " ")
+                added_chunks.extend(
+                    [role.mention + " " for role in all_changed["added"]]
+                )
                 added_chunks.append("\n")
             if all_changed["removed"]:
                 removed_chunks.append("All: ")
-                for role in all_changed["removed"]:
-                    removed_chunks.append(role.mention + " ")
+                removed_chunks.extend(
+                    [role.mention + " " for role in all_changed["removed"]]
+                )
                 removed_chunks.append("\n")
 
         # Permanent
         if perm_changed:
             if perm_changed["added"]:
                 added_chunks.append("Permanent: ")
-                for role in perm_changed["added"]:
-                    added_chunks.append(role.mention + " ")
+                added_chunks.extend(
+                    [role.mention + " " for role in perm_changed["added"]]
+                )
                 added_chunks.append("\n")
             if perm_changed["removed"]:
                 removed_chunks.append("Permanent: ")
-                for role in perm_changed["removed"]:
-                    removed_chunks.append(role.mention + " ")
+                removed_chunks.extend(
+                    [role.mention + " " for role in perm_changed["removed"]]
+                )
                 removed_chunks.append("\n")
 
         added_content = "".join(added_chunks).strip()
@@ -107,7 +113,7 @@ class Logging:
                     title=f"Member joined {'voice' if isinstance(after.channel, discord.VoiceChannel) else 'stage' if isinstance(after.channel, discord.StageChannel) else ''} channel",
                     description=f"{member} joined {after.channel.mention}",
                     color=discord.Color.green(),
-                    timestamp=datetime.datetime.utcnow(),
+                    timestamp=datetime.datetime.now(datetime.timezone.utc),
                 )
                 logging_embed.set_footer(text=f"User ID - {member.id}")
                 logging_embed.set_author(
@@ -152,7 +158,7 @@ class Logging:
                     title=f"Member left {'voice' if isinstance(before.channel, discord.VoiceChannel) else 'stage' if isinstance(before.channel, discord.StageChannel) else ''} channel",
                     description=f"{member} left {before.channel.mention}",
                     color=discord.Color.red(),
-                    timestamp=datetime.datetime.utcnow(),
+                    timestamp=datetime.datetime.now(datetime.timezone.utc),
                 )
                 logging_embed.set_footer(text=f"User ID - {member.id}")
                 logging_embed.set_author(
@@ -198,7 +204,7 @@ class Logging:
                     title=f"Member moved channel",
                     description=f"**Before:** {before.channel.mention}\n**+After:** {after.channel.mention}",
                     color=discord.Color.blue(),
-                    timestamp=datetime.datetime.utcnow(),
+                    timestamp=datetime.datetime.now(datetime.timezone.utc),
                 )
                 logging_embed.set_footer(text=f"User ID - {member.id}")
                 logging_embed.set_author(

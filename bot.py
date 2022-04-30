@@ -73,7 +73,7 @@ class MyClient(commands.AutoShardedBot):
     async def on_error(self, event, *args, **kwargs):
         with open("error.log", "a") as f:
             f.write(
-                f"{datetime.utcnow().strftime('%m/%d/%Y, %H:%M:%S')} {event}: {str(args).encode('utf-8')=}: {str(kwargs).encode('utf-8')=}\n"
+                f"{discord.utils.utcnow().strftime('%m/%d/%Y, %H:%M:%S')} {event}: {str(args).encode('utf-8')=}: {str(kwargs).encode('utf-8')=}\n"
             )
 
     async def on_guild_channel_delete(self, channel: discord.abc.GuildChannel):
@@ -209,7 +209,7 @@ async def reminder():
     with open("guilds.json", "r") as f:
         data = json.load(f)
 
-    data[datetime.utcnow().strftime("%H:%M %d/%m/%Y")] = len(client.guilds)
+    data[discord.utils.utcnow().strftime("%H:%M %d/%m/%Y")] = len(client.guilds)
 
     with open("guilds.json", "w") as f:
         json.dump(data, f)
