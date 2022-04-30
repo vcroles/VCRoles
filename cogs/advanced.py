@@ -27,10 +27,10 @@ class Advanced(commands.Cog):
                 )
             elif key in ["category", "stage", "permanent", "voice"]:
                 # Check data
-                asyncio.create_task(self.parse_channels(value, key, guild))
+                self.client.loop.create_task(self.parse_channels(value, key, guild))
             elif key == "all":
                 # Check data
-                asyncio.create_task(self.parse_links(value, key, guild))
+                self.client.loop.create_task(self.parse_links(value, key, guild))
 
     async def parse_channels(
         self,
@@ -103,7 +103,9 @@ class Advanced(commands.Cog):
                     }
                 self.client.redis.update_linked(key, guild.id, linked_data)
 
-                asyncio.create_task(self.parse_links(links, key, guild, channel))
+                self.client.loop.create_task(
+                    self.parse_links(links, key, guild, channel)
+                )
 
     async def parse_links(
         self,

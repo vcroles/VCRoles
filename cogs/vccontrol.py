@@ -43,10 +43,12 @@ class VCControl(commands.Cog):
         mem = await self.get_members(interaction)
 
         if who == "everyone" and vc:
-            tasks = [asyncio.create_task(member.edit(mute=True)) for member in mem]
+            tasks = [
+                self.client.loop.create_task(member.edit(mute=True)) for member in mem
+            ]
         elif who == "everyone but me" and vc:
             tasks = [
-                asyncio.create_task(member.edit(mute=True))
+                self.client.loop.create_task(member.edit(mute=True))
                 for member in mem
                 if member.id != interaction.user.id
             ]
@@ -81,10 +83,12 @@ class VCControl(commands.Cog):
         mem = await self.get_members(interaction)
 
         if who == "everyone" and vc:
-            tasks = [asyncio.create_task(member.edit(deafen=True)) for member in mem]
+            tasks = [
+                self.client.loop.create_task(member.edit(deafen=True)) for member in mem
+            ]
         elif who == "everyone but me" and vc:
             tasks = [
-                asyncio.create_task(member.edit(deafen=True))
+                self.client.loop.create_task(member.edit(deafen=True))
                 for member in mem
                 if member.id != interaction.user.id
             ]
@@ -114,7 +118,9 @@ class VCControl(commands.Cog):
         mem = await self.get_members(interaction)
 
         if vc:
-            tasks = [asyncio.create_task(member.edit(mute=False)) for member in mem]
+            tasks = [
+                self.client.loop.create_task(member.edit(mute=False)) for member in mem
+            ]
         else:
             return await interaction.response.send_message(
                 "Please ensure you are in a voice channel."
@@ -141,7 +147,10 @@ class VCControl(commands.Cog):
         mem = await self.get_members(interaction)
 
         if vc:
-            tasks = [asyncio.create_task(member.edit(deafen=False)) for member in mem]
+            tasks = [
+                self.client.loop.create_task(member.edit(deafen=False))
+                for member in mem
+            ]
         else:
             return await interaction.response.send_message(
                 "Please ensure you are in a voice channel."
