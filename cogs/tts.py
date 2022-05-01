@@ -52,7 +52,6 @@ class TTS(commands.Cog):
         language="Enter the language you want to use (Default: English `en: English`)",
         leave="The bot leaves the voice channel after reading the message (Default: True)",
     )
-    @check_any(command_available, is_owner)
     async def play(
         self,
         interaction: discord.Interaction,
@@ -135,7 +134,6 @@ class TTS(commands.Cog):
         return self.client.incr_counter("tts_play")
 
     @tts_commands.command()
-    @check_any(command_available, is_owner)
     async def stop(self, interaction: discord.Interaction):
         """Stops the current TTS message & Makes the bot leave the voice channel"""
         for x in self.client.voice_clients:
