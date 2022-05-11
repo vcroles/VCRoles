@@ -158,16 +158,23 @@ async def on_dbl_vote(data):
             client.ar.execute_command("hset", "commands", str(data["user"]), -10_000)
         )
 
-        user = await client.fetch_user(int(data["user"]))
+        try:
+            user = await client.fetch_user(int(data["user"]))
+            description = f"{user.mention} ({user.name}) just voted for VC Roles on Top.gg & received unlimited command usage for the rest of the day!\n\nClick [here](https://top.gg/bot/775025797034541107/vote) to vote"
+        except:
+            user = discord.Object(id=int(data["user"]))
+            description = f"<@{user.id}> just voted for VC Roles on Top.gg & received unlimited command usage for the rest of the day!\n\nClick [here](https://top.gg/bot/775025797034541107/vote) to vote"
 
         channel = client.get_channel(947070091797856276)
         embed = discord.Embed(
             colour=discord.Colour.blue(),
             title=":tada: Top.gg Vote! :tada:",
-            description=f"{user.mention} ({user.name}) just voted for VC Roles on Top.gg & received unlimited command usage for the rest of the day!\n\nClick [here](https://top.gg/bot/775025797034541107/vote) to vote",
+            description=description,
             url="https://top.gg/bot/775025797034541107/vote",
         )
-        embed.set_thumbnail(url=user.avatar.url)
+        embed.set_thumbnail(
+            url=user.avatar.url if user.avatar else client.user.avatar.url
+        )
         embed.set_footer(text="Thanks for voting!")
         await channel.send(embed=embed)
     else:
@@ -182,6 +189,11 @@ async def on_command_error(
     if isinstance(error, app_commands.MissingPermissions):
         return await interaction.response.send_message(
             "You do not have the required permissions to use this command.",
+            ephemeral=True,
+        )
+    if isinstance(error, app_commands.BotMissingPermissions):
+        return await interaction.response.send_message(
+            error,
             ephemeral=True,
         )
     if isinstance(error, app_commands.CheckFailure):

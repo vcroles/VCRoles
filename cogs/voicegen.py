@@ -19,13 +19,13 @@ class VoiceGen(commands.Cog):
     )
 
     @generator_commands.command()
-    @commands.bot_has_permissions(manage_channels=True)
     @app_commands.describe(
         category_name="Name of generator category",
         voice_channel_name="Name of voice channel",
         interface_channel_name="Name of interface channel",
     )
     @check_any(command_available, is_owner)
+    @app_commands.checks.bot_has_permissions(manage_channels=True)
     @app_commands.checks.has_permissions(administrator=True)
     async def create(
         self,
@@ -42,7 +42,7 @@ class VoiceGen(commands.Cog):
             return await interaction.response.send_message(
                 "This command can only be used in a server"
             )
-        self.client.loop.create_task(interaction.response.defer())
+        await interaction.response.defer()
 
         data = self.client.redis.get_generator(interaction.guild_id)
 
