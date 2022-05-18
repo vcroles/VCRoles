@@ -1,5 +1,4 @@
-import json
-from typing import Optional
+from typing import Optional, Union
 
 import discord
 from discord import app_commands
@@ -13,6 +12,40 @@ from views.interface import Interface
 class VoiceGen(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
+
+    async def remove_generator(self, data: dict[str, Union[str, list]]):
+        if data["cat"] != "":
+            try:
+                cat = await self.client.fetch_channel(int(data["cat"]))
+                if cat:
+                    await cat.delete()
+            except:
+                pass
+        if data["gen_id"] != "":
+            try:
+                gen = await self.client.fetch_channel(int(data["gen_id"]))
+                if gen:
+                    await gen.delete()
+            except:
+                pass
+        if data["interface"]["channel"] != "":
+            try:
+                interface = await self.client.fetch_channel(
+                    int(data["interface"]["channel"])
+                )
+                if interface:
+                    try:
+                        await interface.delete()
+                    except:
+                        try:
+                            msg = await interface.fetch_message(
+                                int(data["interface"]["msg_id"])
+                            )
+                            await msg.delete()
+                        except:
+                            pass
+            except:
+                pass
 
     generator_commands = app_commands.Group(
         name="generator", description="Generator channel commands"
@@ -36,9 +69,7 @@ class VoiceGen(commands.Cog):
     ):
         """Creates a voice channel generator"""
 
-        if interaction.guild:
-            assert isinstance(interaction.guild, discord.Guild)
-        else:
+        if not interaction.guild:
             return await interaction.response.send_message(
                 "This command can only be used in a server"
             )
@@ -46,15 +77,8 @@ class VoiceGen(commands.Cog):
 
         data = self.client.redis.get_generator(interaction.guild_id)
 
-        try:
-            data["interface"] = json.loads(data["interface"])
-            channel = self.client.get_channel(int(data["interface"]["channel"]))
-            msg = await channel.fetch_message(int(data["interface"]["msg_id"]))
-            view = discord.ui.View.from_message(msg)
-            view.clear_items()
-            self.client.loop.create_task(msg.edit(view=view))
-        except:
-            pass
+        if any([data["cat"], data["gen_id"], data["interface"]["channel"]]):
+            self.client.loop.create_task(self.remove_generator(data))
 
         category = await interaction.guild.create_category(name=category_name)
 
@@ -80,34 +104,20 @@ class VoiceGen(commands.Cog):
         interface_embed.set_thumbnail(url=self.client.user.avatar.url)
         interface_embed.set_footer(text="Use these commands via the buttons below.")
 
-        interface_embed.add_field(
-            name="Lock",
-            value="Stop people from joining your voice channel",
-            inline=False,
-        )
-        interface_embed.add_field(
-            name="Unlock", value="Allow people to join your voice channel", inline=False
-        )
-        interface_embed.add_field(
-            name="Hide",
-            value="Stop people from seeing your voice channel (in channel list)",
-            inline=False,
-        )
-        interface_embed.add_field(
-            name="Show",
-            value="Allow people to see your voice channel (in channel list)",
-            inline=False,
-        )
-        interface_embed.add_field(
-            name="Increase Limit",
-            value="Increase the user limit of your voice channel",
-            inline=False,
-        )
-        interface_embed.add_field(
-            name="Decrease Limit",
-            value="Decrease the user limit of your voice channel (0 - no limit)",
-            inline=False,
-        )
+        embed_fields = [
+            ["Lock", "Stop people from joining your voice channel"],
+            ["Unlock", "Allow people to join your voice channel"],
+            ["Hide", "Stop people from seeing your voice channel (in channel list)"],
+            ["Show", "Allow people to see your voice channel (in channel list)"],
+            ["Increase Limit", "Increase the user limit of your voice channel"],
+            [
+                "Decrease Limit",
+                "Decrease the user limit of your voice channel (0 - no limit)",
+            ],
+        ]
+
+        for field in embed_fields:
+            interface_embed.add_field(name=field[0], value=field[1], inline=False)
 
         interface_message = await interface_channel.send(
             embed=interface_embed, view=Interface(self.client.redis)
@@ -145,15 +155,7 @@ class VoiceGen(commands.Cog):
 
         data = self.client.redis.get_generator(interaction.guild_id)
 
-        try:
-            data["interface"] = json.loads(data["interface"])
-            channel = self.client.get_channel(int(data["interface"]["channel"]))
-            msg = await channel.fetch_message(int(data["interface"]["msg_id"]))
-            view = discord.ui.View.from_message(msg)
-            view.clear_items()
-            await msg.edit(view=view)
-        except:
-            pass
+        self.client.loop.create_task(self.remove_generator(data))
 
         self.client.redis.r.delete(f"{interaction.guild_id}:gen")
 

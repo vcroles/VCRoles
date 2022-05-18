@@ -3,7 +3,6 @@ import datetime as dt
 import json
 import logging
 import os
-from typing import Optional
 
 import discord
 import redis
