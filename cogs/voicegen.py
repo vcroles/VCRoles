@@ -14,21 +14,25 @@ class VoiceGen(commands.Cog):
         self.client = client
 
     async def remove_generator(self, data: dict[str, Union[str, list]]):
-        if data["cat"] != "":
+        if "cat" in data and data["cat"] != "":
             try:
                 cat = await self.client.fetch_channel(int(data["cat"]))
                 if cat:
                     await cat.delete()
             except:
                 pass
-        if data["gen_id"] != "":
+        if "gen_id" in data and data["gen_id"] != "":
             try:
                 gen = await self.client.fetch_channel(int(data["gen_id"]))
                 if gen:
                     await gen.delete()
             except:
                 pass
-        if data["interface"]["channel"] != "":
+        if (
+            "interface" in data
+            and "channel" in data["interface"]
+            and data["interface"]["channel"] != ""
+        ):
             try:
                 interface = await self.client.fetch_channel(
                     int(data["interface"]["channel"])
@@ -80,21 +84,24 @@ class VoiceGen(commands.Cog):
         if any([data["cat"], data["gen_id"], data["interface"]["channel"]]):
             self.client.loop.create_task(self.remove_generator(data))
 
-        category = await interaction.guild.create_category(name=category_name)
+        try:
+            category = await interaction.guild.create_category(name=category_name)
+            voice_channel = await category.create_voice_channel(name=voice_channel_name)
 
-        voice_channel = await interaction.guild.create_voice_channel(
-            name=voice_channel_name, category=category
-        )
+            overwrites = {
+                interaction.guild.default_role: discord.PermissionOverwrite(
+                    send_messages=False
+                )
+            }
 
-        overwrites = {
-            interaction.guild.default_role: discord.PermissionOverwrite(
-                send_messages=False
+            interface_channel = await category.create_text_channel(
+                name=interface_channel_name, overwrites=overwrites
             )
-        }
-
-        interface_channel = await interaction.guild.create_text_channel(
-            name=interface_channel_name, category=category, overwrites=overwrites
-        )
+        except:
+            await interaction.followup.send(
+                "Failed to create generator channels. Please check permissions or try again later."
+            )
+            return
 
         interface_embed = discord.Embed(
             title="Voice Generator Interface",

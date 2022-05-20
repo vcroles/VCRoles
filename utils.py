@@ -6,7 +6,7 @@ import redis
 
 
 class RedisUtils:
-    """Tools for interacting with the Redis database & converting datatypes"""
+    """Tools for interacting with the Redis database synchronously & converting datatypes"""
 
     def __init__(self, r: redis.Redis):
         self.r = r
@@ -48,8 +48,7 @@ class RedisUtils:
             }
 
     def update_guild_data(self, guild_id: int, data: dict):
-        for key in data:
-            self.r.hset(f"{guild_id}:gd", key, data[key])
+        self.r.hset(f"{guild_id}:gd", mapping=data)
 
     def get_linked(self, type: str, guild_id: int) -> dict:
         r_data = self.r.hget(f"{guild_id}:linked", type)
@@ -94,10 +93,12 @@ class RedisUtils:
         r_data = self.r.hgetall(f"{guild_id}:gen")
         if r_data:
             data = {}
-            for key, value in r_data.items():
-                data[self._decode(key)] = self._decode(value)
-                if self._decode(key) in ["interface", "open"]:
-                    data[self._decode(key)] = self.from_str(data[self._decode(key)])
+            for ekey, evalue in r_data.items():
+                key, value = self._decode(ekey), self._decode(evalue)
+                if key in ["interface", "open"]:
+                    data[key] = self.from_str(value)
+                else:
+                    data[key] = value
             return data
         else:
             return {
@@ -108,11 +109,11 @@ class RedisUtils:
             }
 
     def update_generator(self, guild_id: int, data: dict):
-        for key in data:
+        for key, value in data.items():
             if key in ["open", "interface"]:
-                self.r.hset(f"{guild_id}:gen", key, json.dumps(data[key]))
-            else:
-                self.r.hset(f"{guild_id}:gen", key, data[key])
+                data[key] = self.to_str(value)
+
+        self.r.hset(f"{guild_id}:gen", mapping=data)
 
     def update_gen_open(self, guild_id: int, data: list):
         self.r.hset(f"{guild_id}:gen", "open", self.to_str(data))
