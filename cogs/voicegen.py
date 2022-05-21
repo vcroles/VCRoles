@@ -91,7 +91,10 @@ class VoiceGen(commands.Cog):
             overwrites = {
                 interaction.guild.default_role: discord.PermissionOverwrite(
                     send_messages=False
-                )
+                ),
+                interaction.guild.me: discord.PermissionOverwrite(
+                    send_messages=True, manage_channels=True
+                ),
             }
 
             interface_channel = await category.create_text_channel(
