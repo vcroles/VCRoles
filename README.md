@@ -12,23 +12,29 @@ https://www.vcroles.com
 
 This is a bot that will make your server and voice channels much more interactive, with the ability to give a user a role when they join a voice channel, remove it when they leave the channel, sending TTS messages into voice channels for those times when you can't speak, creating and managing voice channels and more! This is the bot you need to make your servers more interactive, and to help bring a community together.
 
+## GitHub
+
+VC Roles is open source here, and we welcome any pull requests!
+
+Please note however that this code is intended for educational purposes only, and we will not provide support for self-hosting the bot.
+
 ## Code formatter
 
 Use the ['Black'](https://black.readthedocs.io/en/stable/getting_started.html) python code formatter.
 
-Install with: `python -m pip install black` or `pip install black`
-Run formatter in terminal with: `python -m black .` or `black .`
+- Install with: `python -m pip install black` or `pip install black`
+- Run formatter in terminal with: `python -m black .` or `black .`
 
 ## Pre-commit
 
 When cloning the repo for new, make sure you:
-`pip install pre-commit`
-`pre-commit install`
+
+- `pip install pre-commit`
+- `pre-commit install`
 
 ## Current Library
 
-Currently running using tested [pycord fork](https://github.com/CDE90/pycord) managed by CDE.
- Will be updated now and then, once tested thoroughly
+Currently running using tested [discord.py fork](https://github.com/CDE90/discord.py) managed by CDE. Which will be updated regularly, once tested thoroughly to be working with the bot.
 
 ## Links
 
@@ -38,9 +44,9 @@ https://top.gg/bot/775025797034541107
 
 ### Official Website
 
-https://sites.google.com/view/vc-discord-bot/home (old website)
+https://www.vcroles.com
 
-https://www.vcroles.com (new website)
+https://sites.google.com/view/vc-discord-bot/home (old website)
 
 ### Admin Invite Link
 
