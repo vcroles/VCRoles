@@ -85,16 +85,19 @@ class VoiceGen(commands.Cog):
             self.client.loop.create_task(self.remove_generator(data))
 
         try:
-            category = await interaction.guild.create_category(name=category_name)
+            overwrites = {
+                interaction.guild.me: discord.PermissionOverwrite(manage_channels=True)
+            }
+            category = await interaction.guild.create_category(
+                name=category_name, overwrites=overwrites
+            )
             voice_channel = await category.create_voice_channel(name=voice_channel_name)
 
             overwrites = {
                 interaction.guild.default_role: discord.PermissionOverwrite(
                     send_messages=False
                 ),
-                interaction.guild.me: discord.PermissionOverwrite(
-                    send_messages=True, manage_channels=True
-                ),
+                interaction.guild.me: discord.PermissionOverwrite(send_messages=True),
             }
 
             interface_channel = await category.create_text_channel(

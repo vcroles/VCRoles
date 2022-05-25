@@ -20,10 +20,17 @@ class Generator:
         if str(after.channel.id) == data["gen_id"]:
             category = self.client.get_channel(int(data["cat"]))
 
+            overwrites = {
+                member.guild.me: discord.PermissionOverwrite(
+                    manage_channels=True, connect=True, view_channel=True
+                ),
+            }
+
             channel = await member.guild.create_voice_channel(
                 name=f"{member.display_name}",
                 category=category,
                 reason="Voice Channel Generator",
+                overwrites=overwrites,
             )
             await member.move_to(channel)
             data["open"].append(str(channel.id))
