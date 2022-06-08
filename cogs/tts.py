@@ -69,7 +69,7 @@ class TTS(commands.Cog):
             return await interaction.response.send_message(
                 f"TTS isn't enabled in this server."
             )
-        if len(message) > 250 or interaction.user.id in [
+        if len(message) > 250 and interaction.user.id not in [
             652797071623192576,
             602235481459261440,
         ]:
