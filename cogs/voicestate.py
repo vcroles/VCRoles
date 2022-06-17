@@ -51,16 +51,10 @@ class VoiceState(commands.Cog):
 
         # Changing
         elif before.channel != after.channel:
-            leave_roles_changed_task = self.client.loop.create_task(
-                self.leave(member, before, after)
-            )
-            join_roles_changed_task = self.client.loop.create_task(
-                self.join(member, before, after)
-            )
+            
+            leave_roles_changed = await self.leave(member, before, after)
 
-            leave_roles_changed, join_roles_changed = await asyncio.gather(
-                leave_roles_changed_task, join_roles_changed_task
-            )
+            join_roles_changed = await self.join(member, before, after)
 
             if leave_roles_changed and join_roles_changed:
                 await self.logging.log_change(
