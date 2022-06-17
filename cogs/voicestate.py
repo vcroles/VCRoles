@@ -51,7 +51,7 @@ class VoiceState(commands.Cog):
 
         # Changing
         elif before.channel != after.channel:
-            
+
             leave_roles_changed = await self.leave(member, before, after)
 
             join_roles_changed = await self.join(member, before, after)
