@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 
 from bot import MyClient
-from utils import ReturnData, add_suffix, remove_suffix
+from utils.utils import ReturnData, add_suffix, remove_suffix
 from voicestate.all import All
 from voicestate.generator import Generator
 from voicestate.logging import Logging

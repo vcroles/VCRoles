@@ -11,7 +11,7 @@ from discord import app_commands
 from discord.ext import commands, tasks
 
 import config
-from utils import RedisUtils
+from utils.utils import RedisUtils
 from views.interface import Interface
 from views.url import TopGG
 

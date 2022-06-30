@@ -3,7 +3,7 @@ import datetime
 import discord
 
 from bot import MyClient
-from utils import ReturnData
+from utils.utils import ReturnData
 
 
 class Logging:

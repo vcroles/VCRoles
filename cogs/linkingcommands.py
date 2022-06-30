@@ -6,12 +6,14 @@ from discord.ext import commands
 
 from bot import MyClient
 from checks import check_any, command_available, is_owner
-from utils import handle_data_deletion
+from utils.linking import LinkingUtils
+from utils.utils import handle_data_deletion
 
 
 class Linking(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
+        self.linking = LinkingUtils(client)
 
     suffix_commands = app_commands.Group(
         name="suffix", description="Suffix to add to the end of usernames"
@@ -34,38 +36,9 @@ class Linking(commands.Cog):
     ):
         """Use to link a channel with a role"""
 
-        if isinstance(channel, discord.CategoryChannel):
-            channel_type = "category"
-        elif isinstance(channel, discord.VoiceChannel):
-            channel_type = "voice"
-        elif isinstance(channel, discord.StageChannel):
-            channel_type = "stage"
+        data = await self.linking.link(interaction, channel, role)
 
-        data = self.client.redis.get_linked(channel_type, interaction.guild_id)
-
-        try:
-            data[str(channel.id)]
-        except:
-            data[str(channel.id)] = {"roles": [], "suffix": "", "reverse_roles": []}
-
-        if str(role.id) not in data[str(channel.id)]["roles"]:
-            data[str(channel.id)]["roles"].append(str(role.id))
-
-            self.client.redis.update_linked(channel_type, interaction.guild_id, data)
-
-            await interaction.response.send_message(
-                f"Linked {channel.mention} with role: `@{role.name}`"
-            )
-
-            member = interaction.guild.get_member(self.client.user.id)
-            if member.top_role.position < role.position:
-                await interaction.followup.send(
-                    f"Please ensure my highest role is above `@{role.name}`"
-                )
-        else:
-            await interaction.response.send_message(
-                f"The channel and role are already linked."
-            )
+        await interaction.response.send_message(data.message)
 
         return self.client.incr_counter("link")
 
@@ -85,44 +58,9 @@ class Linking(commands.Cog):
     ):
         """Use to unlink a channel from a role"""
 
-        if isinstance(channel, discord.CategoryChannel):
-            channel_type = "category"
-        elif isinstance(channel, discord.VoiceChannel):
-            channel_type = "voice"
-        elif isinstance(channel, discord.StageChannel):
-            channel_type = "stage"
+        data = await self.linking.unlink(interaction, channel, role)
 
-        data = self.client.redis.get_linked(channel_type, interaction.guild_id)
-
-        try:
-            data[str(channel.id)]
-        except:
-            return await interaction.response.send_message(
-                f"The channel and role are not linked."
-            )
-
-        if str(role.id) in data[str(channel.id)]["roles"]:
-            try:
-                data[str(channel.id)]["roles"].remove(str(role.id))
-
-                data = handle_data_deletion(data, str(channel.id))
-
-                self.client.redis.update_linked(
-                    channel_type, interaction.guild_id, data
-                )
-
-                await interaction.response.send_message(
-                    f"Unlinked {channel.mention} and role: `@{role.name}`"
-                )
-            except:
-                return await interaction.response.send_message(
-                    f"There was an error unlinking the channel and role."
-                )
-
-        else:
-            await interaction.response.send_message(
-                f"The channel and role are not linked."
-            )
+        await interaction.response.send_message(data.message)
 
         return self.client.incr_counter("unlink")
 
@@ -143,27 +81,9 @@ class Linking(commands.Cog):
     ):
         """Use to set a suffix for a channel"""
 
-        if isinstance(channel, discord.CategoryChannel):
-            channel_type = "category"
-        elif isinstance(channel, discord.VoiceChannel):
-            channel_type = "voice"
-        elif isinstance(channel, discord.StageChannel):
-            channel_type = "stage"
+        data = await self.linking.suffix_add(interaction, channel, suffix)
 
-        data = self.client.redis.get_linked(channel_type, interaction.guild_id)
-
-        try:
-            data[str(channel.id)]
-        except:
-            data[str(channel.id)] = {"roles": [], "suffix": "", "reverse_roles": []}
-
-        data[str(channel.id)]["suffix"] = suffix
-
-        self.client.redis.update_linked(channel_type, interaction.guild_id, data)
-
-        await interaction.response.send_message(
-            f"Set the suffix for {channel.mention} to `{suffix}`"
-        )
+        await interaction.response.send_message(data.message)
 
         return self.client.incr_counter("add_suffix")
 
@@ -180,31 +100,9 @@ class Linking(commands.Cog):
     ):
         """Use to remove a suffix for a channel"""
 
-        if isinstance(channel, discord.CategoryChannel):
-            channel_type = "category"
-        elif isinstance(channel, discord.VoiceChannel):
-            channel_type = "voice"
-        elif isinstance(channel, discord.StageChannel):
-            channel_type = "stage"
+        data = await self.linking.suffix_remove(interaction, channel)
 
-        data = self.client.redis.get_linked(channel_type, interaction.guild_id)
-
-        try:
-            data[str(channel.id)]
-        except:
-            return await interaction.response.send_message(
-                f"The channel has no associated rules."
-            )
-
-        data[str(channel.id)]["suffix"] = ""
-
-        data = handle_data_deletion(data, str(channel.id))
-
-        self.client.redis.update_linked(channel_type, interaction.guild_id, data)
-
-        await interaction.response.send_message(
-            f"Removed the suffix for {channel.mention}"
-        )
+        await interaction.response.send_message(data.message)
 
         return self.client.incr_counter("remove_suffix")
 
@@ -224,38 +122,11 @@ class Linking(commands.Cog):
     ):
         """Use to add a reverse role link"""
 
-        if isinstance(channel, discord.CategoryChannel):
-            channel_type = "category"
-        elif isinstance(channel, discord.VoiceChannel):
-            channel_type = "voice"
-        elif isinstance(channel, discord.StageChannel):
-            channel_type = "stage"
+        data = await self.linking.link(
+            interaction, channel, role, link_type="reverse_roles"
+        )
 
-        data = self.client.redis.get_linked(channel_type, interaction.guild_id)
-
-        try:
-            data[str(channel.id)]
-        except:
-            data[str(channel.id)] = {"roles": [], "suffix": "", "reverse_roles": []}
-
-        if str(role.id) not in data[str(channel.id)]["reverse_roles"]:
-            data[str(channel.id)]["reverse_roles"].append(str(role.id))
-
-            self.client.redis.update_linked(channel_type, interaction.guild_id, data)
-
-            await interaction.response.send_message(
-                f"Linked {channel.mention} with role: `@{role.name}`"
-            )
-
-            member = interaction.guild.get_member(self.client.user.id)
-            if member.top_role.position < role.position:
-                await interaction.channel.send(
-                    f"Please ensure my highest role is above `@{role.name}`"
-                )
-        else:
-            await interaction.response.send_message(
-                f"The channel and role are already linked."
-            )
+        await interaction.response.send_message(data.message)
 
         return self.client.incr_counter("reverse_link")
 
@@ -275,44 +146,11 @@ class Linking(commands.Cog):
     ):
         """Use to remove a reverse role link"""
 
-        if isinstance(channel, discord.CategoryChannel):
-            channel_type = "category"
-        elif isinstance(channel, discord.VoiceChannel):
-            channel_type = "voice"
-        elif isinstance(channel, discord.StageChannel):
-            channel_type = "stage"
+        data = await self.linking.unlink(
+            interaction, channel, role, link_type="reverse_roles"
+        )
 
-        data = self.client.redis.get_linked(channel_type, interaction.guild_id)
-
-        try:
-            data[str(channel.id)]
-        except:
-            return await interaction.response.send_message(
-                f"The channel has no associated rules."
-            )
-
-        if str(role.id) in data[str(channel.id)]["reverse_roles"]:
-            try:
-                data[str(channel.id)]["reverse_roles"].remove(str(role.id))
-
-                data = handle_data_deletion(data, str(channel.id))
-
-                self.client.redis.update_linked(
-                    channel_type, interaction.guild_id, data
-                )
-
-                await interaction.response.send_message(
-                    f"Unlinked {channel.mention} and role: `@{role.name}`"
-                )
-            except:
-                return await interaction.response.send_message(
-                    f"There was an error unlinking the channel and role."
-                )
-
-        else:
-            await interaction.response.send_message(
-                f"The channel and role are not linked."
-            )
+        await interaction.response.send_message(data.message)
 
         return self.client.incr_counter("reverse_unlink")
 

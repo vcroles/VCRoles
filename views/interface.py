@@ -2,7 +2,7 @@ import json
 
 import discord
 
-from utils import RedisUtils
+from utils.utils import RedisUtils
 
 
 class Interface(discord.ui.View):

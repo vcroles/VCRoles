@@ -6,12 +6,14 @@ from discord.ext import commands
 
 from bot import MyClient
 from checks import check_any, command_available, is_owner
-from utils import handle_data_deletion
+from utils.linking import LinkingUtils
+from utils.utils import handle_data_deletion
 
 
 class PermLink(commands.Cog):
     def __init__(self, client: MyClient):
         self.client = client
+        self.linking = LinkingUtils(client)
 
     perm_commands = app_commands.Group(
         name="permanent", description="Rules to apply to permanent channels"
@@ -41,31 +43,11 @@ class PermLink(commands.Cog):
     ):
         """Use to link a channel and a role (after leaving channel, user will keep role)"""
 
-        data = self.client.redis.get_linked("permanent", interaction.guild_id)
+        data = await self.linking.link(
+            interaction, channel, role, channel_type="permanent"
+        )
 
-        try:
-            data[str(channel.id)]
-        except:
-            data[str(channel.id)] = {"roles": [], "suffix": "", "reverse_roles": []}
-
-        if str(role.id) not in data[str(channel.id)]["roles"]:
-            data[str(channel.id)]["roles"].append(str(role.id))
-
-            self.client.redis.update_linked("permanent", interaction.guild_id, data)
-
-            await interaction.response.send_message(
-                f"Linked {channel.mention} with role: `@{role.name}`\nWhen a user leaves the channel, they will KEEP the role"
-            )
-
-            member = interaction.guild.get_member(self.client.user.id)
-            if member.top_role.position < role.position:
-                await interaction.channel.send(
-                    f"Please ensure my highest role is above `@{role.name}`"
-                )
-        else:
-            await interaction.response.send_message(
-                f"The channel and role are already linked."
-            )
+        await interaction.response.send_message(data.message)
 
         return self.client.incr_counter("perm_link")
 
@@ -85,29 +67,11 @@ class PermLink(commands.Cog):
     ):
         """Use to unlink a "permanent" channel from a role"""
 
-        data = self.client.redis.get_linked("permanent", interaction.guild_id)
+        data = await self.linking.unlink(
+            interaction, channel, role, channel_type="permanent"
+        )
 
-        try:
-            data[str(channel.id)]
-        except:
-            await interaction.response.send_message(
-                f"The channel and role are not linked."
-            )
-            return
-
-        if str(role.id) in data[str(channel.id)]["roles"]:
-            try:
-                data[str(channel.id)]["roles"].remove(str(role.id))
-
-                data = handle_data_deletion(data, str(channel.id))
-
-                self.client.redis.update_linked("permanent", interaction.guild_id, data)
-
-                await interaction.response.send_message(
-                    f"Unlinked {channel.mention} and role: `@{role.name}`"
-                )
-            except:
-                pass
+        await interaction.response.send_message(data.message)
 
         return self.client.incr_counter("perm_unlink")
 
@@ -128,20 +92,11 @@ class PermLink(commands.Cog):
     ):
         """Use to set a suffix to add to the end of usernames"""
 
-        data = self.client.redis.get_linked("permanent", interaction.guild_id)
-
-        try:
-            data[str(channel.id)]
-        except:
-            data[str(channel.id)] = {"roles": [], "suffix": "", "reverse_roles": []}
-
-        data[str(channel.id)]["suffix"] = suffix
-
-        self.client.redis.update_linked("permanent", interaction.guild_id, data)
-
-        await interaction.response.send_message(
-            f"Added suffix rule of `{suffix}` for {channel.mention}"
+        data = await self.linking.suffix_add(
+            interaction, channel, suffix, channel_type="permanent"
         )
+
+        await interaction.response.send_message(data.message)
 
         return self.client.incr_counter("perm_suffix_add")
 
@@ -158,25 +113,11 @@ class PermLink(commands.Cog):
     ):
         """Use to remove a suffix rule from a channel"""
 
-        data = self.client.redis.get_linked("permanent", interaction.guild_id)
-
-        try:
-            data[str(channel.id)]
-        except:
-            await interaction.response.send_message(
-                f"The channel has no associated rules."
-            )
-            return
-
-        data[str(channel.id)]["suffix"] = ""
-
-        data = handle_data_deletion(data, str(channel.id))
-
-        self.client.redis.update_linked("permanent", interaction.guild_id, data)
-
-        await interaction.response.send_message(
-            f"Removed suffix rule for {channel.mention}"
+        data = await self.linking.suffix_remove(
+            interaction, channel, channel_type="permanent"
         )
+
+        await interaction.response.send_message(data.message)
 
         return self.client.incr_counter("perm_suffix_remove")
 
@@ -198,31 +139,15 @@ class PermLink(commands.Cog):
     ):
         """Use to reverse link a channel and a role"""
 
-        data = self.client.redis.get_linked("permanent", interaction.guild_id)
+        data = await self.linking.link(
+            interaction,
+            channel,
+            role,
+            link_type="reverse_roles",
+            channel_type="permanent",
+        )
 
-        try:
-            data[str(channel.id)]
-        except:
-            data[str(channel.id)] = {"roles": [], "suffix": "", "reverse_roles": []}
-
-        if str(role.id) not in data[str(channel.id)]["reverse_roles"]:
-            data[str(channel.id)]["reverse_roles"].append(str(role.id))
-
-            self.client.redis.update_linked("permanent", interaction.guild_id, data)
-
-            await interaction.response.send_message(
-                f"Linked {channel.mention} with role: `@{role.name}`"
-            )
-
-            member = interaction.guild.get_member(self.client.user.id)
-            if member.top_role.position < role.position:
-                await interaction.channel.send(
-                    f"Please ensure my highest role is above `@{role.name}`"
-                )
-        else:
-            await interaction.response.send_message(
-                f"The channel and role are already linked."
-            )
+        await interaction.response.send_message(data.message)
 
         return self.client.incr_counter("perm_reverse_link")
 
@@ -244,28 +169,15 @@ class PermLink(commands.Cog):
     ):
         """Use to unlink a reverse role"""
 
-        data = self.client.redis.get_linked("permanent", interaction.guild_id)
+        data = await self.linking.unlink(
+            interaction,
+            channel,
+            role,
+            link_type="reverse_roles",
+            channel_type="permanent",
+        )
 
-        try:
-            data[str(channel.id)]
-        except:
-            return await interaction.response.send_message(
-                f"The channel and role are not linked."
-            )
-
-        if str(role.id) in data[str(channel.id)]["reverse_roles"]:
-            try:
-                data[str(channel.id)]["reverse_roles"].remove(str(role.id))
-
-                data = handle_data_deletion(data, str(channel.id))
-
-                self.client.redis.update_linked("permanent", interaction.guild_id, data)
-
-                await interaction.response.send_message(
-                    f"Unlinked {channel.mention} and role: `@{role.name}`"
-                )
-            except:
-                pass
+        await interaction.response.send_message(data.message)
 
         return self.client.incr_counter("perm_reverse_unlink")
 

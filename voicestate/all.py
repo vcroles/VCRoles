@@ -1,7 +1,7 @@
 import discord
 
 from bot import MyClient
-from utils import add_suffix, remove_suffix
+from utils.utils import add_suffix, remove_suffix
 
 
 class All:
