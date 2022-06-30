@@ -10,11 +10,12 @@ class RedisUtils:
 
     def __init__(self, r: redis.Redis):
         self.r = r
-        self.DATA_FORMAT_VER = 2
+        self.DATA_FORMAT_VER = 3
         self.DATA_FORMAT = {
             "roles": [],
             "suffix": "",
             "reverse_roles": [],
+            "speaker_roles": [],
         }
 
     def to_str(self, data) -> str:
@@ -65,6 +66,7 @@ class RedisUtils:
             # 0: {channel_id: [role_id, role_id, ...]}
             # 1: {channel_id: {"roles": [role_id, role_id, ...], "suffix": "..."}}
             # 2: {channel_id: {"roles": [role_id, role_id, ...], "suffix": "...", "reverse_roles": [role_id, role_id, ...]}}
+            # 3: {channel_id: {"roles": [role_id, role_id, ...], "suffix": "...", "reverse_roles": [role_id, role_id, ...], "speaker_roles": [role_id, role_id, ...]}}
             if "format" not in data or data["format"] == 0:
                 # reformat data to type 1
                 for channel_id, roles in data.items():
@@ -79,11 +81,24 @@ class RedisUtils:
                         data[channel_id]["reverse_roles"] = []
                 data["format"] = self.DATA_FORMAT_VER
                 self.update_linked(type, guild_id, data)
+            if data["format"] == 2:
+                # reformat data to type 3
+                for channel_id in data:
+                    if channel_id != "format":
+                        data[channel_id]["speaker_roles"] = []
+                data["format"] = self.DATA_FORMAT_VER
+                self.update_linked(type, guild_id, data)
             return data
 
         else:
             if type == "all":
-                return {"roles": [], "except": [], "suffix": "", "reverse_roles": []}
+                return {
+                    "roles": [],
+                    "except": [],
+                    "suffix": "",
+                    "reverse_roles": [],
+                    "speaker_roles": [],
+                }
             return {"format": self.DATA_FORMAT_VER}
 
     def update_linked(self, type: str, guild_id: int, data: dict):

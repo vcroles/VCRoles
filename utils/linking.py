@@ -30,7 +30,7 @@ class LinkingUtils:
     ) -> LinkReturnData:
         """Use to link a channel and a role"""
 
-        if not channel_type:
+        if channel_type is None:
             if isinstance(channel, discord.CategoryChannel):
                 channel_type = "category"
             elif isinstance(channel, discord.VoiceChannel):
@@ -43,7 +43,12 @@ class LinkingUtils:
         try:
             data[str(channel.id)]
         except:
-            data[str(channel.id)] = {"roles": [], "suffix": "", "reverse_roles": []}
+            data[str(channel.id)] = {
+                "roles": [],
+                "suffix": "",
+                "reverse_roles": [],
+                "speaker_roles": [],
+            }
 
         if str(role.id) not in data[str(channel.id)][link_type]:
             data[str(channel.id)][link_type].append(str(role.id))
@@ -139,7 +144,12 @@ class LinkingUtils:
         try:
             data[str(channel.id)]
         except:
-            data[str(channel.id)] = {"roles": [], "suffix": "", "reverse_roles": []}
+            data[str(channel.id)] = {
+                "roles": [],
+                "suffix": "",
+                "reverse_roles": [],
+                "speaker_roles": [],
+            }
 
         data[str(channel.id)]["suffix"] = suffix
 

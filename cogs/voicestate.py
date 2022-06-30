@@ -65,6 +65,32 @@ class VoiceState(commands.Cog):
                     join_roles_changed,
                 )
 
+        if (
+            isinstance(before.channel, discord.StageChannel)
+            and isinstance(after.channel, discord.StageChannel)
+            and before.channel.id == after.channel.id
+        ):
+            # Become Speaker
+            if before.suppress and not after.suppress:
+                data = self.client.redis.get_linked("stage", member.guild.id)
+
+                for i in data[str(before.channel.id)]["speaker_roles"]:
+                    try:
+                        role = member.guild.get_role(int(i))
+                        await member.add_roles(role, reason="Became Speaker")
+                    except:
+                        pass
+            # Stop Speaker
+            elif not before.suppress and after.suppress:
+                data = self.client.redis.get_linked("stage", member.guild.id)
+
+                for i in data[str(before.channel.id)]["speaker_roles"]:
+                    try:
+                        role = member.guild.get_role(int(i))
+                        await member.remove_roles(role, reason="Stopped Speaker")
+                    except:
+                        pass
+
     async def join(
         self,
         member: discord.Member,

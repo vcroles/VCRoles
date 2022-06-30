@@ -7,7 +7,6 @@ from discord.ext import commands
 from bot import MyClient
 from checks import check_any, command_available, is_owner
 from utils.linking import LinkingUtils
-from utils.utils import handle_data_deletion
 
 
 class PermLink(commands.Cog):
