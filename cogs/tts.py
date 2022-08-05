@@ -117,6 +117,7 @@ class TTS(commands.Cog):
                         discord.FFmpegPCMAudio(
                             source=f"tts/{interaction.guild_id}.mp3"
                         ),
+                        options="-loglevel panic",
                     )
                     await asyncio.sleep(audio.info.length + 1)
                     if leave and data["tts:leave"] == "True":

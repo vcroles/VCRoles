@@ -39,9 +39,10 @@ client.remove_command("help")
 
 @client.event
 async def on_autopost_success():
-    print(
-        f"Posted server count ({client.topggpy.guild_count}), shard count ({client.shard_count})"
-    )
+    with open("guilds.log", "a") as file:
+        file.write(
+            f"{discord.utils.utcnow().strftime('%m/%d/%Y, %H:%M:%S')}: Posted server count ({client.topggpy.guild_count}), shard count ({client.shard_count})\n"
+        )
 
 
 @client.event
