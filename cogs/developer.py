@@ -3,11 +3,11 @@ from typing import Optional
 import discord
 from discord.ext import commands
 
-from bot import MyClient
+from utils.client import VCRolesClient
 
 
 class Dev(commands.Cog):
-    def __init__(self, client: MyClient):
+    def __init__(self, client: VCRolesClient):
         self.client = client
 
     @commands.command(description="DEVELOPER COMMAND")
@@ -61,5 +61,5 @@ class Dev(commands.Cog):
         await ctx.reply("Reset command limit!")
 
 
-async def setup(client: MyClient):
+async def setup(client: VCRolesClient):
     await client.add_cog(Dev(client))

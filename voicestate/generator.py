@@ -2,11 +2,11 @@ import json
 
 import discord
 
-from bot import MyClient
+from utils.client import VCRolesClient
 
 
 class Generator:
-    def __init__(self, client: MyClient):
+    def __init__(self, client: VCRolesClient):
         self.client = client
 
     async def join(

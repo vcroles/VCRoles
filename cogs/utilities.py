@@ -5,12 +5,12 @@ import discord
 from discord import Interaction, app_commands
 from discord.ext import commands
 
-from bot import MyClient
+from utils.client import VCRolesClient
 from views.url import Combination, Discord, Invite, TopGG, Website
 
 
 class Utils(commands.Cog):
-    def __init__(self, client: MyClient):
+    def __init__(self, client: VCRolesClient):
         self.client = client
 
     @app_commands.command()
@@ -127,5 +127,5 @@ class Utils(commands.Cog):
         return self.client.incr_counter("help")
 
 
-async def setup(client: MyClient):
+async def setup(client: VCRolesClient):
     await client.add_cog(Utils(client))

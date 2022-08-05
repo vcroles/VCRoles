@@ -2,12 +2,12 @@ import datetime
 
 import discord
 
-from bot import MyClient
-from utils import ReturnData
+from utils.client import VCRolesClient
+from utils.utils import ReturnData
 
 
 class Logging:
-    def __init__(self, client: MyClient):
+    def __init__(self, client: VCRolesClient):
         self.client = client
 
     def construct_embed(
