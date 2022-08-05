@@ -2,13 +2,13 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from bot import MyClient
 from utils.checks import check_any, command_available, is_owner
+from utils.client import VCRolesClient
 from utils.linking import LinkingUtils
 
 
 class StageSpeaker(commands.Cog):
-    def __init__(self, client: MyClient):
+    def __init__(self, client: VCRolesClient):
         self.client = client
         self.linking = LinkingUtils(client)
 
@@ -64,5 +64,5 @@ class StageSpeaker(commands.Cog):
         return self.client.incr_counter("speaker_unlink")
 
 
-async def setup(client: MyClient):
+async def setup(client: VCRolesClient):
     await client.add_cog(StageSpeaker(client))

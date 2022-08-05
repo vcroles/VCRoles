@@ -6,12 +6,12 @@ import requests
 from discord import app_commands
 from discord.ext import commands
 
-from bot import MyClient
 from utils.checks import check_any, command_available, is_owner
+from utils.client import VCRolesClient
 
 
 class Advanced(commands.Cog):
-    def __init__(self, client: MyClient):
+    def __init__(self, client: VCRolesClient):
         self.client = client
 
     async def parse_initial(
@@ -276,5 +276,5 @@ class Advanced(commands.Cog):
         return self.client.incr_counter("export")
 
 
-async def setup(client: MyClient):
+async def setup(client: VCRolesClient):
     await client.add_cog(Advanced(client))

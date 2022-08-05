@@ -3,7 +3,7 @@ import asyncio
 import discord
 from discord.ext import commands
 
-from bot import MyClient
+from utils.client import VCRolesClient
 from utils.utils import ReturnData, add_suffix, remove_suffix
 from voicestate.all import All
 from voicestate.generator import Generator
@@ -11,7 +11,7 @@ from voicestate.logging import Logging
 
 
 class VoiceState(commands.Cog):
-    def __init__(self, client: MyClient):
+    def __init__(self, client: VCRolesClient):
         self.client = client
         self.all = All(client)
         self.generator = Generator(client)
@@ -342,5 +342,5 @@ class VoiceState(commands.Cog):
         return {"added": [], "removed": []}
 
 
-async def setup(client: MyClient):
+async def setup(client: VCRolesClient):
     await client.add_cog(VoiceState(client))

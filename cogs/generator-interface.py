@@ -4,11 +4,11 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from bot import MyClient
+from utils.client import VCRolesClient
 
 
 class GenInterface(commands.Cog):
-    def __init__(self, client: MyClient):
+    def __init__(self, client: VCRolesClient):
         self.client = client
 
     interface_commands = app_commands.Group(
@@ -245,5 +245,5 @@ class GenInterface(commands.Cog):
         return self.client.incr_counter("interface_decrease")
 
 
-async def setup(client: MyClient):
+async def setup(client: VCRolesClient):
     await client.add_cog(GenInterface(client))

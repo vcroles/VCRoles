@@ -2,7 +2,7 @@ from typing import NamedTuple, Optional, Union
 
 import discord
 
-from bot import MyClient
+from utils.client import VCRolesClient
 from utils.utils import handle_data_deletion
 
 
@@ -15,7 +15,7 @@ class LinkReturnData(NamedTuple):
 
 
 class LinkingUtils:
-    def __init__(self, client: MyClient):
+    def __init__(self, client: VCRolesClient):
         self.client = client
 
     async def link(

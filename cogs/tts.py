@@ -8,8 +8,8 @@ from discord.ext import commands
 from gtts import gTTS
 from mutagen.mp3 import MP3
 
-from bot import MyClient
 from utils.checks import check_any, command_available, is_owner
+from utils.client import VCRolesClient
 
 tts_langs = Literal[
     "af: Afrikaans",
@@ -41,7 +41,7 @@ tts_langs = Literal[
 
 
 class TTS(commands.Cog):
-    def __init__(self, client: MyClient):
+    def __init__(self, client: VCRolesClient):
         self.client = client
 
     tts_commands = app_commands.Group(name="tts", description="Text To Speech commands")
@@ -188,5 +188,5 @@ class TTS(commands.Cog):
         return self.client.incr_counter("tts_setup")
 
 
-async def setup(client: MyClient):
+async def setup(client: VCRolesClient):
     await client.add_cog(TTS(client))

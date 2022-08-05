@@ -2,12 +2,12 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from bot import MyClient
 from utils.checks import check_any, command_available, is_owner
+from utils.client import VCRolesClient
 
 
 class Linked(commands.Cog):
-    def __init__(self, client: MyClient):
+    def __init__(self, client: VCRolesClient):
         self.client = client
 
     def construct_linked_content(
@@ -109,5 +109,5 @@ class Linked(commands.Cog):
         return self.client.incr_counter("linked")
 
 
-async def setup(client: MyClient):
+async def setup(client: VCRolesClient):
     await client.add_cog(Linked(client))

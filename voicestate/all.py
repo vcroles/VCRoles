@@ -1,11 +1,11 @@
 import discord
 
-from bot import MyClient
+from utils.client import VCRolesClient
 from utils.utils import add_suffix, remove_suffix
 
 
 class All:
-    def __init__(self, client: MyClient):
+    def __init__(self, client: VCRolesClient):
         self.client = client
 
     async def join(
