@@ -31,7 +31,9 @@ r = redis.from_url(redis_url)
 ar = aioredis.from_url(redis_url)
 r_utils = RedisUtils(r)
 
-client = VCRolesClient(r_utils, ar, intents=intents, command_prefix=commands.when_mentioned)
+client = VCRolesClient(
+    r_utils, ar, intents=intents, command_prefix=commands.when_mentioned
+)
 client.remove_command("help")
 
 
