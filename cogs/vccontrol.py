@@ -6,7 +6,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from bot import MyClient
-from checks import check_any, command_available, is_owner
+from utils.checks import check_any, command_available, is_owner
 
 
 class VCControl(commands.Cog):

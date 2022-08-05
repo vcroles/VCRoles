@@ -7,3 +7,4 @@ __pycache__/
 tts/
 exports/
 config.py
+.vscode/

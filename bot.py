@@ -25,7 +25,9 @@ logger.addHandler(handler)
 
 
 class MyClient(commands.AutoShardedBot):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, redis: RedisUtils, ar: aioredis.Redis, *args, **kwargs):
+        self.redis = redis
+        self.ar = ar
         super().__init__(*args, **kwargs)
         self.persistent_views_added = False
 
@@ -61,10 +63,6 @@ class MyClient(commands.AutoShardedBot):
         print("------")
 
     async def setup_hook(self):
-        redis_url = f"redis://:{config.REDIS.PASSWORD}@{config.REDIS.HOST}:{config.REDIS.PORT}/{config.REDIS.DB}"
-        r = redis.from_url(redis_url)
-        self.ar = aioredis.from_url(redis_url)
-        self.redis = RedisUtils(r)
 
         reminder.start()
 
@@ -139,7 +137,12 @@ class MyClient(commands.AutoShardedBot):
 
 intents = discord.Intents(messages=True, guilds=True, reactions=True, voice_states=True)
 
-client = MyClient(intents=intents, command_prefix=commands.when_mentioned)
+redis_url = f"redis://:{config.REDIS.PASSWORD}@{config.REDIS.HOST}:{config.REDIS.PORT}/{config.REDIS.DB}"
+r = redis.from_url(redis_url)
+ar = aioredis.from_url(redis_url)
+r_utils = RedisUtils(r)
+
+client = MyClient(r_utils, ar, intents=intents, command_prefix=commands.when_mentioned)
 client.remove_command("help")
 
 
