@@ -113,11 +113,10 @@ class TTS(commands.Cog):
                     await interaction.response.send_message(embed=embed)
 
                     assert isinstance(vc, discord.VoiceClient)
-                    player = vc.play(
+                    vc.play(
                         discord.FFmpegPCMAudio(
                             source=f"tts/{interaction.guild_id}.mp3"
                         ),
-                        after=lambda e: 1 + 1,
                     )
                     await asyncio.sleep(audio.info.length + 1)
                     if leave and data["tts:leave"] == "True":

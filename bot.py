@@ -47,6 +47,9 @@ class MyClient(commands.AutoShardedBot):
         )
 
     async def on_ready(self):
+        """
+        Called when the bot is ready.
+        """
         if not self.persistent_views_added:
             self.add_view(Interface(self.redis))
             self.persistent_views_added = True
@@ -78,15 +81,19 @@ class MyClient(commands.AutoShardedBot):
         self.redis.guild_remove(guild.id)
 
     async def on_command_error(self, ctx, error):
-        return
+        return  # who cares about errors
 
     async def on_error(self, event, *args, **kwargs):
+        # the seemingly pointless error handler
         with open("error.log", "a") as f:
             f.write(
                 f"{discord.utils.utcnow().strftime('%m/%d/%Y, %H:%M:%S')} {event}: {str(args).encode('utf-8')=}: {str(kwargs).encode('utf-8')=}\n"
             )
 
     async def on_guild_channel_delete(self, channel: discord.abc.GuildChannel):
+        """
+        When a channel is deleted, remove it from the redis database.
+        """
         # Voice Channels
         if isinstance(channel, discord.VoiceChannel):
             data = self.redis.get_linked("voice", channel.guild.id)
@@ -256,7 +263,7 @@ async def main():
         if filename.endswith(".json"):
             os.remove(f"exports/{filename}")
 
-    # Setting up guild count
+    # Setting up guild count file
 
     try:
         with open("guilds.json", "r") as f:
@@ -266,6 +273,9 @@ async def main():
             json.dump({}, f)
 
     async with client:
+
+        # Setting up topgg integration
+
         try:
             import topgg  # type: ignore
 

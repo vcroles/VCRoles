@@ -214,7 +214,7 @@ class Advanced(commands.Cog):
         self,
         interaction: discord.Interaction,
         attachment: discord.Attachment,
-    ):
+    ):  # seemed like a good idea... but the implementation is horrific :)
         """
         Command for advanced users. Allows you to add/remove/edit a large number of links at once.
         """

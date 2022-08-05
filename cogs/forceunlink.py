@@ -22,30 +22,23 @@ class UnLink(commands.Cog):
         """Use to remove any channel/category from all links (Using ID)"""
 
         channel_id = channel_id.strip()
-        data = self.client.redis.get_linked("voice", interaction.guild_id)
-        if channel_id in data:
-            del data[channel_id]
-            self.client.redis.update_linked("voice", interaction.guild_id, data)
 
-        data = self.client.redis.get_linked("permanent", interaction.guild_id)
-        if channel_id in data:
-            del data[channel_id]
-            self.client.redis.update_linked("permanent", interaction.guild_id, data)
+        for link_type in ["voice", "permanent", "stage", "category"]:
+            data = self.client.redis.get_linked(link_type, interaction.guild_id)
+            if channel_id in data:
+                del data[channel_id]
+                self.client.loop.create_task(
+                    self.client.ar.hset(
+                        f"{interaction.guild_id}:linked",
+                        link_type,
+                        self.client.redis.to_str(data),
+                    )
+                )
 
         data = self.client.redis.get_linked("all", interaction.guild_id)
         if channel_id in data["except"]:
             data["except"].remove(channel_id)
             self.client.redis.update_linked("all", interaction.guild_id, data)
-
-        data = self.client.redis.get_linked("stage", interaction.guild_id)
-        if channel_id in data:
-            del data[channel_id]
-            self.client.redis.update_linked("stage", interaction.guild_id, data)
-
-        data = self.client.redis.get_linked("category", interaction.guild_id)
-        if channel_id in data:
-            del data[channel_id]
-            self.client.redis.update_linked("category", interaction.guild_id, data)
 
         await interaction.response.send_message(
             f"Any found links to {channel_id} have been removed."

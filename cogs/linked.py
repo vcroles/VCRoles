@@ -36,15 +36,21 @@ class Linked(commands.Cog):
         - Suffix
         """
         chunks = []
+
         for role_id in channel_data["roles"]:
             role = interaction.guild.get_role(int(role_id))
             chunks.append(f"{role.mention if role else role_id}, ")
+
         for role_id in channel_data["reverse_roles"]:
             role = interaction.guild.get_role(int(role_id))
             chunks.append(f"R{role.mention if role else role_id}, ")
+
         chunks.append(f"`{channel_data['suffix']}`" if channel_data["suffix"] else "")
+
         content = "".join(chunks)
+
         content = content.removesuffix(", ") + "\n"
+
         return content
 
     @app_commands.command()
@@ -66,6 +72,7 @@ class Linked(commands.Cog):
                 ),
                 interaction,
             )
+
             if content:
                 linked_embed.add_field(
                     name=f"{channel_type} Channels:", value=content, inline=False
@@ -76,6 +83,7 @@ class Linked(commands.Cog):
         all_content = self.iterate_links(all_dict, interaction)
 
         chunks = [all_content]
+
         if "except" in all_dict:
             if all_dict["except"]:
                 chunks.append("All-link exceptions: ")
@@ -85,7 +93,9 @@ class Linked(commands.Cog):
                         chunks.append(f"{channel.mention}, ")
                     except:
                         chunks.append(f"Not Found - ID `{exception_id}`")
+
         all_content = "".join(chunks).removesuffix(", ")
+
         if all_content.strip():
             linked_embed.add_field(
                 name="All Link:", value=all_content.strip(), inline=False
