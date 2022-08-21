@@ -61,12 +61,12 @@ class VCRolesClient(commands.AutoShardedBot):
     async def on_command_error(self, ctx, error):
         return  # who cares about errors
 
-    async def on_error(self, event, *args, **kwargs):
-        # the seemingly pointless error handler
-        with open("error.log", "a") as f:
-            f.write(
-                f"{discord.utils.utcnow().strftime('%m/%d/%Y, %H:%M:%S')} {event}: {str(args).encode('utf-8')=}: {str(kwargs).encode('utf-8')=}\n"
-            )
+#     async def on_error(self, event, *args, **kwargs):
+#         # the seemingly pointless error handler
+#         with open("error.log", "a") as f:
+#             f.write(
+#                 f"{discord.utils.utcnow().strftime('%m/%d/%Y, %H:%M:%S')} {event}: {str(args).encode('utf-8')=}: {str(kwargs).encode('utf-8')=}\n"
+#             )
 
     async def on_guild_channel_delete(self, channel: discord.abc.GuildChannel):
         """
