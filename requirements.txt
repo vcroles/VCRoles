@@ -1,4 +1,4 @@
-git+https://github.com/CDE90/discord.py#egg=discord.py[voice]
+discord.py[voice]
 gtts
 mutagen
 topggpy

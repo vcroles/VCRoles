@@ -34,7 +34,8 @@ When cloning the repo for new, make sure you:
 
 ## Current Library
 
-Currently running using tested [discord.py fork](https://github.com/CDE90/discord.py) managed by CDE. Which will be updated regularly, once tested thoroughly to be working with the bot.
+~~Currently running using tested [discord.py fork](https://github.com/CDE90/discord.py) managed by CDE. Which will be updated regularly, once tested thoroughly to be working with the bot.~~
+Now using stable discord.py release `discord.py[voice]`
 
 ## Links
 
@@ -45,8 +46,6 @@ https://top.gg/bot/775025797034541107
 ### Official Website
 
 https://www.vcroles.com
-
-https://sites.google.com/view/vc-discord-bot/home (old website)
 
 ### Admin Invite Link
 
