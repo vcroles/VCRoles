@@ -6,3 +6,7 @@ pynacl
 redis
 pre-commit
 requests
+orjson>=3.5.4 # these are discord.py's speed modules
+aiodns>=1.1
+Brotli
+cchardet==2.1.7
