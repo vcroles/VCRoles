@@ -85,7 +85,7 @@ def setup_logging():
             "[{asctime}] [{levelname:<8}] {name}: {message}", dt_fmt, style="{"
         )
 
-    logger = logging.getLogger()
+    logger = logging.getLogger("discord")
 
     handler.setFormatter(formatter)
     logger.setLevel(level)
