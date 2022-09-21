@@ -85,7 +85,10 @@ def setup_logging():
             "[{asctime}] [{levelname:<8}] {name}: {message}", dt_fmt, style="{"
         )
 
-    logger = logging.getLogger("discord")
+    logger = logging.getLogger()
+    logging.getLogger("discord.voice_client").setLevel(logging.WARNING)
+    logging.getLogger("discord.player").setLevel(logging.WARNING)
+    logging.getLogger("aiohttp").setLevel(logging.WARNING)
 
     handler.setFormatter(formatter)
     logger.setLevel(level)
