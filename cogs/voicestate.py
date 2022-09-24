@@ -285,23 +285,34 @@ class VoiceState(commands.Cog):
         if isinstance(id, int):
             id = str(id)
         if id in data:
-            await add_suffix(member, data[id]["suffix"])
-            added = []
-            for i in data[id]["roles"]:
-                try:
-                    role = member.guild.get_role(int(i))
-                    await member.add_roles(role, reason="Joined voice channel")
-                    added.append(role)
-                except:
-                    pass
-            removed = []
-            for i in data[id]["reverse_roles"]:
-                try:
-                    role = member.guild.get_role(int(i))
-                    await member.remove_roles(role, reason="Joined voice channel")
-                    removed.append(role)
-                except:
-                    pass
+            me = member.guild.get_member(self.client.user.id)
+
+            tasks = []
+
+            tasks.append(add_suffix(member, data[id]["suffix"]))
+
+            added = list(
+                filter(
+                    lambda role: role < me.top_role,
+                    [member.guild.get_role(int(i)) for i in data[id]["roles"]],
+                )
+            )
+            if added:
+                tasks.append(member.add_roles(*added, reason="Joined voice channel"))
+
+            removed = list(
+                filter(
+                    lambda role: role < me.top_role,
+                    [member.guild.get_role(int(i)) for i in data[id]["reverse_roles"]],
+                )
+            )
+            if removed:
+                tasks.append(
+                    member.remove_roles(*removed, reason="Joined voice channel.")
+                )
+
+            await asyncio.gather(*tasks, return_exceptions=True)
+
             self.client.incr_role_counter("added", len(added))
             self.client.incr_role_counter("removed", len(removed))
             return {"added": added, "removed": removed}
@@ -316,23 +327,34 @@ class VoiceState(commands.Cog):
         if isinstance(id, int):
             id = str(id)
         if id in data:
-            await remove_suffix(member, (data[id]["suffix"]))
-            added = []
-            for i in data[id]["reverse_roles"]:
-                try:
-                    role = member.guild.get_role(int(i))
-                    await member.add_roles(role, reason="Left voice channel")
-                    added.append(role)
-                except:
-                    pass
-            removed = []
-            for i in data[id]["roles"]:
-                try:
-                    role = member.guild.get_role(int(i))
-                    await member.remove_roles(role, reason="Left voice channel")
-                    removed.append(role)
-                except:
-                    pass
+            me = member.guild.get_member(self.client.user.id)
+
+            tasks = []
+
+            tasks.append(remove_suffix(member, (data[id]["suffix"])))
+
+            added = list(
+                filter(
+                    lambda role: role < me.top_role,
+                    [member.guild.get_role(int(i)) for i in data[id]["reverse_roles"]],
+                )
+            )
+            if added:
+                tasks.append(member.add_roles(*added, reason="Left voice channel."))
+
+            removed = list(
+                filter(
+                    lambda role: role < me.top_role,
+                    [member.guild.get_role(int(i)) for i in data[id]["roles"]],
+                )
+            )
+            if removed:
+                tasks.append(
+                    member.remove_roles(*removed, reason="Left voice channel.")
+                )
+
+            await asyncio.gather(*tasks, return_exceptions=True)
+
             self.client.incr_role_counter("added", len(added))
             self.client.incr_role_counter("removed", len(removed))
             return {"added": added, "removed": removed}
