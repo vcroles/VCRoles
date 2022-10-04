@@ -74,6 +74,8 @@ class VoiceState(commands.Cog):
             if before.suppress and not after.suppress:
                 data = self.client.redis.get_linked("stage", member.guild.id)
 
+                if str(before.channel.id) not in data:
+                    return
                 if "speaker_roles" not in data[str(before.channel.id)]:
                     data[str(before.channel.id)]["speaker_roles"] = []
 
@@ -87,6 +89,8 @@ class VoiceState(commands.Cog):
             elif not before.suppress and after.suppress:
                 data = self.client.redis.get_linked("stage", member.guild.id)
 
+                if str(before.channel.id) not in data:
+                    return
                 if "speaker_roles" not in data[str(before.channel.id)]:
                     data[str(before.channel.id)]["speaker_roles"] = []
 
