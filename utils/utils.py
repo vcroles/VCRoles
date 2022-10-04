@@ -79,7 +79,7 @@ class RedisUtils:
                 for channel_id in data:
                     if channel_id != "format":
                         data[channel_id]["reverse_roles"] = []
-                data["format"] = self.DATA_FORMAT_VER
+                data["format"] = 2
                 self.update_linked(type, guild_id, data)
             if data["format"] == 2:
                 # reformat data to type 3
