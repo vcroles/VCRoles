@@ -1,0 +1,7 @@
+[tool.pyright]
+include = [
+    "test.py",
+    "utils/database.py"
+]
+
+typeCheckingMode = "strict"

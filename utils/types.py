@@ -1,0 +1,1 @@
+DiscordID = str | int

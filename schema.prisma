@@ -1,0 +1,55 @@
+generator client {
+    provider               = "prisma-client-py"
+    recursive_type_depth   = 5
+    interface              = "asyncio"
+    partial_type_generator = "utils/partial_types.py"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model Guild {
+    id             String           @id
+    ttsEnabled     Boolean          @default(false)
+    ttsRole        Boolean?
+    ttsLeave       Boolean          @default(true)
+    logging        String?
+    links          Link[]
+    voiceGenerator VoiceGenerator[]
+}
+
+enum LinkType {
+    CATEGORY
+    STAGE
+    ALL
+    PERMANENT
+    REGULAR
+}
+
+model Link {
+    dbId               String   @unique @default(cuid())
+    id                 String
+    type               LinkType @default(REGULAR)
+    guild              Guild    @relation(fields: [guildId], references: [id])
+    guildId            String
+    linkedRoles        String[]
+    reverseLinkedRoles String[]
+    suffix             String?
+    speakerRoles       String[]
+    excludeChannels    String[]
+
+    @@id([id, type])
+}
+
+model VoiceGenerator {
+    id               String   @id @default(cuid())
+    guild            Guild    @relation(fields: [guildId], references: [id])
+    guildId          String
+    categoryId       String?
+    generatorId      String?
+    interfaceChannel String?
+    interfaceMessage String?
+    openChannels     String[]
+}
