@@ -8,7 +8,7 @@
 
 VC Roles, TTS & more!
 
-https://www.vcroles.com
+<https://www.vcroles.com>
 
 This is a bot that will make your server and voice channels much more interactive, with the ability to give a user a role when they join a voice channel, remove it when they leave the channel, sending TTS messages into voice channels for those times when you can't speak, creating and managing voice channels and more! This is the bot you need to make your servers more interactive, and to help bring a community together.
 
@@ -17,6 +17,14 @@ This is a bot that will make your server and voice channels much more interactiv
 VC Roles is open source here, and we welcome any pull requests!
 
 Please note however that this code is intended for educational purposes only, and we will not provide support for self-hosting the bot.
+
+## Development Envrionment
+
+We reccomend using a virtual environment for python. You can do this by:
+
+- Creating a new virtual environment called env `py -m venv env` or `python3 -m venv env`
+- Activating the virtual environment `.\env\Scripts\activate` or `source env/bin/activate`
+- Install the project dependencies `pip install -r requirements.txt`
 
 ## Code formatter
 
@@ -34,25 +42,24 @@ When cloning the repo for new, make sure you:
 
 ## Current Library
 
-~~Currently running using tested [discord.py fork](https://github.com/CDE90/discord.py) managed by CDE. Which will be updated regularly, once tested thoroughly to be working with the bot.~~
 Now using stable discord.py release `discord.py[voice]`
 
 ## Links
 
 ### Top.gg
 
-https://top.gg/bot/775025797034541107
+<https://top.gg/bot/775025797034541107>
 
 ### Official Website
 
-https://www.vcroles.com
+<https://www.vcroles.com>
 
 ### Admin Invite Link
 
-https://discord.com/api/oauth2/authorize?client_id=775025797034541107&permissions=300944400&scope=bot%20applications.commands
+<https://discord.com/api/oauth2/authorize?client_id=775025797034541107&permissions=300944400&scope=bot%20applications.commands>
 
 ### Default Invite Link
 
-https://discord.com/api/oauth2/authorize?client_id=775025797034541107&permissions=300944400&scope=bot%20applications.commands
+<https://discord.com/api/oauth2/authorize?client_id=775025797034541107&permissions=300944400&scope=bot%20applications.commands>
 
 [![Discord Bots](https://top.gg/api/widget/775025797034541107.svg)](https://top.gg/bot/775025797034541107)
