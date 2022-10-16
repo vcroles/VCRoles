@@ -13,7 +13,7 @@ datasource db {
 model Guild {
     id             String           @id
     ttsEnabled     Boolean          @default(false)
-    ttsRole        Boolean?
+    ttsRole        String?
     ttsLeave       Boolean          @default(true)
     logging        String?
     links          Link[]
@@ -46,7 +46,7 @@ model Link {
 model VoiceGenerator {
     id               String   @id @default(cuid())
     guild            Guild    @relation(fields: [guildId], references: [id])
-    guildId          String
+    guildId          String   @unique
     categoryId       String?
     generatorId      String?
     interfaceChannel String?
