@@ -7,7 +7,7 @@ from discord.ext import commands
 from prisma.enums import LinkType
 
 from utils import VCRolesClient
-from utils.types import MentionableRole, RoleList, VoiceStateReturnData, DiscordID
+from utils.types import DiscordID, MentionableRole, RoleList, VoiceStateReturnData
 from utils.utils import add_suffix, remove_suffix
 from voicestate import Generator, Logging
 

@@ -10,11 +10,10 @@ from discord import app_commands
 from discord.ext import commands, tasks
 
 import config
-from utils.database import DatabaseUtils
 from utils.client import VCRolesClient
+from utils.database import DatabaseUtils
 from utils.logging import setup_logging
 from utils.types import using_topgg
-
 from utils.utils import RedisUtils
 from views.url import TopGG
 

@@ -1,8 +1,10 @@
 import enum
-import discord
-from prisma.models import Link
-from prisma.enums import LinkType
 from typing import Literal, NamedTuple, Optional
+
+import discord
+from prisma.enums import LinkType
+from prisma.models import Link
+
 from config import ENVIRONMENT
 
 if ENVIRONMENT == "DEV":

@@ -1,5 +1,4 @@
 import discord
-
 from prisma.enums import LinkType
 
 from utils.client import VCRolesClient

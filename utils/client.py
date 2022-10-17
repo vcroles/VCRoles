@@ -1,12 +1,14 @@
+from typing import Optional
+
 import discord
 import redis.asyncio as aioredis
 from discord.ext import commands
-from typing import Optional
+
+import config
 from utils.database import DatabaseUtils
+from utils.types import using_topgg
 from utils.utils import RedisUtils
 from views.interface import Interface
-from utils.types import using_topgg
-import config
 
 
 class VCRolesClient(commands.AutoShardedBot):

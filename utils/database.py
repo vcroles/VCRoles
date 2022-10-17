@@ -1,8 +1,10 @@
-from typing import Optional, List
+from typing import List, Optional
+
 from prisma import Prisma
-from prisma.models import Guild, Link, VoiceGenerator
 from prisma.enums import LinkType
-from prisma.types import LinkUpdateInput, GuildUpdateInput, VoiceGeneratorUpdateInput
+from prisma.models import Guild, Link, VoiceGenerator
+from prisma.types import GuildUpdateInput, LinkUpdateInput, VoiceGeneratorUpdateInput
+
 from utils.types import DiscordID
 
 

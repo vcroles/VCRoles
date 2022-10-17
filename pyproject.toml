@@ -5,3 +5,7 @@ include = [
 ]
 
 typeCheckingMode = "strict"
+
+[tool.isort]
+skip_glob = ["env/*"]
+profile = "black"
