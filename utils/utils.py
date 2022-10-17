@@ -188,9 +188,8 @@ def handle_data_deletion(data: dict, channel_id: str) -> dict:
 class ReturnData(NamedTuple):
     """Data to return from voicestate join/leave handling"""
 
-    voice_changed: dict[str, list] = {"added": [], "removed": []}
-    stage_changed: dict[str, list] = {"added": [], "removed": []}
-    category_changed: dict[str, list] = {"added": [], "removed": []}
-    all_changed: dict[str, list] = {"added": [], "removed": []}
-    perm_changed: dict[str, list] = None
-    gen_data: dict = None
+    voice_changed: dict[str, list[discord.Role]] = {"added": [], "removed": []}
+    stage_changed: dict[str, list[discord.Role]] = {"added": [], "removed": []}
+    category_changed: dict[str, list[discord.Role]] = {"added": [], "removed": []}
+    all_changed: dict[str, list[discord.Role]] = {"added": [], "removed": []}
+    perm_changed: dict[str, list[discord.Role]] = {"added": [], "removed": []}

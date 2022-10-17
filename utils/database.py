@@ -63,7 +63,7 @@ class DatabaseUtils:
         if not data:
             await self.get_guild_data(guild_id)
             data = await self.db.link.create(
-                {"guildId": str(guild_id), "id": str(channel_id)}
+                {"guildId": str(guild_id), "id": str(channel_id), "type": link_type}
             )
         return data
 
