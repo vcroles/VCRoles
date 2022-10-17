@@ -2,15 +2,24 @@ import discord
 import redis.asyncio as aioredis
 from discord.ext import commands
 
+from utils.database import DatabaseUtils
 from utils.utils import RedisUtils
 from views.interface import Interface
 
 
 class VCRolesClient(commands.AutoShardedBot):
-    def __init__(self, redis: RedisUtils, ar: aioredis.Redis, *args, **kwargs):
+    def __init__(
+        self,
+        redis: RedisUtils,
+        ar: aioredis.Redis,
+        db: DatabaseUtils,
+        intents: discord.Intents,
+        command_prefix,  # type: ignore
+    ):
         self.redis = redis
         self.ar = ar
-        super().__init__(*args, **kwargs)
+        self.db = db
+        super().__init__(intents=intents, command_prefix=command_prefix)
         self.persistent_views_added = False
 
     def incr_counter(self, cmd_name: str):
@@ -57,16 +66,6 @@ class VCRolesClient(commands.AutoShardedBot):
             self.ar.execute_command("hincrby", "counters", "guilds_leave", 1)
         )
         self.redis.guild_remove(guild.id)
-
-    async def on_command_error(self, ctx, error):
-        return  # who cares about errors
-
-    #     async def on_error(self, event, *args, **kwargs):
-    #         # the seemingly pointless error handler
-    #         with open("error.log", "a") as f:
-    #             f.write(
-    #                 f"{discord.utils.utcnow().strftime('%m/%d/%Y, %H:%M:%S')} {event}: {str(args).encode('utf-8')=}: {str(kwargs).encode('utf-8')=}\n"
-    #             )
 
     async def on_guild_channel_delete(self, channel: discord.abc.GuildChannel):
         """

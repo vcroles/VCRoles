@@ -10,6 +10,7 @@ from discord import app_commands
 from discord.ext import commands, tasks
 
 import config
+from utils.database import DatabaseUtils
 from utils.client import VCRolesClient
 from utils.logging import setup_logging
 from utils.utils import RedisUtils
@@ -19,13 +20,23 @@ setup_logging()
 
 intents = discord.Intents(messages=True, guilds=True, reactions=True, voice_states=True)
 
-redis_url = f"redis://:{config.REDIS.PASSWORD}@{config.REDIS.HOST}:{config.REDIS.PORT}/{config.REDIS.DB}"
-r = redis.from_url(redis_url)
-ar = aioredis.from_url(redis_url)
+r = redis.Redis(
+    host=config.REDIS.HOST,
+    password=config.REDIS.PASSWORD,
+    port=config.REDIS.PORT,
+    db=config.REDIS.DB,
+)
+ar = aioredis.Redis(
+    host=config.REDIS.HOST,
+    password=config.REDIS.PASSWORD,
+    port=config.REDIS.PORT,
+    db=config.REDIS.DB,
+)
 r_utils = RedisUtils(r)
+db_utils = DatabaseUtils()
 
 client = VCRolesClient(
-    r_utils, ar, intents=intents, command_prefix=commands.when_mentioned
+    r_utils, ar, intents=intents, command_prefix=commands.when_mentioned, db=db_utils
 )
 client.remove_command("help")
 
@@ -174,6 +185,8 @@ async def main():
             if filename.endswith(".py"):
                 await client.load_extension(f"cogs.{filename[:-3]}")
                 print(f"Loaded extension: {filename[:-3]}")
+
+        await client.db.connect()
 
         await client.start(config.BOT_TOKEN)
 
