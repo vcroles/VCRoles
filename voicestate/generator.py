@@ -1,5 +1,3 @@
-import json
-
 import discord
 
 from utils.client import VCRolesClient
