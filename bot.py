@@ -13,6 +13,8 @@ import config
 from utils.database import DatabaseUtils
 from utils.client import VCRolesClient
 from utils.logging import setup_logging
+from utils.types import using_topgg
+
 from utils.utils import RedisUtils
 from views.url import TopGG
 
@@ -49,34 +51,46 @@ async def on_autopost_success():
         )
 
 
-@client.event
-async def on_dbl_vote(data):
-    if data["type"] == "upvote":
-        client.loop.create_task(
-            client.ar.execute_command("hset", "commands", str(data["user"]), -10_000)
-        )
+if using_topgg:
+    import topgg
 
-        try:
-            user = await client.fetch_user(int(data["user"]))
-            description = f"{user.mention} ({user.name}) just voted for VC Roles on Top.gg & received unlimited command usage for the rest of the day!\n\nClick [here](https://top.gg/bot/775025797034541107/vote) to vote"
-        except:
-            user = discord.Object(id=int(data["user"]))
-            description = f"<@{user.id}> just voted for VC Roles on Top.gg & received unlimited command usage for the rest of the day!\n\nClick [here](https://top.gg/bot/775025797034541107/vote) to vote"
+    @client.event
+    async def on_dbl_vote(data: topgg.types.BotVoteData):
+        if data["type"] == "upvote":
+            client.loop.create_task(
+                client.ar.execute_command(
+                    "hset", "commands", str(data["user"]), -10_000
+                )
+            )
 
-        channel = client.get_channel(947070091797856276)
-        embed = discord.Embed(
-            colour=discord.Colour.blue(),
-            title=":tada: Top.gg Vote! :tada:",
-            description=description,
-            url="https://top.gg/bot/775025797034541107/vote",
-        )
-        embed.set_thumbnail(
-            url=user.avatar.url if user.avatar else client.user.avatar.url
-        )
-        embed.set_footer(text="Thanks for voting!")
-        await channel.send(embed=embed)
-    else:
-        print(data)
+            try:
+                user = await client.fetch_user(int(data["user"]))
+                description = f"{user.mention} ({user.name}) just voted for VC Roles on Top.gg & received unlimited command usage for the rest of the day!\n\nClick [here](https://top.gg/bot/775025797034541107/vote) to vote"
+            except:
+                user = discord.Object(id=int(data["user"]))
+                description = f"<@{user.id}> just voted for VC Roles on Top.gg & received unlimited command usage for the rest of the day!\n\nClick [here](https://top.gg/bot/775025797034541107/vote) to vote"
+
+            channel = client.get_channel(947070091797856276)
+            embed = discord.Embed(
+                colour=discord.Colour.blue(),
+                title=":tada: Top.gg Vote! :tada:",
+                description=description,
+                url="https://top.gg/bot/775025797034541107/vote",
+            )
+            embed.set_thumbnail(
+                url=user.avatar.url if user.avatar else client.user.avatar.url
+            )
+            embed.set_footer(text="Thanks for voting!")
+            await channel.send(embed=embed)
+        else:
+            print(data)
+
+    @topgg.endpoint("/dbl", topgg.WebhookType.BOT, config.DBL.WEBHOOK_PASSWORD)
+    def dbl_endpoint(
+        vote_data: topgg.types.BotVoteData,
+        client: VCRolesClient = topgg.data(VCRolesClient),
+    ):
+        client.dispatch("dbl_vote", vote_data)
 
 
 @client.tree.error
@@ -165,18 +179,17 @@ async def main():
 
         # Setting up topgg integration
 
-        try:
-            import topgg  # type: ignore
-
-            dbl_token = config.DBL.TOKEN
+        if using_topgg:
             client.topggpy = topgg.DBLClient(
-                client, dbl_token, autopost=True, post_shard_count=True
+                config.DBL.TOKEN, autopost=True, post_shard_count=True
+            ).set_data(client)
+            client.topgg_webhook = (
+                topgg.WebhookManager().set_data(client).endpoint(dbl_endpoint)
             )
-            client.topgg_webhook = topgg.WebhookManager(client).dbl_webhook(
-                "/dbl", config.DBL.WEBHOOK_PASSWORD
+            client.loop.run_until_complete(
+                client.topgg_webhook.start(config.DBL.WEBHOOK_PORT)
             )
-            client.topgg_webhook.run(config.DBL.WEBHOOK_PORT)
-        except ImportError:
+        else:
             print("Top.gg integration not found.")
 
         # Adding Extensions

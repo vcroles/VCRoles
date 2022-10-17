@@ -1,10 +1,12 @@
 import discord
 import redis.asyncio as aioredis
 from discord.ext import commands
-
+from typing import Optional
 from utils.database import DatabaseUtils
 from utils.utils import RedisUtils
 from views.interface import Interface
+from utils.types import using_topgg
+import config
 
 
 class VCRolesClient(commands.AutoShardedBot):
@@ -21,6 +23,11 @@ class VCRolesClient(commands.AutoShardedBot):
         self.db = db
         super().__init__(intents=intents, command_prefix=command_prefix)
         self.persistent_views_added = False
+        if using_topgg:
+            import topgg  # type: ignore
+
+            self.topggpy: Optional[topgg.DBLClient] = None  # type: ignore
+            self.topgg_webhook: Optional[topgg.WebhookManager]  # type: ignore
 
     def incr_counter(self, cmd_name: str):
         """Increments the counter for a command"""
@@ -51,6 +58,12 @@ class VCRolesClient(commands.AutoShardedBot):
                 type=discord.ActivityType.watching, name="Voice Channels"
             )
         )
+
+        if hasattr(self, "topgg_webhook") and self.topgg_webhook and using_topgg:
+            if self.topgg_webhook.is_running:
+                print("TopGG webhook is running")
+            else:
+                await self.topgg_webhook.start(config.DBL.WEBHOOK_PORT)
 
         print(f"Logged in as {self.user}")
         print(f"Bot is in {len(self.guilds)} guilds.")
