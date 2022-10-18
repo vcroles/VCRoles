@@ -5,9 +5,16 @@ from typing import Optional
 import discord
 from discord.ext import commands
 from prisma.enums import LinkType
+from prisma.models import Link
 
 from utils import VCRolesClient
-from utils.types import DiscordID, MentionableRole, RoleList, VoiceStateReturnData
+from utils.types import (
+    DiscordID,
+    MentionableRole,
+    RoleList,
+    VoiceStateData,
+    VoiceStateReturnData,
+)
 from utils.utils import add_suffix, remove_suffix
 from voicestate import Generator, Logging
 
@@ -107,6 +114,46 @@ class VoiceState(commands.Cog):
                     except discord.errors.HTTPException:
                         pass
 
+    def data_converter(
+        self, links: list[Link], channel_id: DiscordID, category_id: Optional[DiscordID]
+    ) -> VoiceStateData:
+        return_data = VoiceStateData()
+
+        for link in links:
+            if link.type == LinkType.REGULAR:
+                return_data.voice_data = link
+            elif link.type == LinkType.STAGE:
+                return_data.stage_data = link
+            elif link.type == LinkType.CATEGORY:
+                return_data.category_data = link
+            elif link.type == LinkType.PERMANENT:
+                if link.id == str(channel_id):
+                    return_data.permanent_data = link
+                elif category_id and link.id == str(category_id):
+                    return_data.category_perm_data = link
+            elif link.type == LinkType.ALL:
+                return_data.all_data = link
+
+        return_data.suffix = " ".join(
+            list(
+                filter(
+                    None,
+                    [
+                        i.suffix if i and i.suffix else ""
+                        for i in [
+                            return_data.voice_data,
+                            return_data.stage_data,
+                            return_data.category_data,
+                            return_data.all_data,
+                        ]
+                    ],
+                )
+            )
+        )
+        print(return_data.suffix)
+
+        return return_data
+
     async def join(
         self,
         member: discord.Member,
@@ -116,61 +163,77 @@ class VoiceState(commands.Cog):
         if not after.channel or not after.channel.type:
             return []
 
+        links = await self.client.db.get_all_linked_channel(
+            member.guild.id,
+            after.channel.id,
+            after.channel.category.id if after.channel.category else None,
+        )
+
+        linked_data = self.data_converter(
+            links,
+            after.channel.id,
+            after.channel.category.id if after.channel.category else None,
+        )
+
         tasks: list[Task[VoiceStateReturnData]] = []
 
-        if isinstance(after.channel, discord.VoiceChannel):
+        if isinstance(after.channel, discord.VoiceChannel) and linked_data.voice_data:
             tasks.append(
                 self.client.loop.create_task(
-                    self.handle_join(LinkType.REGULAR, member, after.channel.id)
+                    self.handle_join(linked_data.voice_data, member, after.channel.id)
                 )
             )
 
-        if isinstance(after.channel, discord.StageChannel):
+        if isinstance(after.channel, discord.StageChannel) and linked_data.stage_data:
             tasks.append(
                 self.client.loop.create_task(
-                    self.handle_join(LinkType.STAGE, member, after.channel.id)
+                    self.handle_join(linked_data.stage_data, member, after.channel.id)
                 )
             )
 
-        if after.channel.category:
+        if after.channel.category and linked_data.category_data:
             tasks.append(
                 self.client.loop.create_task(
                     self.handle_join(
-                        LinkType.CATEGORY,
+                        linked_data.category_data,
                         member,
                         after.channel.id,
-                        after.channel.category.id,
-                    )
-                )
-            )
-            tasks.append(
-                self.client.loop.create_task(
-                    self.handle_join(
-                        LinkType.PERMANENT,
-                        member,
-                        after.channel.id,
-                        after.channel.category.id,
                     )
                 )
             )
 
-        tasks.append(
-            self.client.loop.create_task(
-                self.handle_join(LinkType.ALL, member, after.channel.id)
-            )
-        )
-
-        tasks.append(
-            self.client.loop.create_task(
-                self.handle_join(
-                    LinkType.PERMANENT,
-                    member,
-                    after.channel.id,
+        if after.channel.category and linked_data.category_perm_data:
+            tasks.append(
+                self.client.loop.create_task(
+                    self.handle_join(
+                        linked_data.category_perm_data,
+                        member,
+                        after.channel.id,
+                    )
                 )
             )
-        )
+
+        if linked_data.permanent_data:
+            tasks.append(
+                self.client.loop.create_task(
+                    self.handle_join(
+                        linked_data.permanent_data,
+                        member,
+                        after.channel.id,
+                    )
+                )
+            )
+
+        if linked_data.all_data:
+            tasks.append(
+                self.client.loop.create_task(
+                    self.handle_join(linked_data.all_data, member, after.channel.id)
+                )
+            )
 
         await self.generator.join(member, before, after)
+
+        await add_suffix(member, linked_data.suffix)
 
         results: list[VoiceStateReturnData] = await asyncio.gather(*tasks)
 
@@ -185,42 +248,54 @@ class VoiceState(commands.Cog):
         if not before.channel or not before.channel.type:
             return []
 
-        tasks: list[Task[VoiceStateReturnData]] = []
-
-        tasks.append(
-            self.client.loop.create_task(
-                self.handle_leave(LinkType.ALL, member, before.channel.id)
-            )
+        links = await self.client.db.get_all_linked_channel(
+            member.guild.id,
+            before.channel.id,
+            before.channel.category.id if before.channel.category else None,
         )
 
-        if before.channel.category:
+        linked_data = self.data_converter(
+            links,
+            before.channel.id,
+            before.channel.category.id if before.channel.category else None,
+        )
+
+        tasks: list[Task[VoiceStateReturnData]] = []
+
+        if linked_data.all_data:
+            tasks.append(
+                self.client.loop.create_task(
+                    self.handle_leave(linked_data.all_data, member, before.channel.id)
+                )
+            )
+
+        if before.channel.category and linked_data.category_data:
             tasks.append(
                 self.client.loop.create_task(
                     self.handle_leave(
-                        LinkType.CATEGORY,
+                        linked_data.category_data,
                         member,
                         before.channel.id,
-                        before.channel.category.id,
                     )
                 )
             )
 
-        if isinstance(before.channel, discord.StageChannel):
+        if isinstance(before.channel, discord.StageChannel) and linked_data.stage_data:
             tasks.append(
                 self.client.loop.create_task(
                     self.handle_leave(
-                        LinkType.STAGE,
+                        linked_data.stage_data,
                         member,
                         before.channel.id,
                     )
                 )
             )
 
-        if isinstance(before.channel, discord.VoiceChannel):
+        if isinstance(before.channel, discord.VoiceChannel) and linked_data.voice_data:
             tasks.append(
                 self.client.loop.create_task(
                     self.handle_leave(
-                        LinkType.REGULAR,
+                        linked_data.voice_data,
                         member,
                         before.channel.id,
                     )
@@ -229,34 +304,22 @@ class VoiceState(commands.Cog):
 
         await self.generator.leave(member, before, after)
 
+        await remove_suffix(member, linked_data.suffix)
+
         results: list[VoiceStateReturnData] = await asyncio.gather(*tasks)
 
         return results
 
     async def handle_join(
         self,
-        link_type: LinkType,
+        data: Link,
         member: discord.Member,
         channel_id: DiscordID,
-        category_id: Optional[DiscordID] = None,
     ) -> VoiceStateReturnData:
-        if link_type == LinkType.ALL:
-            data = await self.client.db.get_channel_linked(
-                member.guild.id, member.guild.id, link_type
-            )
-        elif category_id:
-            data = await self.client.db.get_channel_linked(
-                category_id, member.guild.id, link_type
-            )
-        else:
-            data = await self.client.db.get_channel_linked(
-                channel_id, member.guild.id, link_type
-            )
-
         if str(channel_id) in data.excludeChannels:
             return VoiceStateReturnData("join", data.type)
 
-        if data.suffix:
+        if data.type == LinkType.PERMANENT and data.suffix:
             await add_suffix(member, data.suffix)
 
         added: RoleList = []
@@ -294,28 +357,14 @@ class VoiceState(commands.Cog):
 
     async def handle_leave(
         self,
-        link_type: LinkType,
+        data: Link,
         member: discord.Member,
         channel_id: DiscordID,
-        category_id: Optional[DiscordID] = None,
     ) -> VoiceStateReturnData:
-        if link_type == LinkType.ALL:
-            data = await self.client.db.get_channel_linked(
-                member.guild.id, member.guild.id, link_type
-            )
-        elif category_id:
-            data = await self.client.db.get_channel_linked(
-                category_id, member.guild.id, link_type
-            )
-        else:
-            data = await self.client.db.get_channel_linked(
-                channel_id, member.guild.id, link_type
-            )
-
         if str(channel_id) in data.excludeChannels:
             return VoiceStateReturnData("leave", data.type)
 
-        if data.suffix:
+        if data.type == LinkType.PERMANENT and data.suffix:
             await remove_suffix(member, data.suffix)
 
         added: RoleList = []

@@ -147,3 +147,26 @@ class DatabaseUtils:
             data["openChannels"] = open_channels
 
         await self.db.voicegenerator.update(where={"guildId": str(guild_id)}, data=data)
+
+    async def get_all_linked_channel(
+        self,
+        guild_id: DiscordID,
+        channel_id: DiscordID,
+        category_id: Optional[DiscordID] = None,
+    ) -> List[Link]:
+
+        if category_id:
+            s = [str(channel_id), str(category_id), str(guild_id)]
+        else:
+            s = [str(channel_id), str(guild_id)]
+
+        guild = await self.db.guild.find_unique(
+            where={"id": str(guild_id)},
+            include={"links": {"where": {"OR": [{"id": i} for i in s]}}},
+        )
+        if not guild:
+            guild = await self.db.guild.create(
+                {"id": str(guild_id)}, include={"links": True}
+            )
+
+        return guild.links or []

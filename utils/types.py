@@ -1,4 +1,5 @@
 import enum
+from dataclasses import dataclass
 from typing import Literal, NamedTuple, Optional
 
 import discord
@@ -51,3 +52,16 @@ class RoleCategory(enum.Enum):
     REGULAR = 1
     REVERSE = 2
     STAGE_SPEAKER = 3
+
+
+@dataclass
+class VoiceStateData:
+    """The data format used in voicestate handling"""
+
+    voice_data: Optional[Link] = None
+    stage_data: Optional[Link] = None
+    category_data: Optional[Link] = None
+    category_perm_data: Optional[Link] = None
+    all_data: Optional[Link] = None
+    permanent_data: Optional[Link] = None
+    suffix: str = ""
