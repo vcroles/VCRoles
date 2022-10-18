@@ -82,7 +82,12 @@ class VoiceState(commands.Cog):
                     if not role:
                         continue
 
-                    await member.add_roles(role, reason="Became Speaker")
+                    try:
+                        await member.add_roles(role, reason="Became Speaker")
+                    except discord.errors.Forbidden:
+                        pass
+                    except discord.errors.HTTPException:
+                        pass
 
             # Stop Speaker
             elif not before.suppress and after.suppress:
@@ -95,7 +100,12 @@ class VoiceState(commands.Cog):
                     if not role:
                         continue
 
-                    await member.remove_roles(role, reason="Stopped Speaker")
+                    try:
+                        await member.remove_roles(role, reason="Stopped Speaker")
+                    except discord.errors.Forbidden:
+                        pass
+                    except discord.errors.HTTPException:
+                        pass
 
     async def join(
         self,
@@ -253,7 +263,12 @@ class VoiceState(commands.Cog):
         for role_id in data.linkedRoles:
             role = member.guild.get_role(int(role_id))
             if role:
-                await member.add_roles(role, reason="Joined voice channel")
+                try:
+                    await member.add_roles(role, reason="Joined voice channel")
+                except discord.errors.Forbidden:
+                    pass
+                except discord.errors.HTTPException:
+                    pass
             else:
                 role = MentionableRole(role_id)
             added.append(role)
@@ -262,7 +277,12 @@ class VoiceState(commands.Cog):
         for role_id in data.reverseLinkedRoles:
             role = member.guild.get_role(int(role_id))
             if role:
-                await member.remove_roles(role, reason="Joined voice channel")
+                try:
+                    await member.remove_roles(role, reason="Joined voice channel")
+                except discord.errors.Forbidden:
+                    pass
+                except discord.errors.HTTPException:
+                    pass
             else:
                 role = MentionableRole(role_id)
             removed.append(role)
@@ -302,7 +322,12 @@ class VoiceState(commands.Cog):
         for role_id in data.reverseLinkedRoles:
             role = member.guild.get_role(int(role_id))
             if role:
-                await member.add_roles(role, reason="Left voice channel")
+                try:
+                    await member.add_roles(role, reason="Left voice channel")
+                except discord.errors.Forbidden:
+                    pass
+                except discord.errors.HTTPException:
+                    pass
             else:
                 role = MentionableRole(role_id)
             added.append(role)
@@ -311,7 +336,12 @@ class VoiceState(commands.Cog):
         for role_id in data.linkedRoles:
             role = member.guild.get_role(int(role_id))
             if role:
-                await member.remove_roles(role, reason="Left voice channel")
+                try:
+                    await member.remove_roles(role, reason="Left voice channel")
+                except discord.errors.Forbidden:
+                    pass
+                except discord.errors.HTTPException:
+                    pass
             else:
                 role = MentionableRole(role_id)
             removed.append(role)
