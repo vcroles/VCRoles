@@ -99,6 +99,9 @@ class DatabaseUtils:
         if suffix is not None:
             data["suffix"] = suffix
 
+        if suffix == "None":
+            data["suffix"] = None
+
         await self.db.link.update(
             where={"id_type": {"id": str(channel_id), "type": link_type}}, data=data
         )
