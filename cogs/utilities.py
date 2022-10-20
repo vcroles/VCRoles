@@ -22,7 +22,7 @@ class Utils(commands.Cog):
         self,
         interaction: Interaction,
         channel: Union[discord.VoiceChannel, discord.StageChannel],
-        message: Optional[str] = "$mention",
+        message: str = "$mention",
     ):
         """Use to mention a channel in chat"""
         await interaction.response.send_message(
@@ -90,7 +90,7 @@ class Utils(commands.Cog):
 
         embed.add_field(
             name="Server Count",
-            value=f"{self.client.user.name} is in {guilds:,} servers",
+            value=f"{self.client.user.name if self.client.user else 'VC Roles'} is in {guilds:,} servers",
             inline=False,
         )
         embed.add_field(
@@ -107,7 +107,10 @@ class Utils(commands.Cog):
             inline=False,
         )
         embed.set_author(
-            name=f"{self.client.user}", icon_url=self.client.user.avatar.url
+            name=f"{self.client.user}",
+            icon_url=self.client.user.avatar.url
+            if self.client.user and self.client.user.avatar
+            else None,
         )
 
         await interaction.response.send_message(embed=embed, view=Combination())
