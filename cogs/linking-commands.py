@@ -1,5 +1,3 @@
-from typing import Union
-
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -7,6 +5,17 @@ from discord.ext import commands
 from utils.checks import check_any, command_available, is_owner
 from utils.client import VCRolesClient
 from utils.linking import LinkingUtils
+from utils.types import LinkableChannel, RoleCategory
+from prisma.enums import LinkType
+
+
+def infer_link_type(channel: LinkableChannel) -> LinkType:
+    if isinstance(channel, discord.VoiceChannel):
+        return LinkType.REGULAR
+    elif isinstance(channel, discord.StageChannel):
+        return LinkType.STAGE
+    else:
+        return LinkType.CATEGORY
 
 
 class Linking(commands.Cog):
@@ -28,14 +37,14 @@ class Linking(commands.Cog):
     async def link(
         self,
         interaction: discord.Interaction,
-        channel: Union[
-            discord.CategoryChannel, discord.VoiceChannel, discord.StageChannel
-        ],
+        channel: LinkableChannel,
         role: discord.Role,
     ):
         """Use to link a channel with a role"""
 
-        data = await self.linking.link(interaction, channel, role)
+        data = await self.linking.link(
+            interaction, channel, role, infer_link_type(channel), RoleCategory.REGULAR
+        )
 
         await interaction.response.send_message(data.message)
 
@@ -50,14 +59,14 @@ class Linking(commands.Cog):
     async def unlink(
         self,
         interaction: discord.Interaction,
-        channel: Union[
-            discord.CategoryChannel, discord.VoiceChannel, discord.StageChannel
-        ],
+        channel: LinkableChannel,
         role: discord.Role,
     ):
         """Use to unlink a channel from a role"""
 
-        data = await self.linking.unlink(interaction, channel, role)
+        data = await self.linking.link(
+            interaction, channel, role, infer_link_type(channel), RoleCategory.REGULAR
+        )
 
         await interaction.response.send_message(data.message)
 
@@ -73,14 +82,14 @@ class Linking(commands.Cog):
     async def add(
         self,
         interaction: discord.Interaction,
-        channel: Union[
-            discord.CategoryChannel, discord.VoiceChannel, discord.StageChannel
-        ],
+        channel: LinkableChannel,
         suffix: str,
     ):
         """Use to set a suffix for a channel"""
 
-        data = await self.linking.suffix_add(interaction, channel, suffix)
+        data = await self.linking.suffix_add(
+            interaction, channel, suffix, infer_link_type(channel)
+        )
 
         await interaction.response.send_message(data.message)
 
@@ -93,13 +102,13 @@ class Linking(commands.Cog):
     async def remove(
         self,
         interaction: discord.Interaction,
-        channel: Union[
-            discord.CategoryChannel, discord.VoiceChannel, discord.StageChannel
-        ],
+        channel: LinkableChannel,
     ):
         """Use to remove a suffix for a channel"""
 
-        data = await self.linking.suffix_remove(interaction, channel)
+        data = await self.linking.suffix_remove(
+            interaction, channel, infer_link_type(channel)
+        )
 
         await interaction.response.send_message(data.message)
 
@@ -114,15 +123,13 @@ class Linking(commands.Cog):
     async def reverse_link(
         self,
         interaction: discord.Interaction,
-        channel: Union[
-            discord.CategoryChannel, discord.VoiceChannel, discord.StageChannel
-        ],
+        channel: LinkableChannel,
         role: discord.Role,
     ):
         """Use to add a reverse role link"""
 
         data = await self.linking.link(
-            interaction, channel, role, link_type="reverse_roles"
+            interaction, channel, role, infer_link_type(channel), RoleCategory.REVERSE
         )
 
         await interaction.response.send_message(data.message)
@@ -138,15 +145,13 @@ class Linking(commands.Cog):
     async def reverse_unlink(
         self,
         interaction: discord.Interaction,
-        channel: Union[
-            discord.CategoryChannel, discord.VoiceChannel, discord.StageChannel
-        ],
+        channel: LinkableChannel,
         role: discord.Role,
     ):
         """Use to remove a reverse role link"""
 
         data = await self.linking.unlink(
-            interaction, channel, role, link_type="reverse_roles"
+            interaction, channel, role, infer_link_type(channel), RoleCategory.REVERSE
         )
 
         await interaction.response.send_message(data.message)
