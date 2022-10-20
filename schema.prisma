@@ -1,8 +1,7 @@
 generator client {
-    provider               = "prisma-client-py"
-    recursive_type_depth   = 5
-    interface              = "asyncio"
-    partial_type_generator = "utils/partial_types.py"
+    provider             = "prisma-client-py"
+    recursive_type_depth = 5
+    interface            = "asyncio"
 }
 
 datasource db {
