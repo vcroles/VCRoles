@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Any
 
 import discord
 from discord.ext import commands
@@ -12,7 +12,9 @@ class Dev(commands.Cog):
 
     @commands.command(description="DEVELOPER COMMAND")
     @commands.is_owner()
-    async def shards(self, ctx):
+    async def shards(self, ctx: commands.Context[Any]):
+        if not ctx.guild:
+            return await ctx.send("You must use this command in a guild.")
         shard_embed = discord.Embed(
             colour=discord.Colour.blue(),
             title="Sharding Info:",
@@ -22,21 +24,14 @@ class Dev(commands.Cog):
 
     @commands.command(description="DEVELOPER COMMAND")
     @commands.is_owner()
-    async def remind(self, ctx):
-        await self.client.send_reminder()
-        await ctx.send("Reminder sent")
-
-    @commands.command(description="DEVELOPER COMMAND")
-    @commands.is_owner()
-    async def logs(self, ctx):
+    async def logs(self, ctx: commands.Context[Any]):
         await ctx.send("Fetching Logs...")
         await ctx.channel.send(file=discord.File(f"discord.log"))
-        await ctx.channel.send(file=discord.File(f"error.log"))
 
     @commands.command(aliases=["sync"])
     @commands.is_owner()
     async def sync_commands(
-        self, ctx: commands.Context, guild_id: Optional[int] = None
+        self, ctx: commands.Context[Any], guild_id: Optional[int] = None
     ):
         await ctx.reply("Syncing commands...")
         if guild_id:
@@ -49,14 +44,16 @@ class Dev(commands.Cog):
 
     @commands.command(aliases=["reset"])
     @commands.is_owner()
-    async def reset_limit(self, ctx: commands.Context, user_id: int = None):
+    async def reset_limit(
+        self, ctx: commands.Context[Any], user_id: Optional[int] = None
+    ):
         if user_id:
             self.client.loop.create_task(
-                self.client.ar.execute_command("hdel", "commands", str(user_id))
+                self.client.ar.execute_command("hdel", "commands", str(user_id))  # todo
             )
         else:
             self.client.loop.create_task(
-                self.client.ar.execute_command("del", "commands")
+                self.client.ar.execute_command("del", "commands")  # todo
             )
         await ctx.reply("Reset command limit!")
 
