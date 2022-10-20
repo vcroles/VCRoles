@@ -71,21 +71,13 @@ def setup_logging():
     level = logging.INFO
     dt_fmt = "%Y-%m-%d %H:%M:%S"
     handler = logging.StreamHandler()
-    # file_handler = logging.FileHandler(filename="discord.log", mode="w")
-    file_handler = logging.handlers.RotatingFileHandler(
-        filename="logs/discord.log",
-        encoding="utf-8",
-        maxBytes=32 * 1024 * 1024,
-        backupCount=5,
-    )
+    file_handler = logging.FileHandler(filename="discord.log", mode="w")
     file_formatter = logging.Formatter(
         "[{asctime}] [{levelname:<8}] {name}: {message}", dt_fmt, style="{"
     )
     file_handler.setFormatter(file_formatter)
 
-    if isinstance(handler, logging.StreamHandler) and stream_supports_colour(
-        handler.stream
-    ):
+    if stream_supports_colour(handler.stream):
         formatter = _ColourFormatter()
     else:
         formatter = logging.Formatter(
