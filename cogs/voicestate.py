@@ -41,7 +41,7 @@ class VoiceState(commands.Cog):
 
             if roles_changed:
                 await self.logging.log_join(
-                    after,
+                    after.channel,
                     member,
                     roles_changed,
                 )
@@ -52,13 +52,13 @@ class VoiceState(commands.Cog):
 
             if roles_changed:
                 await self.logging.log_leave(
-                    before,
+                    before.channel,
                     member,
                     roles_changed,
                 )
 
         # Changing
-        elif before.channel != after.channel:
+        elif before.channel and after.channel and before.channel != after.channel:
 
             leave_roles_changed = await self.leave(member, before, after)
 
@@ -66,8 +66,8 @@ class VoiceState(commands.Cog):
 
             if leave_roles_changed and join_roles_changed:
                 await self.logging.log_change(
-                    before,
-                    after,
+                    before.channel,
+                    after.channel,
                     member,
                     leave_roles_changed,
                     join_roles_changed,
@@ -150,7 +150,6 @@ class VoiceState(commands.Cog):
                 )
             )
         )
-        print(return_data.suffix)
 
         return return_data
 
