@@ -1,12 +1,12 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
+from prisma.enums import LinkType
 
 from utils.checks import check_any, command_available, is_owner
 from utils.client import VCRolesClient
 from utils.linking import LinkingUtils
 from utils.types import LinkableChannel, RoleCategory
-from prisma.enums import LinkType
 
 
 def infer_link_type(channel: LinkableChannel) -> LinkType:

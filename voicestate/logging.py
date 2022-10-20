@@ -1,10 +1,10 @@
 import datetime
 
 import discord
+from prisma.enums import LinkType
 
 from utils.client import VCRolesClient
-from utils.types import VoiceStateReturnData, LinkableChannel
-from prisma.enums import LinkType
+from utils.types import LinkableChannel, VoiceStateReturnData
 
 
 class Logging:

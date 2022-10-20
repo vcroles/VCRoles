@@ -1,4 +1,5 @@
 import asyncio
+from io import BytesIO
 from typing import Literal, Optional
 
 import discord
@@ -6,7 +7,6 @@ from discord import app_commands
 from discord.ext import commands
 from gtts import gTTS  # type: ignore
 from mutagen.mp3 import MP3
-from io import BytesIO
 
 from utils.checks import check_any, command_available, is_owner
 from utils.client import VCRolesClient
