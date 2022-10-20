@@ -54,6 +54,9 @@ class DatabaseUtils:
         if logging is not None:
             data["logging"] = logging
 
+        if logging == "None":
+            data["logging"] = None
+
         await self.db.guild.update(where={"id": str(guild_id)}, data=data)
 
     async def get_channel_linked(

@@ -26,16 +26,22 @@ class Logging(commands.Cog):
         channel: Optional[discord.TextChannel] = None,
     ):
         """Used to enable or disable logging in a channel."""
+        if (
+            not interaction.guild
+            or not interaction.channel
+            or not isinstance(interaction.channel, discord.TextChannel)
+        ):
+            return await interaction.response.send_message(
+                "You must be in a server to use this command."
+            )
 
         if enabled and not channel:
             channel = interaction.channel
         if enabled and channel:
             try:
-                data = self.client.redis.get_guild_data(interaction.guild_id)
-
-                data["logging"] = str(channel.id)
-
-                self.client.redis.update_guild_data(interaction.guild_id, data)
+                await self.client.db.update_guild_data(
+                    interaction.guild.id, logging=str(channel.id)
+                )
 
                 await interaction.response.send_message(
                     f"Successfully enabled logging in {channel.mention}"
@@ -44,11 +50,9 @@ class Logging(commands.Cog):
                 await interaction.response.send_message(f"Unable to enable logging")
         elif not enabled:
             try:
-                data = self.client.redis.get_guild_data(interaction.guild_id)
-
-                data["logging"] = "None"
-
-                self.client.redis.update_guild_data(interaction.guild_id, data)
+                await self.client.db.update_guild_data(
+                    interaction.guild.id, logging="None"
+                )
 
                 await interaction.response.send_message(
                     f"Successfully disabled logging"
