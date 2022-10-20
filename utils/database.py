@@ -45,6 +45,9 @@ class DatabaseUtils:
         if tts_role is not None:
             data["ttsRole"] = tts_role
 
+        if tts_role == "None":
+            data["ttsRole"] = None
+
         if tts_leave is not None:
             data["ttsLeave"] = tts_leave
 
