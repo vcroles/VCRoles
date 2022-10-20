@@ -148,6 +148,17 @@ class DatabaseUtils:
 
         await self.db.voicegenerator.update(where={"guildId": str(guild_id)}, data=data)
 
+    async def delete_generator(self, guild_id: DiscordID) -> None:
+        await self.db.voicegenerator.update(
+            where={"guildId": str(guild_id)},
+            data={
+                "categoryId": None,
+                "generatorId": None,
+                "interfaceChannel": None,
+                "interfaceMessage": None,
+            },
+        )
+
     async def get_all_linked_channel(
         self,
         guild_id: DiscordID,

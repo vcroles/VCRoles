@@ -230,7 +230,7 @@ class VoiceState(commands.Cog):
                 )
             )
 
-        await self.generator.join(member, before, after)
+        await self.generator.join(member, after.channel)
 
         await add_suffix(member, linked_data.suffix)
 
@@ -301,7 +301,7 @@ class VoiceState(commands.Cog):
                 )
             )
 
-        await self.generator.leave(member, before, after)
+        await self.generator.leave(member, before.channel)
 
         await remove_suffix(member, linked_data.suffix)
 

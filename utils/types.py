@@ -15,6 +15,7 @@ else:
 
 DiscordID = str | int
 LinkableChannel = discord.StageChannel | discord.VoiceChannel | discord.CategoryChannel
+JoinableChannel = discord.StageChannel | discord.VoiceChannel
 
 
 class LinkReturnData(NamedTuple):
