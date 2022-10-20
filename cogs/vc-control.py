@@ -45,7 +45,9 @@ class VCControl(commands.Cog):
         """Mutes everyone in a voice channel"""
 
         if not interaction.guild or not isinstance(interaction.user, discord.Member):
-            return
+            return await interaction.response.send_message(
+                "You must be in a server to use this commannd."
+            )
 
         if interaction.user.voice and interaction.user.voice.channel:
             vc = interaction.user.voice.channel
@@ -91,7 +93,9 @@ class VCControl(commands.Cog):
         """Deafens everyone in a voice channel"""
 
         if not interaction.guild or not isinstance(interaction.user, discord.Member):
-            return
+            return await interaction.response.send_message(
+                "You must be in a server to use this commannd."
+            )
 
         if interaction.user.voice and interaction.user.voice.channel:
             vc = interaction.user.voice.channel
@@ -132,7 +136,9 @@ class VCControl(commands.Cog):
         """Unmutes everyone in a voice channel"""
 
         if not interaction.guild or not isinstance(interaction.user, discord.Member):
-            return
+            return await interaction.response.send_message(
+                "You must be in a server to use this commannd."
+            )
 
         if interaction.user.voice and interaction.user.voice.channel:
             vc = interaction.user.voice.channel
@@ -167,7 +173,9 @@ class VCControl(commands.Cog):
         """Undeafens everyone in a voice channel"""
 
         if not interaction.guild or not isinstance(interaction.user, discord.Member):
-            return
+            return await interaction.response.send_message(
+                "You must be in a server to use this commannd."
+            )
 
         if interaction.user.voice and interaction.user.voice.channel:
             vc = interaction.user.voice.channel
