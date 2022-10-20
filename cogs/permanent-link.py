@@ -7,6 +7,8 @@ from discord.ext import commands
 from utils.checks import check_any, command_available, is_owner
 from utils.client import VCRolesClient
 from utils.linking import LinkingUtils
+from prisma.enums import LinkType
+from utils.types import RoleCategory
 
 
 class PermLink(commands.Cog):
@@ -43,7 +45,7 @@ class PermLink(commands.Cog):
         """Use to link a channel and a role (after leaving channel, user will keep role)"""
 
         data = await self.linking.link(
-            interaction, channel, role, channel_type="permanent"
+            interaction, channel, role, LinkType.PERMANENT, RoleCategory.REGULAR
         )
 
         await interaction.response.send_message(data.message)
@@ -67,7 +69,7 @@ class PermLink(commands.Cog):
         """Use to unlink a "permanent" channel from a role"""
 
         data = await self.linking.unlink(
-            interaction, channel, role, channel_type="permanent"
+            interaction, channel, role, LinkType.PERMANENT, RoleCategory.REGULAR
         )
 
         await interaction.response.send_message(data.message)
@@ -92,7 +94,7 @@ class PermLink(commands.Cog):
         """Use to set a suffix to add to the end of usernames"""
 
         data = await self.linking.suffix_add(
-            interaction, channel, suffix, channel_type="permanent"
+            interaction, channel, suffix, LinkType.PERMANENT
         )
 
         await interaction.response.send_message(data.message)
@@ -113,7 +115,7 @@ class PermLink(commands.Cog):
         """Use to remove a suffix rule from a channel"""
 
         data = await self.linking.suffix_remove(
-            interaction, channel, channel_type="permanent"
+            interaction, channel, LinkType.PERMANENT
         )
 
         await interaction.response.send_message(data.message)
@@ -139,11 +141,7 @@ class PermLink(commands.Cog):
         """Use to reverse link a channel and a role"""
 
         data = await self.linking.link(
-            interaction,
-            channel,
-            role,
-            link_type="reverse_roles",
-            channel_type="permanent",
+            interaction, channel, role, LinkType.PERMANENT, RoleCategory.REVERSE
         )
 
         await interaction.response.send_message(data.message)
@@ -169,11 +167,7 @@ class PermLink(commands.Cog):
         """Use to unlink a reverse role"""
 
         data = await self.linking.unlink(
-            interaction,
-            channel,
-            role,
-            link_type="reverse_roles",
-            channel_type="permanent",
+            interaction, channel, role, LinkType.PERMANENT, RoleCategory.REVERSE
         )
 
         await interaction.response.send_message(data.message)
