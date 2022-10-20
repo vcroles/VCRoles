@@ -130,7 +130,7 @@ class VoiceGen(commands.Cog):
             interface_embed.add_field(name=field[0], value=field[1], inline=False)
 
         interface_message = await interface_channel.send(
-            embed=interface_embed, view=Interface(self.client.redis)
+            embed=interface_embed, view=Interface(self.client.db)
         )
 
         await self.client.db.update_generator(

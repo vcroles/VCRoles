@@ -51,7 +51,7 @@ class VCRolesClient(commands.AutoShardedBot):
         Called when the bot is ready.
         """
         if not self.persistent_views_added:
-            self.add_view(Interface(self.redis))
+            self.add_view(Interface(self.db))
             self.persistent_views_added = True
 
         await self.change_presence(status=discord.Status.online)
