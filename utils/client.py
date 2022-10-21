@@ -48,11 +48,11 @@ class VCRolesClient(commands.AutoShardedBot):
             self.add_view(Interface(self.db))
             self.persistent_views_added = True
 
-        await self.change_presence(status=discord.Status.online)
         await self.change_presence(
             activity=discord.Activity(
                 type=discord.ActivityType.watching, name="Voice Channels"
-            )
+            ),
+            status=discord.Status.online,
         )
 
         if hasattr(self, "topgg_webhook") and self.topgg_webhook and using_topgg:
@@ -81,20 +81,12 @@ class VCRolesClient(commands.AutoShardedBot):
             where={"id": str(channel.id), "guildId": str(channel.guild.id)}
         )
 
-    async def send_reminder(self):
-        guild = await self.fetch_guild(775477268893270027)
-        for hook in await guild.webhooks():
-            if not isinstance(hook.channel, discord.TextChannel):
-                continue
-            if hook.channel.id == 869494079745056808 and hook.token:
-                embed = discord.Embed(
-                    title="Vote for VC Roles Here",
-                    description="Vote & get unlimited command usage!\nhttps://top.gg/bot/775025797034541107/vote/",
-                    color=discord.Color.blue(),
-                    url="https://top.gg/bot/775025797034541107/vote/",
-                )
-                await hook.send(
-                    embeds=[embed],
-                    username="VC Roles Top.gg",
-                    avatar_url="https://avatars.githubusercontent.com/u/34552786",
-                )
+    async def close(self) -> None:
+        await self.db.disconnect()
+
+        return await super().close()
+
+    async def setup_hook(self) -> None:
+        await self.db.connect()
+
+        return await super().setup_hook()

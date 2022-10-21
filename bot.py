@@ -161,8 +161,6 @@ async def main():
                 await client.load_extension(f"cogs.{filename[:-3]}")
                 print(f"Loaded extension: {filename[:-3]}")
 
-        await client.db.connect()
-
         await client.start(config.BOT_TOKEN)
 
 
