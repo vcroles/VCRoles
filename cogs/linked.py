@@ -62,6 +62,16 @@ class Linked(commands.Cog):
     def construct_linked_content(
         self, interaction: discord.Interaction, link: Link
     ) -> str:
+        # if no data is linked with the channel
+        if (
+            not link.linkedRoles
+            and not link.reverseLinkedRoles
+            and not link.suffix
+            and not link.speakerRoles
+            and not link.excludeChannels
+        ):
+            return ""
+
         chunks: list[str] = []
         channel = self.client.get_channel(int(link.id))
         if link.type == LinkType.ALL:
