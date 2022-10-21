@@ -57,7 +57,17 @@ class DatabaseUtils:
         if logging == "None":
             data["logging"] = None
 
-        await self.db.guild.update(where={"id": str(guild_id)}, data=data)
+        res = await self.db.guild.update(where={"id": str(guild_id)}, data=data)
+        if not res:
+            await self.db.guild.create(
+                {
+                    "id": str(guild_id),
+                    "ttsEnabled": tts_enabled if tts_enabled else False,
+                    "ttsRole": data.get("ttsRole"),
+                    "ttsLeave": tts_leave if tts_leave else True,
+                    "logging": logging if logging != "None" else None,
+                }
+            )
 
     async def get_channel_linked(
         self,
@@ -105,9 +115,23 @@ class DatabaseUtils:
         if suffix == "None":
             data["suffix"] = None
 
-        await self.db.link.update(
+        res = await self.db.link.update(
             where={"id_type": {"id": str(channel_id), "type": link_type}}, data=data
         )
+        if not res:
+            await self.db.link.create(
+                {
+                    "id": str(channel_id),
+                    "type": link_type,
+                    "linkedRoles": linked_roles if linked_roles else [],
+                    "reverseLinkedRoles": reverse_linked_roles
+                    if reverse_linked_roles
+                    else [],
+                    "speakerRoles": speaker_roles if speaker_roles else [],
+                    "excludeChannels": exclude_channels if exclude_channels else [],
+                    "suffix": suffix if suffix != "None" else None,
+                }
+            )
 
     async def get_all_linked(self, guild_id: DiscordID) -> List[Link]:
         guild = await self.db.guild.find_unique(
@@ -155,7 +179,19 @@ class DatabaseUtils:
         if open_channels is not None:
             data["openChannels"] = open_channels
 
-        await self.db.voicegenerator.update(where={"guildId": str(guild_id)}, data=data)
+        res = await self.db.voicegenerator.update(
+            where={"guildId": str(guild_id)}, data=data
+        )
+        if not res:
+            await self.db.voicegenerator.create(
+                {
+                    "guildId": str(guild_id),
+                    "categoryId": data.get("categoryId"),
+                    "generatorId": data.get("generatorId"),
+                    "interfaceChannel": data.get("interfaceChannel"),
+                    "interfaceMessage": data.get("interfaceMessage"),
+                }
+            )
 
     async def delete_generator(self, guild_id: DiscordID) -> None:
         await self.db.voicegenerator.update(
