@@ -48,13 +48,9 @@ class Dev(commands.Cog):
         self, ctx: commands.Context[Any], user_id: Optional[int] = None
     ):
         if user_id:
-            self.client.loop.create_task(
-                self.client.ar.execute_command("hdel", "commands", str(user_id))  # todo
-            )
+            self.client.loop.create_task(self.client.ar.hdel("commands", str(user_id)))
         else:
-            self.client.loop.create_task(
-                self.client.ar.execute_command("del", "commands")  # todo
-            )
+            self.client.loop.create_task(self.client.ar.delete("commands"))
         await ctx.reply("Reset command limit!")
 
 

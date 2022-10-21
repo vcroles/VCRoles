@@ -1,5 +1,5 @@
 from string import Template
-from typing import Optional, Union
+from typing import Union
 
 import discord
 from discord import Interaction, app_commands
@@ -68,12 +68,12 @@ class Utils(commands.Cog):
 
         total_commands = 0
         total_roles_changed = 0
-        counters = self.client.redis.r.hgetall("counters")
+        counters = await self.client.ar.hgetall("counters")
         for key, value in counters.items():
-            if key.decode("utf-8") not in ["roles_added", "roles_removed"]:
-                total_commands += int(value.decode("utf-8"))
-            elif key.decode("utf-8") in ["roles_added", "roles_removed"]:
-                total_roles_changed += int(value.decode("utf-8"))
+            if key not in ["roles_added", "roles_removed"]:
+                total_commands += int(value)
+            elif key in ["roles_added", "roles_removed"]:
+                total_roles_changed += int(value)
 
         total_members = 0
         voice = 0
@@ -83,7 +83,7 @@ class Utils(commands.Cog):
             if guild.unavailable:
                 continue
 
-            total_members += guild.member_count
+            total_members += guild.member_count if guild.member_count else 0
             for channel in guild.channels:
                 if isinstance(channel, discord.VoiceChannel):
                     voice += 1
