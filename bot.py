@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import json
 import os
@@ -119,9 +121,6 @@ async def on_command_error(
 
 
 async def main():
-    # Removing Logs
-
-    os.remove("discord.log")
 
     # Removing Export Files
 
