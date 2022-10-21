@@ -1,6 +1,7 @@
 from aiohttp import web
 from discord.ext import commands
 
+from config import WEBSERVER_PORT
 from utils.client import VCRolesClient
 
 app = web.Application()
@@ -17,7 +18,7 @@ class Status(commands.Cog):
                 return web.Response(status=503)
             return web.Response(status=200, text="OK")
 
-        self.webserver_port = 5000
+        self.webserver_port = WEBSERVER_PORT
         app.add_routes(routes)
 
     async def cog_load(self) -> None:
