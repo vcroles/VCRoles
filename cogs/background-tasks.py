@@ -42,3 +42,7 @@ class BackgroundTasks(commands.Cog):
     @reset_limits.before_loop
     async def before_reset_limits(self):
         await self.client.wait_until_ready()
+
+
+async def setup(client: VCRolesClient):
+    await client.add_cog(BackgroundTasks(client))
