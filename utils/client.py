@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 import discord
 import redis.asyncio as aioredis
@@ -7,44 +7,36 @@ from discord.ext import commands
 import config
 from utils.database import DatabaseUtils
 from utils.types import using_topgg
-from utils.utils import RedisUtils
 from views.interface import Interface
 
 
 class VCRolesClient(commands.AutoShardedBot):
     def __init__(
         self,
-        redis: RedisUtils,
-        ar: aioredis.Redis,
+        ar: aioredis.Redis[Any],
         db: DatabaseUtils,
         intents: discord.Intents,
-        command_prefix,  # type: ignore
     ):
-        self.redis = redis
         self.ar = ar
         self.db = db
-        super().__init__(intents=intents, command_prefix=command_prefix)
+        super().__init__(intents=intents, command_prefix=commands.when_mentioned)
         self.persistent_views_added = False
         if using_topgg:
-            import topgg  # type: ignore
+            import topgg
 
-            self.topggpy: Optional[topgg.DBLClient] = None  # type: ignore
-            self.topgg_webhook: Optional[topgg.WebhookManager]  # type: ignore
+            self.topggpy: Optional[topgg.DBLClient] = None
+            self.topgg_webhook: Optional[topgg.WebhookManager]
 
     def incr_counter(self, cmd_name: str):
         """Increments the counter for a command"""
-        self.loop.create_task(
-            self.ar.execute_command("hincrby", "counters", cmd_name, 1)
-        )
+        self.loop.create_task(self.ar.hincrby("counters", cmd_name, 1))
 
     def incr_role_counter(self, action: str, count: int = 1):
         """
         action: `add` or `remove`.
         Increments the counter for roles added or removed
         """
-        self.loop.create_task(
-            self.ar.execute_command("hincrby", "counters", f"roles_{action}", count)
-        )
+        self.loop.create_task(self.ar.hincrby("counters", f"roles_{action}", count))
 
     async def on_ready(self):
         """
@@ -72,54 +64,26 @@ class VCRolesClient(commands.AutoShardedBot):
         print("------")
 
     async def on_guild_join(self, guild: discord.Guild):
-        self.loop.create_task(
-            self.ar.execute_command("hincrby", "counters", "guilds_join", 1)
-        )
+        self.incr_counter("guilds_join")
 
     async def on_guild_remove(self, guild: discord.Guild):
-        self.loop.create_task(
-            self.ar.execute_command("hincrby", "counters", "guilds_leave", 1)
-        )
-        self.redis.guild_remove(guild.id)
+        self.incr_counter("guilds_leave")
+
+        await self.db.guild_remove(guild.id)
 
     async def on_guild_channel_delete(self, channel: discord.abc.GuildChannel):
         """
-        When a channel is deleted, remove it from the redis database.
+        When a channel is deleted, remove it from the database.
         """
-        # Voice Channels
-        if isinstance(channel, discord.VoiceChannel):
-            data = self.redis.get_linked("voice", channel.guild.id)
-            if str(channel.id) in data:
-                del data[str(channel.id)]
-                self.redis.update_linked("voice", channel.guild.id, data)
-
-            data = self.redis.get_linked("permanent", channel.guild.id)
-            if str(channel.id) in data:
-                del data[str(channel.id)]
-                self.redis.update_linked("permanent", channel.guild.id, data)
-
-            data = self.redis.get_linked("all", channel.guild.id)
-            if str(channel.id) in data["except"]:
-                data["except"].remove(str(channel.id))
-                self.redis.update_linked("all", channel.guild.id, data)
-
-        # Stage Channels
-        if isinstance(channel, discord.StageChannel):
-            data = self.redis.get_linked("stage", channel.guild.id)
-            if str(channel.id) in data:
-                del data[str(channel.id)]
-                self.redis.update_linked("stage", channel.guild.id, data)
-
-        # Category Channels
-        if isinstance(channel, discord.CategoryChannel):
-            data = self.redis.get_linked("category", channel.guild.id)
-            if str(channel.id) in data:
-                del data[str(channel.id)]
-                self.redis.update_linked("category", channel.guild.id, data)
+        await self.db.db.link.delete_many(
+            where={"id": str(channel.id), "guildId": str(channel.guild.id)}
+        )
 
     async def send_reminder(self):
         guild = await self.fetch_guild(775477268893270027)
         for hook in await guild.webhooks():
+            if not isinstance(hook.channel, discord.TextChannel):
+                continue
             if hook.channel.id == 869494079745056808 and hook.token:
                 embed = discord.Embed(
                     title="Vote for VC Roles Here",
