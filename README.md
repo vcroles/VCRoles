@@ -26,6 +26,35 @@ We reccomend using a virtual environment for python. You can do this by:
 - Activating the virtual environment `.\env\Scripts\activate` or `source env/bin/activate`
 - Install the project dependencies `pip install -r requirements.txt`
 
+## Config Files
+
+To get the bot running, you must configure a number of things.
+
+```py
+# /config.py
+
+BOT_TOKEN: str = # the discord bot token
+ENVIRONMENT: Literal["DEV", "PROD"] = # how to run the bot (such as whether to use topgg integration)
+WEBSERVER_PORT: int = # the port to listen for offline status requests
+
+class REDIS:
+    HOST: str = # the redis host
+    PORT: int = # the redis port
+    DB: int = # the redis db to use
+    PASSWORD: str = # the password to authenticate
+
+class DBL: # dbl (TopGG)
+    TOKEN: str = # the dbl token
+    WEBHOOK_PASSWORD: str = # the password needed to authenticate
+    WEBHOOK_PORT: int = # the port to listen on
+```
+
+```properties
+# /.env
+
+DATABASE_URL="" # the postgres connection string
+```
+
 ## Code formatter
 
 Use the ['Black'](https://black.readthedocs.io/en/stable/getting_started.html) python code formatter.
