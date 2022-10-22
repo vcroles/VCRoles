@@ -21,6 +21,8 @@ class DatabaseUtils:
         await self.db.disconnect()
 
     async def guild_remove(self, guild_id: DiscordID) -> None:
+        await self.db.link.delete_many(where={"guildId": str(guild_id)})
+        await self.db.voicegenerator.delete_many(where={"guildId": str(guild_id)})
         await self.db.guild.delete(where={"id": str(guild_id)})
 
     async def get_guild_data(self, guild_id: DiscordID) -> Guild:
