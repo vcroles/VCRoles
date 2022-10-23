@@ -85,7 +85,10 @@ class Logging:
                 name="Roles Removed:", value=removed_content, inline=False
             )
 
-        await channel.send(embed=logging_embed)
+        try:
+            await channel.send(embed=logging_embed)
+        except:
+            pass
 
     async def log_leave(
         self,
@@ -126,7 +129,10 @@ class Logging:
                 name="Roles Removed:", value=removed_content, inline=False
             )
 
-        await channel.send(embed=logging_embed)
+        try:
+            await channel.send(embed=logging_embed)
+        except:
+            pass
 
     async def log_change(
         self,
@@ -186,4 +192,7 @@ class Logging:
                 inline=False,
             )
 
-        await channel.send(embed=logging_embed)
+        try:
+            await channel.send(embed=logging_embed)
+        except:
+            pass
