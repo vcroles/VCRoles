@@ -1,5 +1,5 @@
 import asyncio
-from io import BytesIO
+import os
 from typing import Literal, Optional
 
 import discord
@@ -95,11 +95,8 @@ class TTS(commands.Cog):
         if role in interaction.user.roles or data.ttsRole is None:
             if interaction.user.voice.channel:
                 tts_message = gTTS(text=message, lang=language_code)
-
-                fp = BytesIO()
-                tts_message.write_to_fp(fp)  # type: ignore
-                fp.seek(0)
-                audio = MP3(fp)
+                tts_message.save(f"tts/{interaction.guild_id}.mp3")  # type: ignore
+                audio = MP3(f"tts/{interaction.guild_id}.mp3")
 
                 vc: Optional[discord.VoiceClient] = None
 
@@ -133,13 +130,15 @@ class TTS(commands.Cog):
                 await interaction.response.send_message(embed=embed)
 
                 vc.play(
-                    discord.FFmpegPCMAudio(source=fp),
+                    discord.FFmpegPCMAudio(source=f"tts/{interaction.guild_id}.mp3"),
                 )
 
                 await asyncio.sleep(audio.info.length + 1)
 
                 if leave and data.ttsLeave:
                     await vc.disconnect()
+
+                os.remove(f"tts/{interaction.guild_id}.mp3")
 
             else:
                 await interaction.response.send_message(

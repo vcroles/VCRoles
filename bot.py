@@ -128,6 +128,12 @@ async def main():
         if filename.endswith(".json"):
             os.remove(f"exports/{filename}")
 
+    # Removing TTS Files
+
+    for filename in os.listdir("tts"):
+        if filename.endswith(".mp3"):
+            os.remove(f"tts/{filename}")
+
     # Setting up guild count file
 
     try:
