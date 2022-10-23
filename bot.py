@@ -154,9 +154,7 @@ async def main():
             client.topgg_webhook = (
                 topgg.WebhookManager().set_data(client).endpoint(dbl_endpoint)
             )
-            client.loop.run_until_complete(
-                client.topgg_webhook.start(config.DBL.WEBHOOK_PORT)
-            )
+            client.loop.create_task(client.topgg_webhook.start(config.DBL.WEBHOOK_PORT))
         else:
             print("Top.gg integration not found.")
 
