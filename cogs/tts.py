@@ -5,7 +5,7 @@ from typing import Literal, Optional
 import discord
 from discord import app_commands
 from discord.ext import commands
-from gtts import gTTS
+from gtts import gTTS  # type: ignore
 from mutagen.mp3 import MP3
 
 from utils.checks import check_any, command_available, is_owner
@@ -56,16 +56,26 @@ class TTS(commands.Cog):
         self,
         interaction: discord.Interaction,
         message: str,
-        language: Optional[tts_langs] = "en: English",
-        leave: Optional[bool] = True,
+        language: tts_langs = "en: English",
+        leave: bool = True,
     ):
         """Used to make the bot read a message in a voice channel"""
         index = language.find(":")
         language_code = language[0:index]
 
-        data = self.client.redis.get_guild_data(interaction.guild_id)
+        if not interaction.guild or not isinstance(interaction.user, discord.Member):
+            return await interaction.response.send_message(
+                "You must be in a server to use this commannd."
+            )
 
-        if data["tts:enabled"] == "False":
+        if not interaction.user.voice:
+            return await interaction.response.send_message(
+                "You must be in a voice channel to use this commannd."
+            )
+
+        data = await self.client.db.get_guild_data(interaction.guild.id)
+
+        if data.ttsEnabled == False:
             return await interaction.response.send_message(
                 f"TTS isn't enabled in this server."
             )
@@ -76,62 +86,69 @@ class TTS(commands.Cog):
             return await interaction.response.send_message(
                 f"The message is over the 250 character limit"
             )
-        if data["tts:enabled"] == "True":
 
-            try:
-                role = interaction.guild.get_role(int(data["tts:role"]))
-            except:
-                role = None
+        if data.ttsRole:
+            role = interaction.guild.get_role(int(data.ttsRole))
+        else:
+            role = None
 
-            if role in interaction.user.roles or data["tts:role"] == "None":
-                if interaction.user.voice.channel:
-                    tts_message = gTTS(text=message, lang=language_code)
-                    tts_message.save(f"tts/{interaction.guild_id}.mp3")
-                    audio = MP3(f"tts/{interaction.guild_id}.mp3")
+        if role in interaction.user.roles or data.ttsRole is None:
+            if interaction.user.voice.channel:
+                tts_message = gTTS(text=message, lang=language_code)
+                tts_message.save(f"tts/{interaction.guild_id}.mp3")  # type: ignore
+                audio = MP3(f"tts/{interaction.guild_id}.mp3")
 
-                    try:
-                        vc = await interaction.user.voice.channel.connect()
-                    except:
-                        for c in self.client.voice_clients:
-                            if (
-                                c.channel == interaction.user.voice.channel
-                                and c.is_playing()
-                            ):
-                                await interaction.response.send_message(
-                                    f"Please wait for the current TTS message to finish"
-                                )
-                                return
-                            elif c.channel == interaction.user.voice.channel:
-                                vc = c
-                                break
+                vc: Optional[discord.VoiceClient] = None
 
-                    embed = discord.Embed(
-                        color=discord.Color.green(),
-                        title="**Reading Message**",
-                        description=f"Reading the message sent by {interaction.user.mention} in the voice channel {interaction.user.voice.channel.mention}",
+                try:
+                    vc = await interaction.user.voice.channel.connect()
+                except:
+                    for c in self.client.voice_clients:
+                        if not isinstance(c, discord.VoiceClient):
+                            continue
+                        if (
+                            c.channel == interaction.user.voice.channel
+                            and c.is_playing()
+                        ):
+                            return await interaction.response.send_message(
+                                f"Please wait for the current TTS message to finish"
+                            )
+                        elif c.channel == interaction.user.voice.channel:
+                            vc = c
+                            break
+
+                if not isinstance(vc, discord.VoiceClient):
+                    return await interaction.response.send_message(
+                        "Unknown error occured. Pleast try again."
                     )
-                    await interaction.response.send_message(embed=embed)
 
-                    assert isinstance(vc, discord.VoiceClient)
-                    vc.play(
-                        discord.FFmpegPCMAudio(
-                            source=f"tts/{interaction.guild_id}.mp3"
-                        ),
-                    )
-                    await asyncio.sleep(audio.info.length + 1)
-                    if leave and data["tts:leave"] == "True":
-                        await vc.disconnect()
-                    os.remove(f"tts/{interaction.guild_id}.mp3")
+                embed = discord.Embed(
+                    color=discord.Color.green(),
+                    title="**Reading Message**",
+                    description=f"Reading the message sent by {interaction.user.mention} in the voice channel {interaction.user.voice.channel.mention}",
+                )
+                await interaction.response.send_message(embed=embed)
 
-                else:
-                    await interaction.response.send_message(
-                        "You must be in a voice channel to use this command"
-                    )
+                vc.play(
+                    discord.FFmpegPCMAudio(source=f"tts/{interaction.guild_id}.mp3"),
+                )
+
+                await asyncio.sleep(audio.info.length + 1)
+
+                if leave and data.ttsLeave:
+                    await vc.disconnect()
+
+                os.remove(f"tts/{interaction.guild_id}.mp3")
 
             else:
                 await interaction.response.send_message(
-                    "You don't have the required role to use TTS"
+                    "You must be in a voice channel to use this command"
                 )
+
+        else:
+            await interaction.response.send_message(
+                "You don't have the required role to use TTS"
+            )
 
         return self.client.incr_counter("tts_play")
 
@@ -139,6 +156,8 @@ class TTS(commands.Cog):
     async def stop(self, interaction: discord.Interaction):
         """Stops the current TTS message & Makes the bot leave the voice channel"""
         for x in self.client.voice_clients:
+            if not isinstance(x, discord.VoiceClient):
+                continue
             if x.guild.id == interaction.guild_id and interaction.guild_id:
                 await x.disconnect()
                 embed = discord.Embed(
@@ -173,13 +192,17 @@ class TTS(commands.Cog):
     ):
         """Used to enable/disable TTS & set a required role"""
 
-        data = self.client.redis.get_guild_data(interaction.guild_id)
+        if not interaction.guild:
+            return await interaction.response.send_message(
+                "You must be in a server to use this command."
+            )
 
-        data["tts:enabled"] = str(enabled)
-        data["tts:role"] = str(role.id) if role else "None"
-        data["tts:leave"] = str(leave)
-
-        self.client.redis.update_guild_data(interaction.guild_id, data)
+        await self.client.db.update_guild_data(
+            interaction.guild.id,
+            tts_enabled=enabled,
+            tts_leave=leave,
+            tts_role=str(role.id) if role else "None",
+        )
 
         await interaction.response.send_message(
             f"TTS settings updated: Enabled {enabled}, Role {role}, Leave {leave}"

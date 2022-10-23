@@ -1,4 +1,5 @@
 import logging
+import logging.handlers
 import os
 import sys
 from typing import Any
@@ -49,7 +50,7 @@ class _ColourFormatter(logging.Formatter):
         for level, colour in LEVEL_COLOURS
     }
 
-    def format(self, record):
+    def format(self, record: Any):
         formatter = self.FORMATS.get(record.levelno)
         if formatter is None:
             formatter = self.FORMATS[logging.DEBUG]
@@ -76,9 +77,7 @@ def setup_logging():
     )
     file_handler.setFormatter(file_formatter)
 
-    if isinstance(handler, logging.StreamHandler) and stream_supports_colour(
-        handler.stream
-    ):
+    if stream_supports_colour(handler.stream):
         formatter = _ColourFormatter()
     else:
         formatter = logging.Formatter(

@@ -1,17 +1,8 @@
-from typing import NamedTuple, Optional, Union
-
 import discord
+from prisma.enums import LinkType
 
 from utils.client import VCRolesClient
-from utils.utils import handle_data_deletion
-
-
-class LinkReturnData(NamedTuple):
-    """Return data from linking"""
-
-    status: bool
-    message: str
-    data: Optional[dict]
+from utils.types import LinkableChannel, LinkReturnData, RoleCategory
 
 
 class LinkingUtils:
@@ -21,48 +12,52 @@ class LinkingUtils:
     async def link(
         self,
         interaction: discord.Interaction,
-        channel: Union[
-            discord.StageChannel, discord.VoiceChannel, discord.CategoryChannel
-        ],
+        channel: LinkableChannel,
         role: discord.Role,
-        channel_type: Optional[str] = None,
-        link_type: Optional[str] = "roles",
+        link_type: LinkType,
+        role_category: RoleCategory,
     ) -> LinkReturnData:
-        """Use to link a channel and a role"""
+        if not interaction.guild_id or not interaction.guild:
+            return LinkReturnData(False, "Guild ID not present", None)
 
-        if channel_type is None:
-            if isinstance(channel, discord.CategoryChannel):
-                channel_type = "category"
-            elif isinstance(channel, discord.VoiceChannel):
-                channel_type = "voice"
-            elif isinstance(channel, discord.StageChannel):
-                channel_type = "stage"
+        data = await self.client.db.get_channel_linked(
+            channel.id, interaction.guild_id, link_type
+        )
 
-        data = self.client.redis.get_linked(channel_type, interaction.guild_id)
+        if role_category == RoleCategory.REGULAR:
+            linked_roles = data.linkedRoles
+        elif role_category == RoleCategory.REVERSE:
+            linked_roles = data.reverseLinkedRoles
+        elif role_category == RoleCategory.STAGE_SPEAKER:
+            linked_roles = data.speakerRoles
 
-        try:
-            data[str(channel.id)]
-        except:
-            data[str(channel.id)] = {
-                "roles": [],
-                "suffix": "",
-                "reverse_roles": [],
-                "speaker_roles": [],
-            }
+        if str(role.id) not in linked_roles:
+            linked_roles.append(str(role.id))
 
-        if str(role.id) not in data[str(channel.id)][link_type]:
-            data[str(channel.id)][link_type].append(str(role.id))
+            if role_category == RoleCategory.REGULAR:
+                await self.client.db.update_channel_linked(
+                    channel.id, link_type, linked_roles=linked_roles
+                )
+            elif role_category == RoleCategory.REVERSE:
+                await self.client.db.update_channel_linked(
+                    channel.id, link_type, reverse_linked_roles=linked_roles
+                )
+            elif role_category == RoleCategory.STAGE_SPEAKER:
+                await self.client.db.update_channel_linked(
+                    channel.id, link_type, speaker_roles=linked_roles
+                )
 
-            self.client.redis.update_linked(channel_type, interaction.guild_id, data)
+            message = f"Linked {channel.mention} with role `@{role.name}`"
 
-            message = f"Linked {channel.mention} with role: `@{role.name}`"
-
-            if channel_type == "permanent":
+            if link_type == LinkType.PERMANENT:
                 message += "\nWhen a user leaves the channel, they will KEEP the role"
 
-            member = interaction.guild.get_member(self.client.user.id)
-            if member.top_role.position < role.position:
-                message += f"\nPlease ensure my highest role is above `@{role.name}`"
+            if self.client.user:
+                member = interaction.guild.get_member(self.client.user.id)
+                if member and member.top_role.position < role.position:
+                    message += (
+                        f"\nPlease ensure my highest role is above `@{role.name}`"
+                    )
 
             status = True
         else:
@@ -74,48 +69,45 @@ class LinkingUtils:
     async def unlink(
         self,
         interaction: discord.Interaction,
-        channel: Union[
-            discord.StageChannel, discord.VoiceChannel, discord.CategoryChannel
-        ],
+        channel: LinkableChannel,
         role: discord.Role,
-        channel_type: Optional[str] = None,
-        link_type: Optional[str] = "roles",
+        link_type: LinkType,
+        role_category: RoleCategory,
     ) -> LinkReturnData:
-        """Use to unlink a channel and a role"""
+        if not interaction.guild_id or not interaction.guild:
+            return LinkReturnData(False, "Guild ID not present", None)
 
-        if not channel_type:
-            if isinstance(channel, discord.CategoryChannel):
-                channel_type = "category"
-            elif isinstance(channel, discord.VoiceChannel):
-                channel_type = "voice"
-            elif isinstance(channel, discord.StageChannel):
-                channel_type = "stage"
+        data = await self.client.db.get_channel_linked(
+            channel.id, interaction.guild_id, link_type
+        )
 
-        data = self.client.redis.get_linked(channel_type, interaction.guild_id)
+        if role_category == RoleCategory.REGULAR:
+            linked_roles = data.linkedRoles
+        elif role_category == RoleCategory.REVERSE:
+            linked_roles = data.reverseLinkedRoles
+        elif role_category == RoleCategory.STAGE_SPEAKER:
+            linked_roles = data.speakerRoles
 
-        try:
-            data[str(channel.id)]
-        except:
-            return LinkReturnData(False, "The channel and role are not linked.")
+        if str(role.id) in linked_roles:
+            linked_roles.remove(str(role.id))
 
-        if str(role.id) in data[str(channel.id)][link_type]:
-            try:
-                data[str(channel.id)][link_type].remove(str(role.id))
-
-                data = handle_data_deletion(data, str(channel.id))
-
-                self.client.redis.update_linked(
-                    channel_type, interaction.guild_id, data
+            if role_category == RoleCategory.REGULAR:
+                await self.client.db.update_channel_linked(
+                    channel.id, link_type, linked_roles=linked_roles
+                )
+            elif role_category == RoleCategory.REVERSE:
+                await self.client.db.update_channel_linked(
+                    channel.id, link_type, reverse_linked_roles=linked_roles
+                )
+            elif role_category == RoleCategory.STAGE_SPEAKER:
+                await self.client.db.update_channel_linked(
+                    channel.id, link_type, speaker_roles=linked_roles
                 )
 
-                message = f"Unlinked {channel.mention} and role: `@{role.name}`"
-                status = True
-            except:
-                message = f"There was an error unlinking the channel and role."
-                status = False
-
+            message = f"Unlinked {channel.mention} and role: `@{role.name}`"
+            status = True
         else:
-            message = f"The channel and role are not linked."
+            message = "The channel and role are not linked."
             status = False
 
         return LinkReturnData(status, message, data)
@@ -123,37 +115,20 @@ class LinkingUtils:
     async def suffix_add(
         self,
         interaction: discord.Interaction,
-        channel: Union[
-            discord.StageChannel, discord.VoiceChannel, discord.CategoryChannel
-        ],
+        channel: LinkableChannel,
         suffix: str,
-        channel_type: Optional[str] = None,
+        link_type: LinkType,
     ) -> LinkReturnData:
-        """Use to add a suffix to a channel"""
+        if not interaction.guild_id or not interaction.guild:
+            return LinkReturnData(False, "Guild ID not present", None)
 
-        if not channel_type:
-            if isinstance(channel, discord.CategoryChannel):
-                channel_type = "category"
-            elif isinstance(channel, discord.VoiceChannel):
-                channel_type = "voice"
-            elif isinstance(channel, discord.StageChannel):
-                channel_type = "stage"
+        data = await self.client.db.get_channel_linked(
+            channel.id, interaction.guild_id, link_type
+        )
 
-        data = self.client.redis.get_linked(channel_type, interaction.guild_id)
+        data.suffix = suffix
 
-        try:
-            data[str(channel.id)]
-        except:
-            data[str(channel.id)] = {
-                "roles": [],
-                "suffix": "",
-                "reverse_roles": [],
-                "speaker_roles": [],
-            }
-
-        data[str(channel.id)]["suffix"] = suffix
-
-        self.client.redis.update_linked(channel_type, interaction.guild_id, data)
+        await self.client.db.update_channel_linked(channel.id, link_type, suffix=suffix)
 
         message = f"Set the suffix for {channel.mention} to `{suffix}`"
 
@@ -162,35 +137,14 @@ class LinkingUtils:
     async def suffix_remove(
         self,
         interaction: discord.Interaction,
-        channel: Union[
-            discord.StageChannel, discord.VoiceChannel, discord.CategoryChannel
-        ],
-        channel_type: Optional[str] = None,
+        channel: LinkableChannel,
+        link_type: LinkType,
     ) -> LinkReturnData:
-        """Use to remove a suffix from a channel"""
+        if not interaction.guild_id or not interaction.guild:
+            return LinkReturnData(False, "Guild ID not present", None)
 
-        if not channel_type:
-            if isinstance(channel, discord.CategoryChannel):
-                channel_type = "category"
-            elif isinstance(channel, discord.VoiceChannel):
-                channel_type = "voice"
-            elif isinstance(channel, discord.StageChannel):
-                channel_type = "stage"
-
-        data = self.client.redis.get_linked(channel_type, interaction.guild_id)
-
-        try:
-            data[str(channel.id)]
-        except:
-            message = "The channel has no associated suffix."
-            return LinkReturnData(False, message, data)
-
-        data[str(channel.id)]["suffix"] = ""
-
-        data = handle_data_deletion(data, str(channel.id))
-
-        self.client.redis.update_linked(channel_type, interaction.guild_id, data)
+        await self.client.db.update_channel_linked(channel.id, link_type, suffix="")
 
         message = f"Removed the suffix for {channel.mention}"
 
-        return LinkReturnData(True, message, data)
+        return LinkReturnData(True, message, None)

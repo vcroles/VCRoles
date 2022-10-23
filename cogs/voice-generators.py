@@ -1,8 +1,7 @@
-from typing import Optional, Union
-
 import discord
 from discord import app_commands
 from discord.ext import commands
+from prisma.models import VoiceGenerator
 
 from utils.checks import check_any, command_available, is_owner
 from utils.client import VCRolesClient
@@ -13,41 +12,36 @@ class VoiceGen(commands.Cog):
     def __init__(self, client: VCRolesClient):
         self.client = client
 
-    async def remove_generator(self, data: dict[str, Union[str, list]]):
-        if "cat" in data and data["cat"] != "":
+    async def remove_generator(self, data: VoiceGenerator) -> None:
+        if data.categoryId:
             try:
-                cat = await self.client.fetch_channel(int(data["cat"]))
-                if cat:
-                    await cat.delete()
+                category = await self.client.fetch_channel(int(data.categoryId))
+                if category and isinstance(category, discord.guild.GuildChannel):
+                    await category.delete()
             except:
                 pass
-        if "gen_id" in data and data["gen_id"] != "":
+
+        if data.generatorId:
             try:
-                gen = await self.client.fetch_channel(int(data["gen_id"]))
-                if gen:
-                    await gen.delete()
-            except:
-                pass
-        if (
-            "interface" in data
-            and "channel" in data["interface"]
-            and data["interface"]["channel"] != ""
-        ):
-            try:
-                interface = await self.client.fetch_channel(
-                    int(data["interface"]["channel"])
+                generator_channel = await self.client.fetch_channel(
+                    int(data.generatorId)
                 )
-                if interface:
-                    try:
-                        await interface.delete()
-                    except:
-                        try:
-                            msg = await interface.fetch_message(
-                                int(data["interface"]["msg_id"])
-                            )
-                            await msg.delete()
-                        except:
-                            pass
+                if generator_channel and isinstance(
+                    generator_channel, discord.guild.GuildChannel
+                ):
+                    await generator_channel.delete()
+            except:
+                pass
+
+        if data.interfaceChannel:
+            try:
+                interface_channel = await self.client.fetch_channel(
+                    int(data.interfaceChannel)
+                )
+                if interface_channel and isinstance(
+                    interface_channel, discord.guild.GuildChannel
+                ):
+                    await interface_channel.delete()
             except:
                 pass
 
@@ -67,9 +61,9 @@ class VoiceGen(commands.Cog):
     async def create(
         self,
         interaction: discord.Interaction,
-        category_name: Optional[str] = "Voice Generator",
-        voice_channel_name: Optional[str] = "Voice Generator",
-        interface_channel_name: Optional[str] = "VC Roles Interface",
+        category_name: str = "Voice Generator",
+        voice_channel_name: str = "Voice Generator",
+        interface_channel_name: str = "VC Roles Interface",
     ):
         """Creates a voice channel generator"""
 
@@ -77,20 +71,19 @@ class VoiceGen(commands.Cog):
             return await interaction.response.send_message(
                 "This command can only be used in a server"
             )
+
         await interaction.response.defer()
 
-        data = self.client.redis.get_generator(interaction.guild_id)
-
-        if any([data["cat"], data["gen_id"], data["interface"]["channel"]]):
-            self.client.loop.create_task(self.remove_generator(data))
-
         try:
-            overwrites = {
-                interaction.guild.me: discord.PermissionOverwrite(manage_channels=True)
-            }
             category = await interaction.guild.create_category(
-                name=category_name, overwrites=overwrites
+                name=category_name,
+                overwrites={
+                    interaction.guild.me: discord.PermissionOverwrite(
+                        manage_channels=True
+                    )
+                },
             )
+
             voice_channel = await category.create_voice_channel(name=voice_channel_name)
 
             overwrites = {
@@ -105,7 +98,7 @@ class VoiceGen(commands.Cog):
             )
         except:
             await interaction.followup.send(
-                "Failed to create generator channels. Please check permissions or try again later."
+                "Failed to create generator channels. Please check permissions and try again."
             )
             return
 
@@ -114,7 +107,11 @@ class VoiceGen(commands.Cog):
             description=f"You can use this interface to customize your private voice channel.",
             color=discord.Color.blue(),
         )
-        interface_embed.set_thumbnail(url=self.client.user.avatar.url)
+        interface_embed.set_thumbnail(
+            url=self.client.user.avatar.url
+            if self.client.user and self.client.user.avatar
+            else None
+        )
         interface_embed.set_footer(text="Use these commands via the buttons below.")
 
         embed_fields = [
@@ -133,20 +130,16 @@ class VoiceGen(commands.Cog):
             interface_embed.add_field(name=field[0], value=field[1], inline=False)
 
         interface_message = await interface_channel.send(
-            embed=interface_embed, view=Interface(self.client.redis)
+            embed=interface_embed, view=Interface(self.client.db)
         )
 
-        data = {
-            "cat": str(category.id),
-            "gen_id": str(voice_channel.id),
-            "open": [],
-            "interface": {
-                "channel": str(interface_channel.id),
-                "msg_id": str(interface_message.id),
-            },
-        }
-
-        self.client.redis.update_generator(interaction.guild_id, data)
+        await self.client.db.update_generator(
+            interaction.guild.id,
+            category_id=str(category.id),
+            generator_id=str(voice_channel.id),
+            interface_channel=str(interface_channel.id),
+            interface_message=str(interface_message.id),
+        )
 
         creation_embed = discord.Embed(
             color=discord.Color.green(),
@@ -164,13 +157,18 @@ class VoiceGen(commands.Cog):
     async def remove(self, interaction: discord.Interaction):
         """Removes a voice channel generator"""
 
-        self.client.loop.create_task(interaction.response.defer())
+        if not interaction.guild:
+            return await interaction.response.send_message(
+                "This command can only be used in a server"
+            )
 
-        data = self.client.redis.get_generator(interaction.guild_id)
+        await interaction.response.defer()
 
-        self.client.loop.create_task(self.remove_generator(data))
+        gen_data = await self.client.db.get_generator(interaction.guild.id)
 
-        self.client.redis.r.delete(f"{interaction.guild_id}:gen")
+        await self.remove_generator(gen_data)
+
+        await self.client.db.delete_generator(interaction.guild.id)
 
         embed = discord.Embed(
             color=discord.Color.green(),

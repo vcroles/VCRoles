@@ -1,51 +1,45 @@
+from typing import Optional
+
 import discord
 from discord import app_commands
 from discord.ext import commands
+from prisma.enums import LinkType
+from prisma.models import Link
 
 from utils.checks import check_any, command_available, is_owner
 from utils.client import VCRolesClient
+from utils.types import LinkableChannel
 
 
 class Linked(commands.Cog):
     def __init__(self, client: VCRolesClient):
         self.client = client
 
-    def construct_linked_content(
-        self, data: dict, interaction: discord.Interaction
-    ) -> str:
-        chunks = []
-        for channel_id, channel_data in data.items():
-            if channel_id == "format":
-                continue
-            try:
-                channel = self.client.get_channel(int(channel_id))
-                chunks.append(f"{channel.mention}: ")
-                chunks.append(self.iterate_links(channel_data, interaction))
-            except:
-                chunks.append(f"Not Found - ID `{channel_id}`\n")
-
-        return "".join(chunks)
-
     def iterate_links(
-        self, channel_data: dict, interaction: discord.Interaction
+        self,
+        interaction: discord.Interaction,
+        roles: list[str],
+        reverse: list[str],
+        speaker: list[str],
+        suffix: Optional[str],
     ) -> str:
-        """
-        Iterates through:
-        - Roles
-        - Reverse Roles
-        - Suffix
-        """
-        chunks = []
+        chunks: list[str] = []
+        if not interaction.guild:
+            return ""
 
-        for role_id in channel_data["roles"]:
+        for role_id in roles:
             role = interaction.guild.get_role(int(role_id))
             chunks.append(f"{role.mention if role else role_id}, ")
 
-        for role_id in channel_data["reverse_roles"]:
+        for role_id in reverse:
             role = interaction.guild.get_role(int(role_id))
             chunks.append(f"R{role.mention if role else role_id}, ")
 
-        chunks.append(f"`{channel_data['suffix']}`" if channel_data["suffix"] else "")
+        for role_id in speaker:
+            role = interaction.guild.get_role(int(role_id))
+            chunks.append(f"S{role.mention if role else role_id}, ")
+
+        chunks.append(f"`{suffix}`" if suffix else "")
 
         content = "".join(chunks)
 
@@ -53,11 +47,73 @@ class Linked(commands.Cog):
 
         return content
 
+    def iterate_channels(self, exclude_channels: list[str]) -> str:
+        chunks: list[str] = ["Excluded Channels: "]
+        for channel_id in exclude_channels:
+            channel = self.client.get_channel(int(channel_id))
+            if not isinstance(channel, LinkableChannel):
+                chunks.append(f"{channel_id}, ")
+                continue
+            chunks.append(f"{channel.mention}, ")
+        if len(chunks) == 1:
+            return "\n"
+        return "".join(chunks).removesuffix(", ") + "\n"
+
+    def construct_linked_content(
+        self, interaction: discord.Interaction, link: Link
+    ) -> str:
+        # if no data is linked with the channel
+        if (
+            not link.linkedRoles
+            and not link.reverseLinkedRoles
+            and not link.suffix
+            and not link.speakerRoles
+            and not link.excludeChannels
+        ):
+            return ""
+
+        chunks: list[str] = []
+        channel = self.client.get_channel(int(link.id))
+        if link.type == LinkType.ALL:
+            chunks.append(
+                self.iterate_links(
+                    interaction,
+                    link.linkedRoles,
+                    link.reverseLinkedRoles,
+                    link.speakerRoles,
+                    link.suffix,
+                )
+            )
+            exclude_content = self.iterate_channels(link.excludeChannels)
+            chunks.append(exclude_content)
+        elif not channel or not isinstance(channel, LinkableChannel):
+            chunks.append(f"Not Found - ID `{link.id}`\n")
+        else:
+            chunks.append(f"{channel.mention}: ")
+            chunks.append(
+                self.iterate_links(
+                    interaction,
+                    link.linkedRoles,
+                    link.reverseLinkedRoles,
+                    link.speakerRoles,
+                    link.suffix,
+                )
+            )
+            if link.type == LinkType.CATEGORY:
+                exclude_content = self.iterate_channels(link.excludeChannels)
+                chunks.append(exclude_content)
+
+        return "".join(chunks)
+
     @app_commands.command()
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
     async def linked(self, interaction: discord.Interaction):
         """Displays the linked roles, channels & categories"""
+        if not interaction.guild_id or not interaction.guild:
+            return await interaction.response.send_message(
+                "You must use this command in a guild."
+            )
 
         linked_embed = discord.Embed(
             colour=discord.Colour.blue(),
@@ -65,41 +121,51 @@ class Linked(commands.Cog):
             description="Note: \n- R before a role indicates a reverse link\n- Text like `this` shows linked suffixes",
         )
 
-        for channel_type in ["Voice", "Stage", "Category", "Permanent"]:
-            content = self.construct_linked_content(
-                self.client.redis.get_linked(
-                    channel_type.lower(), interaction.guild_id
-                ),
-                interaction,
-            )
+        links = await self.client.db.get_all_linked(interaction.guild_id)
 
-            if content:
-                linked_embed.add_field(
-                    name=f"{channel_type} Channels:", value=content, inline=False
-                )
+        voice_chunks: list[str] = []
+        stage_chunks: list[str] = []
+        category_chunks: list[str] = []
+        permanent_chunks: list[str] = []
+        all_chunks: list[str] = []
 
-        all_dict = self.client.redis.get_linked("all", interaction.guild_id)
+        for link in links:
+            content = self.construct_linked_content(interaction, link)
+            if link.type == LinkType.REGULAR:
+                voice_chunks.append(content)
+            elif link.type == LinkType.STAGE:
+                stage_chunks.append(content)
+            elif link.type == LinkType.CATEGORY:
+                category_chunks.append(content)
+            elif link.type == LinkType.PERMANENT:
+                permanent_chunks.append(content)
+            elif link.type == LinkType.ALL:
+                all_chunks.append(content)
 
-        all_content = self.iterate_links(all_dict, interaction)
+        voice_content = "".join(voice_chunks).strip()
+        stage_content = "".join(stage_chunks).strip()
+        category_content = "".join(category_chunks).strip()
+        permanent_content = "".join(permanent_chunks).strip()
+        all_content = "".join(all_chunks).strip()
 
-        chunks = [all_content]
-
-        if "except" in all_dict:
-            if all_dict["except"]:
-                chunks.append("All-link exceptions: ")
-                for exception_id in all_dict["except"]:
-                    try:
-                        channel = self.client.get_channel(int(exception_id))
-                        chunks.append(f"{channel.mention}, ")
-                    except:
-                        chunks.append(f"Not Found - ID `{exception_id}`")
-
-        all_content = "".join(chunks).removesuffix(", ")
-
-        if all_content.strip():
+        if voice_content:
             linked_embed.add_field(
-                name="All Link:", value=all_content.strip(), inline=False
+                name="Voice Channels:", value=voice_content, inline=False
             )
+        if stage_content:
+            linked_embed.add_field(
+                name="Stage Channels:", value=stage_content, inline=False
+            )
+        if category_content:
+            linked_embed.add_field(
+                name="Category Channels:", value=category_content, inline=False
+            )
+        if permanent_content:
+            linked_embed.add_field(
+                name="Permanent Channels:", value=permanent_content, inline=False
+            )
+        if all_content:
+            linked_embed.add_field(name="All Link:", value=all_content, inline=False)
 
         if linked_embed.fields:
             await interaction.response.send_message(embed=linked_embed)

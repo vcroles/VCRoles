@@ -1,11 +1,12 @@
 discord.py[voice]
 gtts
 mutagen
-topggpy
+git+https://github.com/top-gg/python-sdk/ # topggpy
 pynacl
 redis
 pre-commit
 requests
+prisma
 orjson>=3.5.4 # these are discord.py's speed modules
 aiodns>=1.1
 Brotli

@@ -1,10 +1,12 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
+from prisma.enums import LinkType
 
 from utils.checks import check_any, command_available, is_owner
 from utils.client import VCRolesClient
 from utils.linking import LinkingUtils
+from utils.types import RoleCategory
 
 
 class StageSpeaker(commands.Cog):
@@ -34,7 +36,7 @@ class StageSpeaker(commands.Cog):
         """Link a stage channel speaker to a role"""
 
         data = await self.linking.link(
-            interaction, channel, role, link_type="speaker_roles"
+            interaction, channel, role, LinkType.STAGE, RoleCategory.REGULAR
         )
 
         await interaction.response.send_message(data.message)
@@ -56,7 +58,7 @@ class StageSpeaker(commands.Cog):
         """Unlink a stage channel speaker from a role"""
 
         data = await self.linking.unlink(
-            interaction, channel, role, link_type="speaker_roles"
+            interaction, channel, role, LinkType.STAGE, RoleCategory.REGULAR
         )
 
         await interaction.response.send_message(data.message)

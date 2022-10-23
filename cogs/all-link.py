@@ -3,6 +3,7 @@ from typing import Union
 import discord
 from discord import app_commands
 from discord.ext import commands
+from prisma.enums import LinkType
 
 from utils.checks import check_any, command_available, is_owner
 from utils.client import VCRolesClient
@@ -15,8 +16,8 @@ class AllLink(commands.Cog):
     all_commands = app_commands.Group(
         name="all", description="Rules to apply to all channels"
     )
-    exception_commands = app_commands.Group(
-        name="exception",
+    exclude_commands = app_commands.Group(
+        name="exclude",
         description="Channels to exclude from rules",
         parent=all_commands,
     )
@@ -40,18 +41,34 @@ class AllLink(commands.Cog):
     ):
         """Use to link all channels with a role"""
 
-        data = self.client.redis.get_linked("all", interaction.guild_id)
+        if not interaction.guild:
+            return await interaction.response.send_message(
+                "You must be in a server to use this command."
+            )
 
-        if str(role.id) not in data["roles"]:
-            data["roles"].append(str(role.id))
+        data = await self.client.db.get_channel_linked(
+            interaction.guild.id, interaction.guild.id, LinkType.ALL
+        )
 
-            self.client.redis.update_linked("all", interaction.guild_id, data)
+        if str(role.id) not in data.linkedRoles:
+            data.linkedRoles.append(str(role.id))
+
+            await self.client.db.update_channel_linked(
+                interaction.guild.id, LinkType.ALL, linked_roles=data.linkedRoles
+            )
 
             await interaction.response.send_message(
                 f"Linked all channels with role: `@{role.name}`"
             )
 
+            if not self.client.user:
+                return
+
             member = interaction.guild.get_member(self.client.user.id)
+
+            if not member:
+                return
+
             if member.top_role.position < role.position:
                 await interaction.followup.send(
                     f"Please ensure my highest role is above `@{role.name}`"
@@ -74,12 +91,21 @@ class AllLink(commands.Cog):
     ):
         """Use to unlink all channels from a role"""
 
-        data = self.client.redis.get_linked("all", interaction.guild_id)
+        if not interaction.guild:
+            return await interaction.response.send_message(
+                "You must be in a server to use this command."
+            )
 
-        if str(role.id) in data["roles"]:
-            data["roles"].remove(str(role.id))
+        data = await self.client.db.get_channel_linked(
+            interaction.guild.id, interaction.guild.id, LinkType.ALL
+        )
 
-            self.client.redis.update_linked("all", interaction.guild_id, data)
+        if str(role.id) in data.linkedRoles:
+            data.linkedRoles.remove(str(role.id))
+
+            await self.client.db.update_channel_linked(
+                interaction.guild.id, LinkType.ALL, linked_roles=data.linkedRoles
+            )
 
             await interaction.response.send_message(
                 f"Unlinked all channels from role: `@{role.name}`"
@@ -91,24 +117,35 @@ class AllLink(commands.Cog):
 
         return self.client.incr_counter("all_unlink")
 
-    @exception_commands.command()
+    @exclude_commands.command(name="add")
     @app_commands.describe(channel="Select a channel to exclude")
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
-    async def add(
+    async def add_exclude(
         self,
         interaction: discord.Interaction,
         channel: Union[discord.VoiceChannel, discord.StageChannel],
     ):
         """Use to create an exception to the all link command"""
 
-        data = self.client.redis.get_linked("all", interaction.guild_id)
+        if not interaction.guild:
+            return await interaction.response.send_message(
+                "You must be in a server to use this command."
+            )
+
+        data = await self.client.db.get_channel_linked(
+            interaction.guild.id, interaction.guild.id, LinkType.ALL
+        )
 
         try:
-            if str(channel.id) not in data["except"]:
-                data["except"].append(str(channel.id))
+            if str(channel.id) not in data.excludeChannels:
+                data.excludeChannels.append(str(channel.id))
 
-                self.client.redis.update_linked("all", interaction.guild_id, data)
+                await self.client.db.update_channel_linked(
+                    interaction.guild.id,
+                    LinkType.ALL,
+                    exclude_channels=data.excludeChannels,
+                )
 
                 await interaction.response.send_message(
                     f"Added exception: `{channel.name}`"
@@ -122,23 +159,34 @@ class AllLink(commands.Cog):
 
         return self.client.incr_counter("all_add_exception")
 
-    @exception_commands.command()
+    @exclude_commands.command(name="remove")
     @app_commands.describe(channel="Select a channel to un-exclude")
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
-    async def remove(
+    async def remove_exclude(
         self,
         interaction: discord.Interaction,
         channel: Union[discord.VoiceChannel, discord.StageChannel],
     ):
         """Use to remove an exception to the all link command"""
 
-        data = self.client.redis.get_linked("all", interaction.guild_id)
+        if not interaction.guild:
+            return await interaction.response.send_message(
+                "You must be in a server to use this command."
+            )
 
-        if str(channel.id) in data["except"]:
-            data["except"].remove(str(channel.id))
+        data = await self.client.db.get_channel_linked(
+            interaction.guild.id, interaction.guild.id, LinkType.ALL
+        )
 
-            self.client.redis.update_linked("all", interaction.guild_id, data)
+        if str(channel.id) in data.excludeChannels:
+            data.excludeChannels.remove(str(channel.id))
+
+            await self.client.db.update_channel_linked(
+                interaction.guild.id,
+                LinkType.ALL,
+                exclude_channels=data.excludeChannels,
+            )
 
             await interaction.response.send_message(
                 f"Removed {channel.mention} as an exception to alllink"
@@ -150,22 +198,27 @@ class AllLink(commands.Cog):
 
         return self.client.incr_counter("all_remove_exception")
 
-    @suffix_commands.command()
+    @suffix_commands.command(name="add")
     @app_commands.describe(
         suffix="The suffix to add to your username when joining any channel"
     )
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
-    async def add(
+    async def add_suffix(
         self,
         interaction: discord.Interaction,
         suffix: str,
     ):
         """Use to add a suffix to users"""
 
-        data = self.client.redis.get_linked("all", interaction.guild_id)
-        data["suffix"] = suffix
-        self.client.redis.update_linked("all", interaction.guild_id, data)
+        if not interaction.guild:
+            return await interaction.response.send_message(
+                "You must be in a server to use this command."
+            )
+
+        await self.client.db.update_channel_linked(
+            interaction.guild.id, LinkType.ALL, suffix=suffix
+        )
 
         await interaction.response.send_message(
             f"When members join any channel, their username will be appended with `{suffix}`"
@@ -173,15 +226,20 @@ class AllLink(commands.Cog):
 
         return self.client.incr_counter("all_add_suffix")
 
-    @suffix_commands.command()
+    @suffix_commands.command(name="remove")
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
-    async def remove(self, interaction: discord.Interaction):
+    async def remove_suffix(self, interaction: discord.Interaction):
         """Use to remove a username suffix rule"""
 
-        data = self.client.redis.get_linked("all", interaction.guild_id)
-        data["suffix"] = ""
-        self.client.redis.update_linked("all", interaction.guild_id, data)
+        if not interaction.guild:
+            return await interaction.response.send_message(
+                "You must be in a server to use this command."
+            )
+
+        await self.client.db.update_channel_linked(
+            interaction.guild.id, LinkType.ALL, suffix="None"
+        )
 
         await interaction.response.send_message("Removed the username suffix rule")
 
@@ -198,12 +256,23 @@ class AllLink(commands.Cog):
     ):
         """Use to add a reverse link"""
 
-        data = self.client.redis.get_linked("all", interaction.guild_id)
+        if not interaction.guild:
+            return await interaction.response.send_message(
+                "You must be in a server to use this command."
+            )
 
-        if str(role.id) not in data["reverse_roles"]:
-            data["reverse_roles"].append(str(role.id))
+        data = await self.client.db.get_channel_linked(
+            interaction.guild.id, interaction.guild.id, LinkType.ALL
+        )
 
-            self.client.redis.update_linked("all", interaction.guild_id, data)
+        if str(role.id) not in data.reverseLinkedRoles:
+            data.reverseLinkedRoles.append(str(role.id))
+
+            await self.client.db.update_channel_linked(
+                interaction.guild.id,
+                LinkType.ALL,
+                reverse_linked_roles=data.reverseLinkedRoles,
+            )
 
             await interaction.response.send_message(
                 f"Added reverse link: `@{role.name}`"
@@ -226,13 +295,24 @@ class AllLink(commands.Cog):
     ):
         """Use to remove a reverse link"""
 
-        data = self.client.redis.get_linked("all", interaction.guild_id)
+        if not interaction.guild:
+            return await interaction.response.send_message(
+                "You must be in a server to use this command."
+            )
 
-        if str(role.id) in data["reverse_roles"]:
+        data = await self.client.db.get_channel_linked(
+            interaction.guild.id, interaction.guild.id, LinkType.ALL
+        )
+
+        if str(role.id) in data.reverseLinkedRoles:
             try:
-                data["reverse_roles"].remove(str(role.id))
+                data.reverseLinkedRoles.remove(str(role.id))
 
-                self.client.redis.update_linked("all", interaction.guild_id, data)
+                await self.client.db.update_channel_linked(
+                    interaction.guild.id,
+                    LinkType.ALL,
+                    reverse_linked_roles=data.reverseLinkedRoles,
+                )
 
                 await interaction.response.send_message(
                     f"Removed reverse link: `@{role.name}`"

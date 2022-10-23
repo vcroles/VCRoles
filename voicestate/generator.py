@@ -1,8 +1,7 @@
-import json
-
 import discord
 
 from utils.client import VCRolesClient
+from utils.types import JoinableChannel
 
 
 class Generator:
@@ -12,43 +11,54 @@ class Generator:
     async def join(
         self,
         member: discord.Member,
-        before: discord.VoiceState,
-        after: discord.VoiceState,
-    ):
-        data = self.client.redis.get_generator(member.guild.id)
+        user_channel: JoinableChannel,
+    ) -> None:
+        gen_data = await self.client.db.get_generator(member.guild.id)
 
-        if str(after.channel.id) == data["gen_id"]:
-            category = self.client.get_channel(int(data["cat"]))
+        if not gen_data.generatorId or not gen_data.categoryId:
+            return
 
-            overwrites = {
-                member.guild.me: discord.PermissionOverwrite(
-                    manage_channels=True, connect=True, view_channel=True
-                ),
-            }
+        if str(user_channel.id) == gen_data.generatorId:
+            category = self.client.get_channel(int(gen_data.categoryId))
+
+            if not isinstance(category, discord.CategoryChannel):
+                return
 
             channel = await member.guild.create_voice_channel(
                 name=f"{member.display_name}",
                 category=category,
                 reason="Voice Channel Generator",
-                overwrites=overwrites,
+                overwrites={
+                    member.guild.me: discord.PermissionOverwrite(
+                        manage_channels=True, connect=True, view_channel=True
+                    ),
+                },
             )
-            await member.move_to(channel)
-            data["open"].append(str(channel.id))
 
-            self.client.redis.update_gen_open(member.guild.id, data["open"])
+            try:
+                await member.move_to(channel)
+            except:
+                return
+
+            gen_data.openChannels.append(str(channel.id))
+
+            await self.client.db.update_generator(
+                member.guild.id, open_channels=gen_data.openChannels
+            )
 
     async def leave(
         self,
         member: discord.Member,
-        before: discord.VoiceState,
-        after: discord.VoiceState,
+        user_channel: JoinableChannel,
     ):
-        data = self.client.redis.get_generator(member.guild.id)
+        gen_data = await self.client.db.get_generator(member.guild.id)
 
-        if str(before.channel.id) in data["open"]:
-            if not before.channel.members:
-                await before.channel.delete()
+        if str(user_channel.id) in gen_data.openChannels:
+            if not user_channel.members:
+                await user_channel.delete()
 
-                data["open"].remove(str(before.channel.id))
+                gen_data.openChannels.remove(str(user_channel.id))
 
-                self.client.redis.update_gen_open(member.guild.id, data["open"])
+                await self.client.db.update_generator(
+                    member.guild.id, open_channels=gen_data.openChannels
+                )

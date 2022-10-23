@@ -18,12 +18,17 @@ class VCControl(commands.Cog):
     )
 
     async def get_members(
-        self, interaction: discord.Interaction
+        self, guild: discord.Guild, user: discord.Member
     ) -> list[discord.Member]:
-        mem = []
-        for user_id, state in interaction.guild._voice_states.items():
-            if state.channel and state.channel.id == interaction.user.voice.channel.id:
-                member = await interaction.guild.fetch_member(user_id)
+        mem: list[discord.Member] = []
+        for user_id, state in guild._voice_states.items():  # type: ignore
+            if (
+                state.channel
+                and user.voice
+                and user.voice.channel
+                and state.channel.id == user.voice.channel.id
+            ):
+                member = await guild.fetch_member(user_id)
                 if member is not None:
                     mem.append(member)
         return mem
@@ -39,10 +44,17 @@ class VCControl(commands.Cog):
     ):
         """Mutes everyone in a voice channel"""
 
+        if not interaction.guild or not isinstance(interaction.user, discord.Member):
+            return await interaction.response.send_message(
+                "You must be in a server to use this commannd."
+            )
+
         if interaction.user.voice and interaction.user.voice.channel:
             vc = interaction.user.voice.channel
+        else:
+            vc = None
 
-        mem = await self.get_members(interaction)
+        mem = await self.get_members(interaction.guild, interaction.user)
 
         if who == "everyone" and vc:
             tasks = [
@@ -80,10 +92,17 @@ class VCControl(commands.Cog):
     ):
         """Deafens everyone in a voice channel"""
 
+        if not interaction.guild or not isinstance(interaction.user, discord.Member):
+            return await interaction.response.send_message(
+                "You must be in a server to use this commannd."
+            )
+
         if interaction.user.voice and interaction.user.voice.channel:
             vc = interaction.user.voice.channel
+        else:
+            vc = None
 
-        mem = await self.get_members(interaction)
+        mem = await self.get_members(interaction.guild, interaction.user)
 
         if who == "everyone" and vc:
             tasks = [
@@ -116,10 +135,17 @@ class VCControl(commands.Cog):
     async def unmute(self, interaction: discord.Interaction):
         """Unmutes everyone in a voice channel"""
 
+        if not interaction.guild or not isinstance(interaction.user, discord.Member):
+            return await interaction.response.send_message(
+                "You must be in a server to use this commannd."
+            )
+
         if interaction.user.voice and interaction.user.voice.channel:
             vc = interaction.user.voice.channel
+        else:
+            vc = None
 
-        mem = await self.get_members(interaction)
+        mem = await self.get_members(interaction.guild, interaction.user)
 
         if vc:
             tasks = [
@@ -146,10 +172,17 @@ class VCControl(commands.Cog):
     async def undeafen(self, interaction: discord.Interaction):
         """Undeafens everyone in a voice channel"""
 
+        if not interaction.guild or not isinstance(interaction.user, discord.Member):
+            return await interaction.response.send_message(
+                "You must be in a server to use this commannd."
+            )
+
         if interaction.user.voice and interaction.user.voice.channel:
             vc = interaction.user.voice.channel
+        else:
+            vc = None
 
-        mem = await self.get_members(interaction)
+        mem = await self.get_members(interaction.guild, interaction.user)
 
         if vc:
             tasks = [

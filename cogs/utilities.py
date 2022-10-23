@@ -1,5 +1,5 @@
 from string import Template
-from typing import Optional, Union
+from typing import Union
 
 import discord
 from discord import Interaction, app_commands
@@ -22,7 +22,7 @@ class Utils(commands.Cog):
         self,
         interaction: Interaction,
         channel: Union[discord.VoiceChannel, discord.StageChannel],
-        message: Optional[str] = "$mention",
+        message: str = "$mention",
     ):
         """Use to mention a channel in chat"""
         await interaction.response.send_message(
@@ -68,12 +68,12 @@ class Utils(commands.Cog):
 
         total_commands = 0
         total_roles_changed = 0
-        counters = self.client.redis.r.hgetall("counters")
+        counters = await self.client.ar.hgetall("counters")
         for key, value in counters.items():
-            if key.decode("utf-8") not in ["roles_added", "roles_removed"]:
-                total_commands += int(value.decode("utf-8"))
-            elif key.decode("utf-8") in ["roles_added", "roles_removed"]:
-                total_roles_changed += int(value.decode("utf-8"))
+            if key not in ["roles_added", "roles_removed"]:
+                total_commands += int(value)
+            elif key in ["roles_added", "roles_removed"]:
+                total_roles_changed += int(value)
 
         total_members = 0
         voice = 0
@@ -83,14 +83,14 @@ class Utils(commands.Cog):
             if guild.unavailable:
                 continue
 
-            total_members += guild.member_count
+            total_members += guild.member_count if guild.member_count else 0
             for channel in guild.channels:
                 if isinstance(channel, discord.VoiceChannel):
                     voice += 1
 
         embed.add_field(
             name="Server Count",
-            value=f"{self.client.user.name} is in {guilds:,} servers",
+            value=f"{self.client.user.name if self.client.user else 'VC Roles'} is in {guilds:,} servers",
             inline=False,
         )
         embed.add_field(
@@ -107,7 +107,10 @@ class Utils(commands.Cog):
             inline=False,
         )
         embed.set_author(
-            name=f"{self.client.user}", icon_url=self.client.user.avatar.url
+            name=f"{self.client.user}",
+            icon_url=self.client.user.avatar.url
+            if self.client.user and self.client.user.avatar
+            else None,
         )
 
         await interaction.response.send_message(embed=embed, view=Combination())

@@ -4,7 +4,8 @@ config.json
 guilds.json
 **/*.pyc
 __pycache__/
-tts/
-exports/
+tts/*.mp3
+exports/*.json
 config.py
-.vscode/
+env/
+.env
