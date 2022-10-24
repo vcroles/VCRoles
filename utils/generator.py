@@ -1,5 +1,5 @@
 import discord
-from utils.database import DatabaseUtils
+from .database import DatabaseUtils
 
 
 class GeneratorUtils:
@@ -57,7 +57,10 @@ class GeneratorUtils:
         except KeyError:
             overwrites[default_role] = discord.PermissionOverwrite(connect=False)
 
-        await user.voice.channel.edit(overwrites=overwrites)
+        try:
+            await user.voice.channel.edit(overwrites=overwrites)
+        except discord.Forbidden:
+            return "Bot permission error."
 
         return "Locked voice channel!"
 
@@ -88,7 +91,10 @@ class GeneratorUtils:
         except KeyError:
             overwrites[default_role] = discord.PermissionOverwrite(connect=True)
 
-        await user.voice.channel.edit(overwrites=overwrites)
+        try:
+            await user.voice.channel.edit(overwrites=overwrites)
+        except discord.Forbidden:
+            return "Bot permission error."
 
         return "Unlocked voice channel!"
 
@@ -119,7 +125,10 @@ class GeneratorUtils:
         except KeyError:
             overwrites[default_role] = discord.PermissionOverwrite(view_channel=False)
 
-        await user.voice.channel.edit(overwrites=overwrites)
+        try:
+            await user.voice.channel.edit(overwrites=overwrites)
+        except discord.Forbidden:
+            return "Bot permission error."
 
         return "Hidden voice channel!"
 
@@ -150,7 +159,10 @@ class GeneratorUtils:
         except KeyError:
             overwrites[default_role] = discord.PermissionOverwrite(view_channel=True)
 
-        await user.voice.channel.edit(overwrites=overwrites)
+        try:
+            await user.voice.channel.edit(overwrites=overwrites)
+        except discord.Forbidden:
+            return "Bot permission error."
 
         return "Made voice channel visible!"
 
@@ -169,7 +181,11 @@ class GeneratorUtils:
             return self.editable_failure
 
         user_limit = user.voice.channel.user_limit
-        await user.voice.channel.edit(user_limit=user_limit + 1)
+
+        try:
+            await user.voice.channel.edit(user_limit=user_limit + 1)
+        except discord.Forbidden:
+            return "Bot permission error."
 
         return f"Increased channel member limit to {user_limit}!"
 
@@ -189,6 +205,29 @@ class GeneratorUtils:
 
         user_limit = user.voice.channel.user_limit
         if user_limit > 0:
-            await user.voice.channel.edit(user_limit=user_limit - 1)
+            try:
+                await user.voice.channel.edit(user_limit=user_limit - 1)
+            except discord.Forbidden:
+                return "Bot permission error."
 
         return f"Decreased channel member limit to {user_limit - 1 if user_limit > 0 else user_limit}!"
+
+    async def rename(self, user: discord.Member, name: str):
+        if (
+            not user.voice
+            or not user.voice.channel
+            or not await self.in_voice_channel(user)
+        ):
+            return self.channel_failure
+
+        gen_data = await self.db.get_generated_channel(user.voice.channel.id)
+
+        if not gen_data or not gen_data.userEditable:
+            return self.editable_failure
+
+        try:
+            await user.voice.channel.edit(name=name)
+        except discord.Forbidden:
+            return "Bot permission error."
+
+        return f"Changed the channel name to `{name}`!"

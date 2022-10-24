@@ -3,7 +3,7 @@ from typing import Any
 import discord
 
 from utils.database import DatabaseUtils
-from utils import GeneratorUtils
+from utils.generator import GeneratorUtils
 
 
 class Interface(discord.ui.View):
@@ -115,6 +115,36 @@ class Interface(discord.ui.View):
             )
 
         message = await self.utils.decrease_limit(interaction.user)
+
+        await interaction.response.send_message(
+            message,
+            ephemeral=True,
+        )
+
+    @discord.ui.button(
+        label="Rename", style=discord.ButtonStyle.blurple, custom_id="voicegen:rename"
+    )
+    async def rename(
+        self, interaction: discord.Interaction, button: discord.ui.Button[Any]
+    ):
+        await interaction.response.send_modal(RenameModal(self.db))
+
+
+class RenameModal(discord.ui.Modal, title="Rename Channel"):
+    name: discord.ui.TextInput[Any] = discord.ui.TextInput(label="New Name")
+
+    def __init__(self, db: DatabaseUtils):
+        super().__init__()
+
+        self.utils = GeneratorUtils(db)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        if not isinstance(interaction.user, discord.Member):
+            return await interaction.response.send_message(
+                "You must be in a guild to use this."
+            )
+
+        message = await self.utils.rename(interaction.user, str(self.name))
 
         await interaction.response.send_message(
             message,

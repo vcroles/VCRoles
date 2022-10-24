@@ -124,6 +124,7 @@ class VoiceGen(commands.Cog):
                 "Decrease Limit",
                 "Decrease the user limit of your voice channel (0 - no limit)",
             ],
+            ["Rename", "Rename your voice channel"],
         ]
 
         for field in embed_fields:

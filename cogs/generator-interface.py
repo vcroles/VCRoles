@@ -99,6 +99,20 @@ class GenInterface(commands.Cog):
 
         return self.client.incr_counter("interface_decrease")
 
+    @interface_commands.command(name="rename")
+    @app_commands.describe(name="The new name.")
+    async def rename_channel(self, interaction: discord.Interaction, name: str):
+        """Rename your generated voice channel"""
+        if not isinstance(interaction.user, discord.Member):
+            return await interaction.response.send_message(
+                "You must be in a guild to use this."
+            )
+
+        message = await self.utils.rename(interaction.user, name)
+        await interaction.response.send_message(message, ephemeral=True)
+
+        return self.client.incr_counter("interface_rename")
+
 
 async def setup(client: VCRolesClient):
     await client.add_cog(GenInterface(client))
