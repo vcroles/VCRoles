@@ -1,13 +1,13 @@
 from typing import List, Optional
 
 from prisma import Prisma
-from prisma.enums import LinkType
-from prisma.models import Guild, Link, VoiceGenerator, GeneratedChannel
+from prisma.enums import LinkType, VoiceGeneratorOption, VoiceGeneratorType
+from prisma.models import GeneratedChannel, Guild, Link, VoiceGenerator
 from prisma.types import (
+    GeneratedChannelUpdateInput,
     GuildUpdateInput,
     LinkUpdateInput,
     VoiceGeneratorUpdateInput,
-    GeneratedChannelUpdateInput,
 )
 
 from utils.types import DiscordID
@@ -180,6 +180,11 @@ class DatabaseUtils:
         category_id: DiscordID,
         interface_channel: Optional[str] = None,
         interface_message: Optional[str] = None,
+        gen_type: Optional[VoiceGeneratorType] = None,
+        default_options: Optional[list[VoiceGeneratorOption]] = None,
+        default_user_limit: Optional[int] = None,
+        channel_limit: Optional[int] = None,
+        default_role_id: Optional[str] = None,
     ) -> None:
         data: VoiceGeneratorUpdateInput = {}
 
@@ -188,6 +193,21 @@ class DatabaseUtils:
 
         if interface_message is not None:
             data["interfaceMessage"] = interface_message
+
+        if gen_type is not None:
+            data["type"] = gen_type
+
+        if default_options is not None:
+            data["defaultOptions"] = default_options
+
+        if default_user_limit is not None:
+            data["defaultUserLimit"] = default_user_limit
+
+        if channel_limit is not None:
+            data["channelLimit"] = channel_limit
+
+        if default_role_id is not None:
+            data["defaultRole"] = default_role_id
 
         res = await self.db.voicegenerator.update(
             where={
@@ -225,6 +245,7 @@ class DatabaseUtils:
         channel_id: DiscordID,
         owner_id: Optional[DiscordID] = None,
         text_channel_id: Optional[str] = None,
+        user_editable: Optional[bool] = None,
     ) -> None:
         data: GeneratedChannelUpdateInput = {}
 
@@ -237,6 +258,9 @@ class DatabaseUtils:
         if text_channel_id == "None":
             data["textChannelId"] = None
 
+        if user_editable is not None:
+            data["userEditable"] = user_editable
+
         await self.db.generatedchannel.update(
             where={"channelId": str(channel_id)}, data=data
         )
@@ -247,6 +271,7 @@ class DatabaseUtils:
         generator_id: DiscordID,
         channel_id: DiscordID,
         owner_id: DiscordID,
+        user_editable: bool = True,
     ) -> GeneratedChannel:
         data = await self.db.generatedchannel.create(
             data={
@@ -260,6 +285,7 @@ class DatabaseUtils:
                 },
                 "channelId": str(channel_id),
                 "ownerId": str(owner_id),
+                "userEditable": user_editable,
             }
         )
         return data

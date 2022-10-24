@@ -54,6 +54,7 @@ enum VoiceGeneratorOption {
     HIDE
     TEXT
     NO_INTERFACE
+    EDITABLE
 }
 
 model VoiceGenerator {
@@ -67,7 +68,9 @@ model VoiceGenerator {
     openChannels     GeneratedChannel[]
     type             VoiceGeneratorType     @default(DEFAULT)
     defaultOptions   VoiceGeneratorOption[]
-    defaultLimit     Int                    @default(0)
+    defaultUserLimit Int                    @default(0)
+    channelLimit     Int                    @default(100)
+    defaultRole      String?
 
     @@unique([guildId, generatorId])
 }
@@ -79,4 +82,5 @@ model GeneratedChannel {
     textChannelId    String?
     VoiceGenerator   VoiceGenerator @relation(fields: [voiceGeneratorId], references: [id], onDelete: Cascade)
     voiceGeneratorId String
+    userEditable     Boolean        @default(true)
 }
