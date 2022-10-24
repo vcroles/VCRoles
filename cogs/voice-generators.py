@@ -135,8 +135,8 @@ class VoiceGen(commands.Cog):
 
         await self.client.db.update_generator(
             interaction.guild.id,
+            voice_channel.id,
             category_id=str(category.id),
-            generator_id=str(voice_channel.id),
             interface_channel=str(interface_channel.id),
             interface_message=str(interface_message.id),
         )
@@ -154,7 +154,9 @@ class VoiceGen(commands.Cog):
     @commands.bot_has_permissions(manage_channels=True)
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
-    async def remove(self, interaction: discord.Interaction):
+    async def remove(
+        self, interaction: discord.Interaction, generator: discord.VoiceChannel
+    ):
         """Removes a voice channel generator"""
 
         if not interaction.guild:
@@ -164,11 +166,18 @@ class VoiceGen(commands.Cog):
 
         await interaction.response.defer()
 
-        gen_data = await self.client.db.get_generator(interaction.guild.id)
+        gen_data = await self.client.db.get_generator(
+            interaction.guild.id, generator.id
+        )
+
+        if not gen_data:
+            return await interaction.followup.send(
+                "Please select a valid generator channel"
+            )
 
         await self.remove_generator(gen_data)
 
-        await self.client.db.delete_generator(interaction.guild.id)
+        await self.client.db.delete_generator(interaction.guild.id, generator.id)
 
         embed = discord.Embed(
             color=discord.Color.green(),

@@ -13,9 +13,9 @@ class Generator:
         member: discord.Member,
         user_channel: JoinableChannel,
     ) -> None:
-        gen_data = await self.client.db.get_generator(member.guild.id)
+        gen_data = await self.client.db.get_generator(member.guild.id, user_channel.id)
 
-        if not gen_data.generatorId or not gen_data.categoryId:
+        if not gen_data:
             return
 
         if str(user_channel.id) == gen_data.generatorId:
@@ -40,10 +40,8 @@ class Generator:
             except:
                 return
 
-            gen_data.openChannels.append(str(channel.id))
-
-            await self.client.db.update_generator(
-                member.guild.id, open_channels=gen_data.openChannels
+            await self.client.db.create_generated_channel(
+                member.guild.id, user_channel.id, channel.id, member.id
             )
 
     async def leave(
@@ -51,14 +49,10 @@ class Generator:
         member: discord.Member,
         user_channel: JoinableChannel,
     ):
-        gen_data = await self.client.db.get_generator(member.guild.id)
+        data = await self.client.db.get_generated_channel(user_channel.id)
 
-        if str(user_channel.id) in gen_data.openChannels:
+        if data:
             if not user_channel.members:
                 await user_channel.delete()
 
-                gen_data.openChannels.remove(str(user_channel.id))
-
-                await self.client.db.update_generator(
-                    member.guild.id, open_channels=gen_data.openChannels
-                )
+                await self.client.db.delete_generated_channel(user_channel.id)

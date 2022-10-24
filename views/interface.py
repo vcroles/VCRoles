@@ -18,7 +18,7 @@ class Interface(discord.ui.View):
         if not interaction.guild or not isinstance(interaction.user, discord.Member):
             return False
 
-        data = await self.db.get_generator(interaction.guild.id)
+        data = await self.db.get_generators(interaction.guild.id)
 
         if (
             not interaction.user.voice
@@ -27,13 +27,13 @@ class Interface(discord.ui.View):
         ):
             return False
 
-        if str(interaction.user.voice.channel.category.id) != data.categoryId:
-            return False
-
-        if str(interaction.user.voice.channel.id) == data.generatorId:
-            return False
-
-        return True
+        return any(
+            [
+                str(interaction.user.voice.channel.category.id) == d.categoryId
+                and str(interaction.user.voice.channel.id) != d.generatorId
+                for d in data
+            ]
+        )
 
     @discord.ui.button(
         label="Lock",

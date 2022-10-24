@@ -2,8 +2,13 @@ from typing import List, Optional
 
 from prisma import Prisma
 from prisma.enums import LinkType
-from prisma.models import Guild, Link, VoiceGenerator
-from prisma.types import GuildUpdateInput, LinkUpdateInput, VoiceGeneratorUpdateInput
+from prisma.models import Guild, Link, VoiceGenerator, GeneratedChannel
+from prisma.types import (
+    GuildUpdateInput,
+    LinkUpdateInput,
+    VoiceGeneratorUpdateInput,
+    GeneratedChannelUpdateInput,
+)
 
 from utils.types import DiscordID
 
@@ -146,31 +151,37 @@ class DatabaseUtils:
 
         return guild.links or []
 
-    async def get_generator(self, guild_id: DiscordID) -> VoiceGenerator:
-        data = await self.db.voicegenerator.find_unique(
-            where={"guildId": str(guild_id)}
+    async def get_generators(self, guild_id: DiscordID) -> list[VoiceGenerator]:
+        data = await self.db.voicegenerator.find_many(
+            where={"guildId": str(guild_id)}, include={"openChannels": True}
         )
         if not data:
-            await self.get_guild_data(guild_id)
-            data = await self.db.voicegenerator.create({"guildId": str(guild_id)})
+            return []
+        return data
+
+    async def get_generator(
+        self, guild_id: DiscordID, generator_id: DiscordID
+    ) -> Optional[VoiceGenerator]:
+        data = await self.db.voicegenerator.find_unique(
+            where={
+                "guildId_generatorId": {
+                    "generatorId": str(generator_id),
+                    "guildId": str(guild_id),
+                }
+            },
+            include={"openChannels": True},
+        )
         return data
 
     async def update_generator(
         self,
         guild_id: DiscordID,
-        category_id: Optional[str] = None,
-        generator_id: Optional[str] = None,
+        generator_id: DiscordID,
+        category_id: DiscordID,
         interface_channel: Optional[str] = None,
         interface_message: Optional[str] = None,
-        open_channels: Optional[List[str]] = None,
     ) -> None:
         data: VoiceGeneratorUpdateInput = {}
-
-        if category_id is not None:
-            data["categoryId"] = category_id
-
-        if generator_id is not None:
-            data["generatorId"] = generator_id
 
         if interface_channel is not None:
             data["interfaceChannel"] = interface_channel
@@ -178,32 +189,91 @@ class DatabaseUtils:
         if interface_message is not None:
             data["interfaceMessage"] = interface_message
 
-        if open_channels is not None:
-            data["openChannels"] = open_channels
-
         res = await self.db.voicegenerator.update(
-            where={"guildId": str(guild_id)}, data=data
+            where={
+                "guildId_generatorId": {
+                    "guildId": str(guild_id),
+                    "generatorId": str(generator_id),
+                }
+            },
+            data=data,
         )
         if not res:
             await self.db.voicegenerator.create(
                 {
                     "guildId": str(guild_id),
-                    "categoryId": data.get("categoryId"),
-                    "generatorId": data.get("generatorId"),
+                    "generatorId": str(generator_id),
+                    "categoryId": str(category_id),
                     "interfaceChannel": data.get("interfaceChannel"),
                     "interfaceMessage": data.get("interfaceMessage"),
                 }
             )
 
-    async def delete_generator(self, guild_id: DiscordID) -> None:
-        await self.db.voicegenerator.update(
-            where={"guildId": str(guild_id)},
+    async def get_generated_channel(
+        self, channel_id: DiscordID
+    ) -> Optional[GeneratedChannel]:
+        data = await self.db.generatedchannel.find_unique(
+            where={"channelId": str(channel_id)}
+        )
+        return data
+
+    async def delete_generated_channel(self, channel_id: DiscordID) -> None:
+        await self.db.generatedchannel.delete(where={"channelId": str(channel_id)})
+
+    async def update_generated_channel(
+        self,
+        channel_id: DiscordID,
+        owner_id: Optional[DiscordID] = None,
+        text_channel_id: Optional[str] = None,
+    ) -> None:
+        data: GeneratedChannelUpdateInput = {}
+
+        if owner_id is not None:
+            data["ownerId"] = str(owner_id)
+
+        if text_channel_id is not None:
+            data["textChannelId"] = text_channel_id
+
+        if text_channel_id == "None":
+            data["textChannelId"] = None
+
+        await self.db.generatedchannel.update(
+            where={"channelId": str(channel_id)}, data=data
+        )
+
+    async def create_generated_channel(
+        self,
+        guild_id: DiscordID,
+        generator_id: DiscordID,
+        channel_id: DiscordID,
+        owner_id: DiscordID,
+    ) -> GeneratedChannel:
+        data = await self.db.generatedchannel.create(
             data={
-                "categoryId": None,
-                "generatorId": None,
-                "interfaceChannel": None,
-                "interfaceMessage": None,
-            },
+                "VoiceGenerator": {
+                    "connect": {
+                        "guildId_generatorId": {
+                            "guildId": str(guild_id),
+                            "generatorId": str(generator_id),
+                        }
+                    }
+                },
+                "channelId": str(channel_id),
+                "ownerId": str(owner_id),
+            }
+        )
+        return data
+
+    async def delete_generator(
+        self, guild_id: DiscordID, generator_id: DiscordID
+    ) -> None:
+        await self.db.voicegenerator.delete(
+            where={
+                "guildId_generatorId": {
+                    "guildId": str(guild_id),
+                    "generatorId": str(generator_id),
+                }
+            }
         )
 
     async def get_all_linked_channel(
