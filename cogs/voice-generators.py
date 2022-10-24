@@ -171,6 +171,9 @@ class VoiceGen(commands.Cog):
                 "This command can only be used in a server"
             )
 
+        if not user_editable:
+            create_interface_channel = False
+
         await interaction.response.defer()
         data = await self.create_channels(
             interaction,
@@ -236,6 +239,9 @@ class VoiceGen(commands.Cog):
                 "This command can only be used in a server"
             )
 
+        if not user_editable:
+            create_interface_channel = False
+
         await interaction.response.defer()
         data = await self.create_channels(
             interaction,
@@ -288,9 +294,9 @@ class VoiceGen(commands.Cog):
         self,
         interaction: discord.Interaction,
         user_editable: bool,
+        voice_channel_name: str,
         channel_limit: int = 100,
         category_name: str = "Voice Generator",
-        voice_channel_name: str = "Voice Generator",
         create_interface_channel: bool = True,
         interface_channel_name: str = "VC Roles Interface",
     ):
@@ -299,6 +305,9 @@ class VoiceGen(commands.Cog):
             return await interaction.response.send_message(
                 "This command can only be used in a server"
             )
+
+        if not user_editable:
+            create_interface_channel = False
 
         await interaction.response.defer()
         data = await self.create_channels(
@@ -338,7 +347,7 @@ class VoiceGen(commands.Cog):
     @create_commands.command()
     @app_commands.describe(
         category_name="Name of generator category",
-        generated_channel_name="Name of voice channel variables: {username}, {count}",
+        generated_channel_name="Name of voice channel variables: $username, $count",
         interface_channel_name="Name of interface channel",
         user_editable="Whether users can edit their generated channel",
         channel_limit="The maximum of generated channels allowed",
@@ -363,6 +372,9 @@ class VoiceGen(commands.Cog):
             return await interaction.response.send_message(
                 "This command can only be used in a server"
             )
+
+        if not user_editable:
+            create_interface_channel = False
 
         await interaction.response.defer()
         data = await self.create_channels(
