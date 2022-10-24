@@ -233,7 +233,7 @@ class DatabaseUtils:
         self, channel_id: DiscordID
     ) -> Optional[GeneratedChannel]:
         data = await self.db.generatedchannel.find_unique(
-            where={"channelId": str(channel_id)}
+            where={"channelId": str(channel_id)}, include={"VoiceGenerator": True}
         )
         return data
 
