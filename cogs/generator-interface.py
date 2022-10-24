@@ -2,8 +2,8 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from utils.client import VCRolesClient
 from utils import GeneratorUtils
+from utils.client import VCRolesClient
 
 
 class GenInterface(commands.Cog):

@@ -1,6 +1,9 @@
+from typing import Optional, Tuple
+
 import discord
 from discord import app_commands
 from discord.ext import commands
+from prisma.enums import VoiceGeneratorOption, VoiceGeneratorType
 from prisma.models import VoiceGenerator
 
 from utils.checks import check_any, command_available, is_owner
@@ -16,7 +19,7 @@ class VoiceGen(commands.Cog):
         if data.categoryId:
             try:
                 category = await self.client.fetch_channel(int(data.categoryId))
-                if category and isinstance(category, discord.guild.GuildChannel):
+                if category and isinstance(category, discord.CategoryChannel):
                     await category.delete()
             except:
                 pass
@@ -27,7 +30,7 @@ class VoiceGen(commands.Cog):
                     int(data.generatorId)
                 )
                 if generator_channel and isinstance(
-                    generator_channel, discord.guild.GuildChannel
+                    generator_channel, discord.VoiceChannel
                 ):
                     await generator_channel.delete()
             except:
@@ -39,69 +42,13 @@ class VoiceGen(commands.Cog):
                     int(data.interfaceChannel)
                 )
                 if interface_channel and isinstance(
-                    interface_channel, discord.guild.GuildChannel
+                    interface_channel, discord.TextChannel
                 ):
                     await interface_channel.delete()
             except:
                 pass
 
-    generator_commands = app_commands.Group(
-        name="generator", description="Generator channel commands"
-    )
-
-    @generator_commands.command()
-    @app_commands.describe(
-        category_name="Name of generator category",
-        voice_channel_name="Name of voice channel",
-        interface_channel_name="Name of interface channel",
-    )
-    @check_any(command_available, is_owner)
-    @app_commands.checks.bot_has_permissions(manage_channels=True)
-    @app_commands.checks.has_permissions(administrator=True)
-    async def create(
-        self,
-        interaction: discord.Interaction,
-        category_name: str = "Voice Generator",
-        voice_channel_name: str = "Voice Generator",
-        interface_channel_name: str = "VC Roles Interface",
-    ):
-        """Creates a voice channel generator"""
-
-        if not interaction.guild:
-            return await interaction.response.send_message(
-                "This command can only be used in a server"
-            )
-
-        await interaction.response.defer()
-
-        try:
-            category = await interaction.guild.create_category(
-                name=category_name,
-                overwrites={
-                    interaction.guild.me: discord.PermissionOverwrite(
-                        manage_channels=True
-                    )
-                },
-            )
-
-            voice_channel = await category.create_voice_channel(name=voice_channel_name)
-
-            overwrites = {
-                interaction.guild.default_role: discord.PermissionOverwrite(
-                    send_messages=False
-                ),
-                interaction.guild.me: discord.PermissionOverwrite(send_messages=True),
-            }
-
-            interface_channel = await category.create_text_channel(
-                name=interface_channel_name, overwrites=overwrites
-            )
-        except:
-            await interaction.followup.send(
-                "Failed to create generator channels. Please check permissions and try again."
-            )
-            return
-
+    def get_interface_embed(self) -> discord.Embed:
         interface_embed = discord.Embed(
             title="Voice Generator Interface",
             description=f"You can use this interface to customize your private voice channel.",
@@ -130,22 +77,324 @@ class VoiceGen(commands.Cog):
         for field in embed_fields:
             interface_embed.add_field(name=field[0], value=field[1], inline=False)
 
-        interface_message = await interface_channel.send(
-            embed=interface_embed, view=Interface(self.client.db)
+        return interface_embed
+
+    async def create_channels(
+        self,
+        interaction: discord.Interaction,
+        category_name: str,
+        voice_channel_name: str,
+        create_interface_channel: bool,
+        interface_channel_name: str,
+    ) -> Optional[
+        Tuple[
+            discord.CategoryChannel,
+            discord.VoiceChannel,
+            Optional[discord.TextChannel],
+            Optional[discord.Message],
+        ]
+    ]:
+        assert interaction.guild
+        try:
+            category = await interaction.guild.create_category(
+                name=category_name,
+                overwrites={
+                    interaction.guild.me: discord.PermissionOverwrite(
+                        manage_channels=True
+                    )
+                },
+            )
+
+            voice_channel = await category.create_voice_channel(name=voice_channel_name)
+
+            if create_interface_channel:
+                overwrites = {
+                    interaction.guild.default_role: discord.PermissionOverwrite(
+                        send_messages=False
+                    ),
+                    interaction.guild.me: discord.PermissionOverwrite(
+                        send_messages=True
+                    ),
+                }
+
+                interface_channel = await category.create_text_channel(
+                    name=interface_channel_name, overwrites=overwrites
+                )
+
+                interface_message = await interface_channel.send(
+                    embed=self.get_interface_embed(), view=Interface(self.client.db)
+                )
+            else:
+                interface_channel = None
+                interface_message = None
+        except:
+            return await interaction.followup.send(
+                "Failed to create generator channels. Please check permissions and try again."
+            )
+        return (category, voice_channel, interface_channel, interface_message)
+
+    generator_commands = app_commands.Group(
+        name="generator", description="Generator channel commands"
+    )
+
+    create_commands = app_commands.Group(
+        name="create",
+        description="Commands to create voice generators.",
+        parent=generator_commands,
+    )
+
+    @create_commands.command()
+    @app_commands.describe(
+        category_name="Name of generator category",
+        voice_channel_name="Name of voice channel",
+        interface_channel_name="Name of interface channel",
+        user_editable="Whether users can edit their generated channel",
+        channel_limit="The maximum of generated channels allowed",
+        create_interface_channel="Whether to create an interface channel",
+    )
+    @check_any(command_available, is_owner)
+    @app_commands.checks.bot_has_permissions(manage_channels=True)
+    @app_commands.checks.has_permissions(administrator=True)
+    async def default(
+        self,
+        interaction: discord.Interaction,
+        user_editable: bool,
+        channel_limit: int = 100,
+        category_name: str = "Voice Generator",
+        voice_channel_name: str = "Voice Generator",
+        create_interface_channel: bool = True,
+        interface_channel_name: str = "VC Roles Interface",
+    ):
+        """Creates a voice channel generator"""
+        if not interaction.guild:
+            return await interaction.response.send_message(
+                "This command can only be used in a server"
+            )
+
+        await interaction.response.defer()
+        data = await self.create_channels(
+            interaction,
+            category_name,
+            voice_channel_name,
+            create_interface_channel,
+            interface_channel_name,
         )
+        if not data:
+            return
+        category = data[0]
+        voice_channel = data[1]
+        interface_channel = data[2]
+        interface_message = data[3]
 
         await self.client.db.update_generator(
             interaction.guild.id,
             voice_channel.id,
             category_id=str(category.id),
-            interface_channel=str(interface_channel.id),
-            interface_message=str(interface_message.id),
+            interface_channel=str(interface_channel.id) if interface_channel else None,
+            interface_message=str(interface_message.id) if interface_message else None,
+            gen_type=VoiceGeneratorType.DEFAULT,
+            default_options=[VoiceGeneratorOption.EDITABLE] if user_editable else [],
+            channel_limit=channel_limit,
         )
 
         creation_embed = discord.Embed(
             color=discord.Color.green(),
-            title="**Voice Generator Setup**",
-            description=f"The category **{category.name}**, voice channel {voice_channel.mention}, and interface channel {interface_channel.mention} have been created.\n Join the voice channel to generate a voice channel.",
+            title="**Voice Generator Setup - Default**",
+            description=f"The category **{category.name}**, voice channel {voice_channel.mention}{f', and interface channel {interface_channel.mention}' if interface_channel else ''} have been created.\n Join the voice channel to generate a voice channel.",
+        )
+        await interaction.followup.send(embed=creation_embed)
+
+        return self.client.incr_counter("voice_generator_create")
+
+    @create_commands.command()
+    @app_commands.describe(
+        category_name="Name of generator category",
+        generated_channel_name="Name of generated voice channel",
+        interface_channel_name="Name of interface channel",
+        user_editable="Whether users can edit their generated channel",
+        channel_limit="The maximum of generated channels allowed",
+        create_interface_channel="Whether to create an interface channel",
+        voice_channel_name="Name of joinable channel",
+    )
+    @check_any(command_available, is_owner)
+    @app_commands.checks.bot_has_permissions(manage_channels=True)
+    @app_commands.checks.has_permissions(administrator=True)
+    async def numbered(
+        self,
+        interaction: discord.Interaction,
+        user_editable: bool,
+        generated_channel_name: str,
+        channel_limit: int,
+        category_name: str = "Voice Generator",
+        create_interface_channel: bool = True,
+        interface_channel_name: str = "VC Roles Interface",
+        voice_channel_name: str = "Voice Generator",
+    ):
+        """Creates a numbered voice channel generator"""
+        if not interaction.guild:
+            return await interaction.response.send_message(
+                "This command can only be used in a server"
+            )
+
+        await interaction.response.defer()
+        data = await self.create_channels(
+            interaction,
+            category_name,
+            voice_channel_name,
+            create_interface_channel,
+            interface_channel_name,
+        )
+        if not data:
+            return
+        category = data[0]
+        voice_channel = data[1]
+        interface_channel = data[2]
+        interface_message = data[3]
+
+        await self.client.db.update_generator(
+            interaction.guild.id,
+            voice_channel.id,
+            category_id=str(category.id),
+            interface_channel=str(interface_channel.id) if interface_channel else None,
+            interface_message=str(interface_message.id) if interface_message else None,
+            gen_type=VoiceGeneratorType.NUMBERED,
+            default_options=[VoiceGeneratorOption.EDITABLE] if user_editable else [],
+            channel_limit=channel_limit,
+            channel_name=generated_channel_name,
+        )
+
+        creation_embed = discord.Embed(
+            color=discord.Color.green(),
+            title="**Voice Generator Setup - Numbered**",
+            description=f"The category **{category.name}**, voice channel {voice_channel.mention}{f', and interface channel {interface_channel.mention}' if interface_channel else ''} have been created.\n Join the voice channel to generate a voice channel.",
+        )
+        await interaction.followup.send(embed=creation_embed)
+
+        return self.client.incr_counter("voice_generator_create")
+
+    @create_commands.command()
+    @app_commands.describe(
+        category_name="Name of generator category",
+        voice_channel_name="Name of voice channel",
+        interface_channel_name="Name of interface channel",
+        user_editable="Whether users can edit their generated channel",
+        channel_limit="The maximum of generated channels allowed",
+        create_interface_channel="Whether to create an interface channel",
+    )
+    @check_any(command_available, is_owner)
+    @app_commands.checks.bot_has_permissions(manage_channels=True)
+    @app_commands.checks.has_permissions(administrator=True)
+    async def clone(
+        self,
+        interaction: discord.Interaction,
+        user_editable: bool,
+        channel_limit: int = 100,
+        category_name: str = "Voice Generator",
+        voice_channel_name: str = "Voice Generator",
+        create_interface_channel: bool = True,
+        interface_channel_name: str = "VC Roles Interface",
+    ):
+        """Creates a voice channel generator which clones a channel"""
+        if not interaction.guild:
+            return await interaction.response.send_message(
+                "This command can only be used in a server"
+            )
+
+        await interaction.response.defer()
+        data = await self.create_channels(
+            interaction,
+            category_name,
+            voice_channel_name,
+            create_interface_channel,
+            interface_channel_name,
+        )
+        if not data:
+            return
+        category = data[0]
+        voice_channel = data[1]
+        interface_channel = data[2]
+        interface_message = data[3]
+
+        await self.client.db.update_generator(
+            interaction.guild.id,
+            voice_channel.id,
+            category_id=str(category.id),
+            interface_channel=str(interface_channel.id) if interface_channel else None,
+            interface_message=str(interface_message.id) if interface_message else None,
+            gen_type=VoiceGeneratorType.CLONED,
+            default_options=[VoiceGeneratorOption.EDITABLE] if user_editable else [],
+            channel_limit=channel_limit,
+        )
+
+        creation_embed = discord.Embed(
+            color=discord.Color.green(),
+            title="**Voice Generator Setup - Cloned**",
+            description=f"The category **{category.name}**, voice channel {voice_channel.mention}{f', and interface channel {interface_channel.mention}' if interface_channel else ''} have been created.\n Join the voice channel to generate a voice channel.",
+        )
+        await interaction.followup.send(embed=creation_embed)
+
+        return self.client.incr_counter("voice_generator_create")
+
+    @create_commands.command()
+    @app_commands.describe(
+        category_name="Name of generator category",
+        generated_channel_name="Name of voice channel variables: {username}, {count}",
+        interface_channel_name="Name of interface channel",
+        user_editable="Whether users can edit their generated channel",
+        channel_limit="The maximum of generated channels allowed",
+        create_interface_channel="Whether to create an interface channel",
+    )
+    @check_any(command_available, is_owner)
+    @app_commands.checks.bot_has_permissions(manage_channels=True)
+    @app_commands.checks.has_permissions(administrator=True)
+    async def custom_name(
+        self,
+        interaction: discord.Interaction,
+        user_editable: bool,
+        generated_channel_name: str,
+        channel_limit: int,
+        category_name: str = "Voice Generator",
+        create_interface_channel: bool = True,
+        interface_channel_name: str = "VC Roles Interface",
+        voice_channel_name: str = "Voice Generator",
+    ):
+        """Creates a voice channel generator with custom name"""
+        if not interaction.guild:
+            return await interaction.response.send_message(
+                "This command can only be used in a server"
+            )
+
+        await interaction.response.defer()
+        data = await self.create_channels(
+            interaction,
+            category_name,
+            voice_channel_name,
+            create_interface_channel,
+            interface_channel_name,
+        )
+        if not data:
+            return
+        category = data[0]
+        voice_channel = data[1]
+        interface_channel = data[2]
+        interface_message = data[3]
+
+        await self.client.db.update_generator(
+            interaction.guild.id,
+            voice_channel.id,
+            category_id=str(category.id),
+            interface_channel=str(interface_channel.id) if interface_channel else None,
+            interface_message=str(interface_message.id) if interface_message else None,
+            gen_type=VoiceGeneratorType.CUSTOM_NAME,
+            default_options=[VoiceGeneratorOption.EDITABLE] if user_editable else [],
+            channel_limit=channel_limit,
+            channel_name=generated_channel_name,
+        )
+
+        creation_embed = discord.Embed(
+            color=discord.Color.green(),
+            title="**Numbered Voice Generator Setup**",
+            description=f"The category **{category.name}**, voice channel {voice_channel.mention}{f', and interface channel {interface_channel.mention}' if interface_channel else ''} have been created.\n Join the voice channel to generate a voice channel.",
         )
         await interaction.followup.send(embed=creation_embed)
 

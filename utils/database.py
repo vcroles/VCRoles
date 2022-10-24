@@ -185,6 +185,7 @@ class DatabaseUtils:
         default_user_limit: Optional[int] = None,
         channel_limit: Optional[int] = None,
         default_role_id: Optional[str] = None,
+        channel_name: Optional[str] = None,
     ) -> None:
         data: VoiceGeneratorUpdateInput = {}
 
@@ -209,6 +210,9 @@ class DatabaseUtils:
         if default_role_id is not None:
             data["defaultRole"] = default_role_id
 
+        if channel_name is not None:
+            data["channelName"] = channel_name
+
         res = await self.db.voicegenerator.update(
             where={
                 "guildId_generatorId": {
@@ -224,8 +228,7 @@ class DatabaseUtils:
                     "guildId": str(guild_id),
                     "generatorId": str(generator_id),
                     "categoryId": str(category_id),
-                    "interfaceChannel": data.get("interfaceChannel"),
-                    "interfaceMessage": data.get("interfaceMessage"),
+                    **data,
                 }
             )
 

@@ -1,4 +1,5 @@
 import discord
+
 from .database import DatabaseUtils
 
 
