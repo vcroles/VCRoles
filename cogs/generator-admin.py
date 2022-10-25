@@ -466,7 +466,6 @@ class VoiceGen(commands.Cog):
         option="The option to enable/disable.",
         state="The state to set the option to.",
     )
-    @commands.bot_has_permissions(manage_channels=True)
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
     async def toggle(
@@ -515,7 +514,6 @@ class VoiceGen(commands.Cog):
     @app_commands.describe(
         generator="The generator channel to edit.",
     )
-    @commands.bot_has_permissions(manage_channels=True)
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
     async def options(
@@ -547,6 +545,46 @@ class VoiceGen(commands.Cog):
             await interaction.response.send_message(
                 f"There are no default enabled options for {generator.mention}"
             )
+
+    @generator_commands.command(name="role")
+    @app_commands.describe(
+        default_role="The default role the bot edits permissions for",
+        generator="The generator channel to edit.",
+    )
+    @check_any(command_available, is_owner)
+    @app_commands.checks.has_permissions(administrator=True)
+    async def set_role(
+        self,
+        interaction: discord.Interaction,
+        generator: discord.VoiceChannel,
+        default_role: discord.Role,
+    ):
+        """Sets the default role the bot edits permissions for"""
+
+        if not interaction.guild:
+            return await interaction.response.send_message(
+                "This command can only be used in a server"
+            )
+
+        gen_data = await self.client.db.get_generator(
+            interaction.guild.id, generator.id
+        )
+
+        if not gen_data:
+            return await interaction.response.send_message(
+                "Please select a valid generator channel"
+            )
+
+        await self.client.db.update_generator(
+            interaction.guild.id,
+            generator.id,
+            generator.category.id if generator.category else "",
+            default_role_id=str(default_role.id),
+        )
+
+        await interaction.response.send_message(
+            f"Set the default permission role for {generator.mention} to `@{default_role.name}`"
+        )
 
 
 async def setup(client: VCRolesClient):
