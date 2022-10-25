@@ -151,6 +151,7 @@ class VoiceGen(commands.Cog):
         user_editable="Whether users can edit their generated channel",
         channel_limit="The maximum of generated channels allowed",
         create_interface_channel="Whether to create an interface channel",
+        default_user_limit="The default user limit for created channels.",
     )
     @check_any(command_available, is_owner)
     @app_commands.checks.bot_has_permissions(manage_channels=True)
@@ -164,6 +165,7 @@ class VoiceGen(commands.Cog):
         voice_channel_name: str = "Voice Generator",
         create_interface_channel: bool = True,
         interface_channel_name: str = "VC Roles Interface",
+        default_user_limit: int = 0,
     ):
         """Creates a voice channel generator"""
         if not interaction.guild:
@@ -200,6 +202,7 @@ class VoiceGen(commands.Cog):
             if user_editable
             else [VoiceGeneratorOption.OWNER],
             channel_limit=channel_limit,
+            default_user_limit=default_user_limit,
         )
 
         creation_embed = discord.Embed(
@@ -220,6 +223,7 @@ class VoiceGen(commands.Cog):
         channel_limit="The maximum of generated channels allowed",
         create_interface_channel="Whether to create an interface channel",
         voice_channel_name="Name of joinable channel",
+        default_user_limit="The default user limit for created channels.",
     )
     @check_any(command_available, is_owner)
     @app_commands.checks.bot_has_permissions(manage_channels=True)
@@ -234,6 +238,7 @@ class VoiceGen(commands.Cog):
         create_interface_channel: bool = True,
         interface_channel_name: str = "VC Roles Interface",
         voice_channel_name: str = "Voice Generator",
+        default_user_limit: int = 0,
     ):
         """Creates a numbered voice channel generator"""
         if not interaction.guild:
@@ -271,6 +276,7 @@ class VoiceGen(commands.Cog):
             else [VoiceGeneratorOption.OWNER],
             channel_limit=channel_limit,
             channel_name=generated_channel_name,
+            default_user_limit=default_user_limit,
         )
 
         creation_embed = discord.Embed(
@@ -359,6 +365,7 @@ class VoiceGen(commands.Cog):
         channel_limit="The maximum of generated channels allowed",
         create_interface_channel="Whether to create an interface channel",
         voice_channel_name="The name of the generating channel",
+        default_user_limit="The default user limit for created channels.",
     )
     @check_any(command_available, is_owner)
     @app_commands.checks.bot_has_permissions(manage_channels=True)
@@ -373,6 +380,7 @@ class VoiceGen(commands.Cog):
         create_interface_channel: bool = True,
         interface_channel_name: str = "VC Roles Interface",
         voice_channel_name: str = "Voice Generator",
+        default_user_limit: int = 0,
     ):
         """Creates a voice channel generator with custom name"""
         if not interaction.guild:
@@ -410,6 +418,7 @@ class VoiceGen(commands.Cog):
             else [VoiceGeneratorOption.OWNER],
             channel_limit=channel_limit,
             channel_name=generated_channel_name,
+            default_user_limit=default_user_limit,
         )
 
         creation_embed = discord.Embed(

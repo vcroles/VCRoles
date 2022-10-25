@@ -98,6 +98,7 @@ class Generator:
                     ),
                     **overwrites,
                 },
+                user_limit=gen_data.defaultUserLimit,
             )
         elif gen_data.type == VoiceGeneratorType.CUSTOM_NAME:
             channel = await member.guild.create_voice_channel(
@@ -112,6 +113,7 @@ class Generator:
                     ),
                     **overwrites,
                 },
+                user_limit=gen_data.defaultUserLimit,
             )
         else:
             channel = await member.guild.create_voice_channel(
@@ -124,6 +126,7 @@ class Generator:
                     ),
                     **overwrites,
                 },
+                user_limit=gen_data.defaultUserLimit,
             )
 
         if VoiceGeneratorOption.TEXT in gen_data.defaultOptions:
