@@ -16,14 +16,6 @@ class VoiceGen(commands.Cog):
         self.client = client
 
     async def remove_generator(self, data: VoiceGenerator) -> None:
-        if data.categoryId:
-            try:
-                category = await self.client.fetch_channel(int(data.categoryId))
-                if category and isinstance(category, discord.CategoryChannel):
-                    await category.delete()
-            except:
-                pass
-
         if data.generatorId:
             try:
                 generator_channel = await self.client.fetch_channel(
@@ -45,6 +37,14 @@ class VoiceGen(commands.Cog):
                     interface_channel, discord.TextChannel
                 ):
                     await interface_channel.delete()
+            except:
+                pass
+
+        if data.categoryId:
+            try:
+                category = await self.client.fetch_channel(int(data.categoryId))
+                if category and isinstance(category, discord.CategoryChannel):
+                    await category.delete()
             except:
                 pass
 
