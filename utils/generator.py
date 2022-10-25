@@ -213,7 +213,7 @@ class GeneratorUtils:
 
         return f"Decreased channel member limit to {user_limit - 1 if user_limit > 0 else user_limit}!"
 
-    async def rename(self, user: discord.Member, name: str):
+    async def rename(self, user: discord.Member, name: str) -> str:
         if (
             not user.voice
             or not user.voice.channel
@@ -232,3 +232,67 @@ class GeneratorUtils:
             return "Bot permission error."
 
         return f"Changed the channel name to `{name}`!"
+
+    async def restrict(
+        self, user: discord.Member, mentionables: list[discord.Role | discord.Member]
+    ) -> str:
+        if (
+            not user.voice
+            or not user.voice.channel
+            or not await self.in_voice_channel(user)
+        ):
+            return self.channel_failure
+
+        gen_data = await self.db.get_generated_channel(user.voice.channel.id)
+
+        if not gen_data or not gen_data.userEditable:
+            return self.editable_failure
+
+        overwrites = user.voice.channel.overwrites
+
+        for mentionable in mentionables:
+            try:
+                overwrites[mentionable].connect = False
+            except KeyError:
+                overwrites[mentionable] = discord.PermissionOverwrite(connect=False)
+
+        try:
+            await user.voice.channel.edit(overwrites=overwrites)
+        except discord.Forbidden:
+            return "Bot permission error."
+
+        return f"Restricted: {', '.join([m.mention for m in mentionables])}!"
+
+    async def permit(
+        self, user: discord.Member, mentionables: list[discord.Role | discord.Member]
+    ) -> str:
+        if (
+            not user.voice
+            or not user.voice.channel
+            or not await self.in_voice_channel(user)
+        ):
+            return self.channel_failure
+
+        gen_data = await self.db.get_generated_channel(user.voice.channel.id)
+
+        if not gen_data or not gen_data.userEditable:
+            return self.editable_failure
+
+        overwrites = user.voice.channel.overwrites
+
+        for mentionable in mentionables:
+            try:
+                overwrites[mentionable].connect = True
+            except KeyError:
+                overwrites[mentionable] = discord.PermissionOverwrite(connect=True)
+            try:
+                overwrites[mentionable].view_channel = True
+            except KeyError:
+                overwrites[mentionable] = discord.PermissionOverwrite(view_channel=True)
+
+        try:
+            await user.voice.channel.edit(overwrites=overwrites)
+        except discord.Forbidden:
+            return "Bot permission error."
+
+        return f"Permitted: {', '.join([m.mention for m in mentionables])}!"

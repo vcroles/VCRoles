@@ -129,6 +129,10 @@ class Interface(discord.ui.View):
     ):
         await interaction.response.send_modal(RenameModal(self.db))
 
+    # Waiting for discord.py https://github.com/Rapptz/discord.py/pull/9013 to be
+    # merged and released to add restrict/permit roles/members functionality to
+    # interface view.
+
 
 class RenameModal(discord.ui.Modal, title="Rename Channel"):
     name: discord.ui.TextInput[Any] = discord.ui.TextInput(label="New Name")
