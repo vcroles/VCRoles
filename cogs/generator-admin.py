@@ -196,7 +196,9 @@ class VoiceGen(commands.Cog):
             interface_channel=str(interface_channel.id) if interface_channel else None,
             interface_message=str(interface_message.id) if interface_message else None,
             gen_type=VoiceGeneratorType.DEFAULT,
-            default_options=[VoiceGeneratorOption.EDITABLE] if user_editable else [],
+            default_options=[VoiceGeneratorOption.EDITABLE, VoiceGeneratorOption.OWNER]
+            if user_editable
+            else [VoiceGeneratorOption.OWNER],
             channel_limit=channel_limit,
         )
 
@@ -264,7 +266,9 @@ class VoiceGen(commands.Cog):
             interface_channel=str(interface_channel.id) if interface_channel else None,
             interface_message=str(interface_message.id) if interface_message else None,
             gen_type=VoiceGeneratorType.NUMBERED,
-            default_options=[VoiceGeneratorOption.EDITABLE] if user_editable else [],
+            default_options=[VoiceGeneratorOption.EDITABLE, VoiceGeneratorOption.OWNER]
+            if user_editable
+            else [VoiceGeneratorOption.OWNER],
             channel_limit=channel_limit,
             channel_name=generated_channel_name,
         )
@@ -331,7 +335,9 @@ class VoiceGen(commands.Cog):
             interface_channel=str(interface_channel.id) if interface_channel else None,
             interface_message=str(interface_message.id) if interface_message else None,
             gen_type=VoiceGeneratorType.CLONED,
-            default_options=[VoiceGeneratorOption.EDITABLE] if user_editable else [],
+            default_options=[VoiceGeneratorOption.EDITABLE, VoiceGeneratorOption.OWNER]
+            if user_editable
+            else [VoiceGeneratorOption.OWNER],
             channel_limit=channel_limit,
         )
 
@@ -352,6 +358,7 @@ class VoiceGen(commands.Cog):
         user_editable="Whether users can edit their generated channel",
         channel_limit="The maximum of generated channels allowed",
         create_interface_channel="Whether to create an interface channel",
+        voice_channel_name="The name of the generating channel",
     )
     @check_any(command_available, is_owner)
     @app_commands.checks.bot_has_permissions(manage_channels=True)
@@ -398,7 +405,9 @@ class VoiceGen(commands.Cog):
             interface_channel=str(interface_channel.id) if interface_channel else None,
             interface_message=str(interface_message.id) if interface_message else None,
             gen_type=VoiceGeneratorType.CUSTOM_NAME,
-            default_options=[VoiceGeneratorOption.EDITABLE] if user_editable else [],
+            default_options=[VoiceGeneratorOption.EDITABLE, VoiceGeneratorOption.OWNER]
+            if user_editable
+            else [VoiceGeneratorOption.OWNER],
             channel_limit=channel_limit,
             channel_name=generated_channel_name,
         )

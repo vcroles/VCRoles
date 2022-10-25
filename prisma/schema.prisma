@@ -54,6 +54,7 @@ enum VoiceGeneratorOption {
     HIDE
     TEXT
     EDITABLE
+    OWNER
 }
 
 model VoiceGenerator {

@@ -117,6 +117,19 @@ class GenInterface(commands.Cog):
     # merged and released to add restrict/permit roles/members functionality to
     # commands.
 
+    @interface_commands.command(name="claim")
+    async def claim_channel(self, interaction: discord.Interaction):
+        """Claim a generated channel (if owner has left)"""
+        if not isinstance(interaction.user, discord.Member):
+            return await interaction.response.send_message(
+                "You must be in a guild to use this."
+            )
+
+        message = await self.utils.claim(interaction.user)
+        await interaction.response.send_message(message, ephemeral=True)
+
+        return self.client.incr_counter("interface_claim")
+
 
 async def setup(client: VCRolesClient):
     await client.add_cog(GenInterface(client))

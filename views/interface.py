@@ -133,6 +133,24 @@ class Interface(discord.ui.View):
     # merged and released to add restrict/permit roles/members functionality to
     # interface view.
 
+    @discord.ui.button(
+        label="Claim", style=discord.ButtonStyle.green, custom_id="voicegen:claim"
+    )
+    async def claim_channel(
+        self, interaction: discord.Interaction, button: discord.ui.Button[Any]
+    ):
+        if not isinstance(interaction.user, discord.Member):
+            return await interaction.response.send_message(
+                "You must be in a guild to use this."
+            )
+
+        message = await self.utils.claim(interaction.user)
+
+        await interaction.response.send_message(
+            message,
+            ephemeral=True,
+        )
+
 
 class RenameModal(discord.ui.Modal, title="Rename Channel"):
     name: discord.ui.TextInput[Any] = discord.ui.TextInput(label="New Name")
