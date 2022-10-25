@@ -1,3 +1,5 @@
+from typing import Optional
+
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -99,6 +101,21 @@ class GenInterface(commands.Cog):
 
         return self.client.incr_counter("interface_decrease")
 
+    @interface_commands.command(name="limit")
+    async def set_limit(
+        self, interaction: discord.Interaction, limit: app_commands.Range[int, 0, 100]
+    ):
+        """Set the user limit for your generated voice channel"""
+        if not isinstance(interaction.user, discord.Member):
+            return await interaction.response.send_message(
+                "You must be in a guild to use this."
+            )
+
+        message = await self.utils.set_limit(interaction.user, limit)
+        await interaction.response.send_message(message, ephemeral=True)
+
+        return self.client.incr_counter("interface_decrease")
+
     @interface_commands.command(name="rename")
     @app_commands.describe(name="The new name.")
     async def rename_channel(self, interaction: discord.Interaction, name: str):
@@ -129,6 +146,40 @@ class GenInterface(commands.Cog):
         await interaction.response.send_message(message, ephemeral=True)
 
         return self.client.incr_counter("interface_claim")
+
+    @interface_commands.command(name="invite")
+    async def invite_user(
+        self,
+        interaction: discord.Interaction,
+        user: discord.Member,
+        message: Optional[str],
+    ):
+        """Invite a user to your channel"""
+        if not isinstance(interaction.user, discord.Member):
+            return await interaction.response.send_message(
+                "You must be in a guild to use this."
+            )
+
+        return_message = await self.utils.permit(interaction.user, [user])
+        if (
+            not interaction.user.voice
+            or not interaction.user.voice.channel
+            or not await self.utils.in_voice_channel(interaction.user)
+            or return_message == self.utils.owner_failure
+        ):
+            return await interaction.response.send_message(
+                return_message, ephemeral=True
+            )
+
+        if not message:
+            message = f"{interaction.user.mention} wants you to join them in {interaction.user.voice.channel.mention}"
+
+        try:
+            await user.send(message)
+        except:
+            return_message += f"\nCould not DM {user.display_name}"
+
+        await interaction.response.send_message(return_message, ephemeral=True)
 
 
 async def setup(client: VCRolesClient):

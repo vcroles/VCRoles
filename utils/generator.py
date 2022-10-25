@@ -244,6 +244,34 @@ class GeneratorUtils:
 
         return f"Decreased channel member limit to {user_limit - 1 if user_limit > 0 else user_limit}!"
 
+    async def set_limit(self, user: discord.Member, user_limit: int) -> str:
+        if (
+            not user.voice
+            or not user.voice.channel
+            or not await self.in_voice_channel(user)
+            or not isinstance(user.voice.channel, discord.VoiceChannel)
+        ):
+            return self.channel_failure
+
+        if user_limit < 0:
+            return "Limit cannot be less than 0"
+
+        gen_data = await self.db.get_generated_channel(user.voice.channel.id)
+
+        if not gen_data:
+            return self.channel_failure
+        if not gen_data.userEditable:
+            return self.editable_failure
+        if not self.is_owner(user, gen_data):
+            return self.owner_failure
+
+        try:
+            await user.voice.channel.edit(user_limit=user_limit)
+        except discord.Forbidden:
+            return "Bot permission error."
+
+        return f"Set channel member limit to {user_limit}!"
+
     async def rename(self, user: discord.Member, name: str) -> str:
         if (
             not user.voice
