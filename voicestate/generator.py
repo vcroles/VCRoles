@@ -20,6 +20,25 @@ class Generator:
         if isinstance(user_channel, discord.StageChannel):
             return
 
+        channel_data = await self.client.db.get_generated_channel(user_channel.id)
+        # add new user to text channel permissions
+        if channel_data and channel_data.textChannelId:
+            user_text_channel = self.client.get_channel(int(channel_data.textChannelId))
+            if not user_text_channel or not isinstance(
+                user_text_channel, discord.TextChannel
+            ):
+                pass
+            else:
+                text_overwrites = user_text_channel.overwrites
+                try:
+                    text_overwrites[member].view_channel = True
+                    text_overwrites[member].send_messages = True
+                except KeyError:
+                    text_overwrites[member] = discord.PermissionOverwrite(
+                        view_channel=True, send_messages=True
+                    )
+                await user_text_channel.edit(overwrites=text_overwrites)
+
         gen_data = await self.client.db.get_generator(member.guild.id, user_channel.id)
 
         if not gen_data:
@@ -39,6 +58,30 @@ class Generator:
             finally:
                 return
 
+        if gen_data.defaultRole:
+            default_role = member.guild.get_role(int(gen_data.defaultRole))
+            if not default_role:
+                default_role = member.guild.default_role
+        else:
+            default_role = member.guild.default_role
+
+        overwrites: dict[
+            discord.Role | discord.Member, discord.PermissionOverwrite
+        ] = {}
+
+        if VoiceGeneratorOption.LOCK in gen_data.defaultOptions:
+            try:
+                overwrites[default_role].connect = False
+            except KeyError:
+                overwrites[default_role] = discord.PermissionOverwrite(connect=False)
+        if VoiceGeneratorOption.HIDE in gen_data.defaultOptions:
+            try:
+                overwrites[default_role].view_channel = False
+            except KeyError:
+                overwrites[default_role] = discord.PermissionOverwrite(
+                    view_channel=False
+                )
+
         if gen_data.type == VoiceGeneratorType.CLONED:
             channel = await user_channel.clone(
                 name=f"[{user_channel.name}] #{count+1}",
@@ -53,6 +96,7 @@ class Generator:
                     member.guild.me: discord.PermissionOverwrite(
                         manage_channels=True, connect=True, view_channel=True
                     ),
+                    **overwrites,
                 },
             )
         elif gen_data.type == VoiceGeneratorType.CUSTOM_NAME:
@@ -66,6 +110,7 @@ class Generator:
                     member.guild.me: discord.PermissionOverwrite(
                         manage_channels=True, connect=True, view_channel=True
                     ),
+                    **overwrites,
                 },
             )
         else:
@@ -77,8 +122,32 @@ class Generator:
                     member.guild.me: discord.PermissionOverwrite(
                         manage_channels=True, connect=True, view_channel=True
                     ),
+                    **overwrites,
                 },
             )
+
+        if VoiceGeneratorOption.TEXT in gen_data.defaultOptions:
+            text_channel = await member.guild.create_text_channel(
+                name=f"{member.display_name}-text",
+                category=user_channel.category,
+                reason="Voice Channel Generator",
+                overwrites={
+                    member.guild.me: discord.PermissionOverwrite(
+                        manage_channels=True, send_messages=True, view_channel=True
+                    ),
+                    member: discord.PermissionOverwrite(
+                        view_channel=True, send_messages=True
+                    ),
+                    default_role: discord.PermissionOverwrite(
+                        view_channel=False, send_messages=False
+                    ),
+                },
+            )
+            await text_channel.send(
+                f"{member.mention} this is your generated text channel."
+            )
+        else:
+            text_channel = None
 
         try:
             await member.move_to(channel)
@@ -86,7 +155,14 @@ class Generator:
             pass
 
         await self.client.db.create_generated_channel(
-            member.guild.id, user_channel.id, channel.id, member.id, editable
+            member.guild.id,
+            user_channel.id,
+            channel.id,
+            member.id,
+            editable,
+            text_channel_id=str(text_channel.id)
+            if text_channel is not None
+            else text_channel,
         )
 
     async def leave(
@@ -96,8 +172,27 @@ class Generator:
     ):
         data = await self.client.db.get_generated_channel(user_channel.id)
 
-        if data:
-            if not user_channel.members:
-                await user_channel.delete()
+        if not data:
+            return
 
-                await self.client.db.delete_generated_channel(user_channel.id)
+        if not user_channel.members:
+            await user_channel.delete()
+            if data.textChannelId:
+                text_channel = self.client.get_channel(int(data.textChannelId))
+                if text_channel and isinstance(text_channel, discord.TextChannel):
+                    await text_channel.delete()
+
+            await self.client.db.delete_generated_channel(user_channel.id)
+        else:
+            if data.textChannelId:
+                text_channel = self.client.get_channel(int(data.textChannelId))
+                if text_channel and isinstance(text_channel, discord.TextChannel):
+                    overwrites = text_channel.overwrites
+                    try:
+                        overwrites[member].send_messages = False
+                        overwrites[member].view_channel = False
+                    except KeyError:
+                        overwrites[member] = discord.PermissionOverwrite(
+                            send_messages=False, view_channel=False
+                        )
+                    await text_channel.edit(overwrites=overwrites)

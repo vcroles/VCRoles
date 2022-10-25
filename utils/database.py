@@ -275,6 +275,7 @@ class DatabaseUtils:
         channel_id: DiscordID,
         owner_id: DiscordID,
         user_editable: bool = True,
+        text_channel_id: Optional[str] = None,
     ) -> GeneratedChannel:
         data = await self.db.generatedchannel.create(
             data={
@@ -289,6 +290,7 @@ class DatabaseUtils:
                 "channelId": str(channel_id),
                 "ownerId": str(owner_id),
                 "userEditable": user_editable,
+                "textChannelId": text_channel_id,
             }
         )
         return data

@@ -413,6 +413,7 @@ class VoiceGen(commands.Cog):
         return self.client.incr_counter("voice_generator_create")
 
     @generator_commands.command()
+    @app_commands.describe(generator="The generator channel to edit.")
     @commands.bot_has_permissions(manage_channels=True)
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
@@ -449,6 +450,94 @@ class VoiceGen(commands.Cog):
         await interaction.followup.send(embed=embed)
 
         return self.client.incr_counter("voice_generator_remove")
+
+    @generator_commands.command()
+    @app_commands.describe(
+        generator="The generator channel to edit.",
+        option="The option to enable/disable.",
+        state="The state to set the option to.",
+    )
+    @commands.bot_has_permissions(manage_channels=True)
+    @check_any(command_available, is_owner)
+    @app_commands.checks.has_permissions(administrator=True)
+    async def toggle(
+        self,
+        interaction: discord.Interaction,
+        generator: discord.VoiceChannel,
+        option: VoiceGeneratorOption,
+        state: bool,
+    ):
+        """Toggles a default option for a voice generator."""
+        if not interaction.guild:
+            return await interaction.response.send_message(
+                "This command can only be used in a server"
+            )
+
+        gen_data = await self.client.db.get_generator(
+            interaction.guild.id, generator.id
+        )
+
+        if not gen_data:
+            return await interaction.response.send_message(
+                "Please select a valid generator channel"
+            )
+
+        if state is True and option not in gen_data.defaultOptions:
+            gen_data.defaultOptions.append(option)
+        elif state is False and option in gen_data.defaultOptions:
+            gen_data.defaultOptions.remove(option)
+        else:
+            return await interaction.response.send_message(
+                f"{option} is already set to {state} for {generator.mention}."
+            )
+
+        await self.client.db.update_generator(
+            interaction.guild.id,
+            generator.id,
+            generator.category.id if generator.category else "",
+            default_options=gen_data.defaultOptions,
+        )
+
+        await interaction.response.send_message(
+            f"Set {option} to {state} in {generator.mention}"
+        )
+
+    @generator_commands.command()
+    @app_commands.describe(
+        generator="The generator channel to edit.",
+    )
+    @commands.bot_has_permissions(manage_channels=True)
+    @check_any(command_available, is_owner)
+    @app_commands.checks.has_permissions(administrator=True)
+    async def options(
+        self,
+        interaction: discord.Interaction,
+        generator: discord.VoiceChannel,
+    ):
+        """Lists the default options set for a generator channel."""
+
+        if not interaction.guild:
+            return await interaction.response.send_message(
+                "This command can only be used in a server"
+            )
+
+        gen_data = await self.client.db.get_generator(
+            interaction.guild.id, generator.id
+        )
+
+        if not gen_data:
+            return await interaction.response.send_message(
+                "Please select a valid generator channel"
+            )
+
+        if gen_data.defaultOptions:
+            await interaction.response.send_message(
+                f"The currently enabled for {generator.mention} options are: {', '.join([option for option in gen_data.defaultOptions])}"
+            )
+        else:
+            await interaction.response.send_message(
+                f"There are no default enabled options for {generator.mention}"
+            )
 
 
 async def setup(client: VCRolesClient):

@@ -230,6 +230,8 @@ class GeneratorUtils:
             await user.voice.channel.edit(name=name)
         except discord.Forbidden:
             return "Bot permission error."
+        except discord.HTTPException:
+            return "Unable to complete currently. Try again in a minute."
 
         return f"Changed the channel name to `{name}`!"
 
