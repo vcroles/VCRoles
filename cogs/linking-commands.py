@@ -64,7 +64,7 @@ class Linking(commands.Cog):
     ):
         """Use to unlink a channel from a role"""
 
-        data = await self.linking.link(
+        data = await self.linking.unlink(
             interaction, channel, role, infer_link_type(channel), RoleCategory.REGULAR
         )
 
