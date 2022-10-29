@@ -10,8 +10,10 @@ class GeneratorUtils:
 
     def __init__(self, db: DatabaseUtils) -> None:
         self.db = db
-        self.channel_failure = "You must be in a voice channel to use this command."
-        self.editable_failure = "You are not allowed to edit the channel."
+        self.channel_failure = (
+            "You must be in a valid voice channel to use this command."
+        )
+        self.editable_failure = "You are not allowed to edit this channel."
         self.owner_failure = "You must be the channel owner to edit."
 
     async def in_voice_channel(self, user: discord.Member) -> bool:

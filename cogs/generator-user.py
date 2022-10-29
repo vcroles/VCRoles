@@ -186,6 +186,11 @@ class GenInterface(commands.Cog):
                 "You must be in a guild to use this."
             )
 
+        if not await self.utils.in_voice_channel(interaction.user):
+            return await interaction.response.send_message(
+                self.utils.channel_failure, ephemeral=True
+            )
+
         await interaction.response.send_message(
             ephemeral=True,
             view=MentionableView(
@@ -200,6 +205,11 @@ class GenInterface(commands.Cog):
         if not isinstance(interaction.user, discord.Member):
             return await interaction.response.send_message(
                 "You must be in a guild to use this."
+            )
+
+        if not await self.utils.in_voice_channel(interaction.user):
+            return await interaction.response.send_message(
+                self.utils.channel_failure, ephemeral=True
             )
 
         await interaction.response.send_message(
