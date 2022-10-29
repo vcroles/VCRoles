@@ -38,7 +38,7 @@ class Interface(discord.ui.View):
     ):
         if not isinstance(interaction.user, discord.Member):
             return await interaction.response.send_message(
-                "You must be in a guild to use this."
+                "You must be in a guild to use this.", ephemeral=True
             )
 
         message = await self.utils.lock(interaction.user)
@@ -55,7 +55,7 @@ class Interface(discord.ui.View):
     ):
         if not isinstance(interaction.user, discord.Member):
             return await interaction.response.send_message(
-                "You must be in a guild to use this."
+                "You must be in a guild to use this.", ephemeral=True
             )
 
         message = await self.utils.unlock(interaction.user)
@@ -72,7 +72,7 @@ class Interface(discord.ui.View):
     ):
         if not isinstance(interaction.user, discord.Member):
             return await interaction.response.send_message(
-                "You must be in a guild to use this."
+                "You must be in a guild to use this.", ephemeral=True
             )
 
         message = await self.utils.hide(interaction.user)
@@ -89,7 +89,7 @@ class Interface(discord.ui.View):
     ):
         if not isinstance(interaction.user, discord.Member):
             return await interaction.response.send_message(
-                "You must be in a guild to use this."
+                "You must be in a guild to use this.", ephemeral=True
             )
 
         message = await self.utils.unhide(interaction.user)
@@ -106,7 +106,7 @@ class Interface(discord.ui.View):
     ):
         if not isinstance(interaction.user, discord.Member):
             return await interaction.response.send_message(
-                "You must be in a guild to use this."
+                "You must be in a guild to use this.", ephemeral=True
             )
 
         message = await self.utils.increase_limit(interaction.user)
@@ -123,7 +123,7 @@ class Interface(discord.ui.View):
     ):
         if not isinstance(interaction.user, discord.Member):
             return await interaction.response.send_message(
-                "You must be in a guild to use this."
+                "You must be in a guild to use this.", ephemeral=True
             )
 
         message = await self.utils.decrease_limit(interaction.user)
@@ -149,7 +149,7 @@ class Interface(discord.ui.View):
     ):
         if not isinstance(interaction.user, discord.Member):
             return await interaction.response.send_message(
-                "You must be in a guild to use this."
+                "You must be in a guild to use this.", ephemeral=True
             )
 
         message = await self.utils.claim(interaction.user)
@@ -181,7 +181,7 @@ class MentionableDropdown(discord.ui.MentionableSelect[Self]):
     async def callback(self, interaction: discord.Interaction) -> None:
         if not isinstance(interaction.user, discord.Member):
             return await interaction.response.send_message(
-                "You must be in a guild to use this."
+                "You must be in a guild to use this.", ephemeral=True
             )
 
         values = [x for x in self.values if not isinstance(x, discord.User)]
@@ -208,7 +208,7 @@ class RenameModal(discord.ui.Modal, title="Rename Channel"):
     async def on_submit(self, interaction: discord.Interaction):
         if not isinstance(interaction.user, discord.Member):
             return await interaction.response.send_message(
-                "You must be in a guild to use this."
+                "You must be in a guild to use this.", ephemeral=True
             )
 
         message = await self.utils.rename(interaction.user, str(self.name))

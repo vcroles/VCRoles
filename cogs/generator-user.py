@@ -23,7 +23,7 @@ class GenInterface(commands.Cog):
         """Lock your generated voice channel"""
         if not isinstance(interaction.user, discord.Member):
             return await interaction.response.send_message(
-                "You must be in a guild to use this."
+                "You must be in a guild to use this.", ephemeral=True
             )
 
         message = await self.utils.lock(interaction.user)
@@ -38,7 +38,7 @@ class GenInterface(commands.Cog):
         """Unlock your generated voice channel"""
         if not isinstance(interaction.user, discord.Member):
             return await interaction.response.send_message(
-                "You must be in a guild to use this."
+                "You must be in a guild to use this.", ephemeral=True
             )
 
         message = await self.utils.unlock(interaction.user)
@@ -53,7 +53,7 @@ class GenInterface(commands.Cog):
         """Hide your generated voice channel"""
         if not isinstance(interaction.user, discord.Member):
             return await interaction.response.send_message(
-                "You must be in a guild to use this."
+                "You must be in a guild to use this.", ephemeral=True
             )
 
         message = await self.utils.hide(interaction.user)
@@ -66,7 +66,7 @@ class GenInterface(commands.Cog):
         """Show your generated voice channel"""
         if not isinstance(interaction.user, discord.Member):
             return await interaction.response.send_message(
-                "You must be in a guild to use this."
+                "You must be in a guild to use this.", ephemeral=True
             )
 
         message = await self.utils.unhide(interaction.user)
@@ -81,7 +81,7 @@ class GenInterface(commands.Cog):
         """Increase your generated voice channel user limit"""
         if not isinstance(interaction.user, discord.Member):
             return await interaction.response.send_message(
-                "You must be in a guild to use this."
+                "You must be in a guild to use this.", ephemeral=True
             )
 
         message = await self.utils.increase_limit(interaction.user)
@@ -94,7 +94,7 @@ class GenInterface(commands.Cog):
         """Decrease your generated voice channel user limit"""
         if not isinstance(interaction.user, discord.Member):
             return await interaction.response.send_message(
-                "You must be in a guild to use this."
+                "You must be in a guild to use this.", ephemeral=True
             )
 
         message = await self.utils.decrease_limit(interaction.user)
@@ -109,7 +109,7 @@ class GenInterface(commands.Cog):
         """Set the user limit for your generated voice channel"""
         if not isinstance(interaction.user, discord.Member):
             return await interaction.response.send_message(
-                "You must be in a guild to use this."
+                "You must be in a guild to use this.", ephemeral=True
             )
 
         message = await self.utils.set_limit(interaction.user, limit)
@@ -123,7 +123,7 @@ class GenInterface(commands.Cog):
         """Rename your generated voice channel"""
         if not isinstance(interaction.user, discord.Member):
             return await interaction.response.send_message(
-                "You must be in a guild to use this."
+                "You must be in a guild to use this.", ephemeral=True
             )
 
         message = await self.utils.rename(interaction.user, name)
@@ -136,7 +136,7 @@ class GenInterface(commands.Cog):
         """Claim a generated channel (if owner has left)"""
         if not isinstance(interaction.user, discord.Member):
             return await interaction.response.send_message(
-                "You must be in a guild to use this."
+                "You must be in a guild to use this.", ephemeral=True
             )
 
         message = await self.utils.claim(interaction.user)
@@ -154,7 +154,7 @@ class GenInterface(commands.Cog):
         """Invite a user to your channel"""
         if not isinstance(interaction.user, discord.Member):
             return await interaction.response.send_message(
-                "You must be in a guild to use this."
+                "You must be in a guild to use this.", ephemeral=True
             )
 
         return_message = await self.utils.permit(interaction.user, [user])
@@ -183,7 +183,7 @@ class GenInterface(commands.Cog):
         """Permits roles/users to join you."""
         if not isinstance(interaction.user, discord.Member):
             return await interaction.response.send_message(
-                "You must be in a guild to use this."
+                "You must be in a guild to use this.", ephemeral=True
             )
 
         if not await self.utils.in_voice_channel(interaction.user):
@@ -204,7 +204,7 @@ class GenInterface(commands.Cog):
         """Restricts roles/users to join you."""
         if not isinstance(interaction.user, discord.Member):
             return await interaction.response.send_message(
-                "You must be in a guild to use this."
+                "You must be in a guild to use this.", ephemeral=True
             )
 
         if not await self.utils.in_voice_channel(interaction.user):
