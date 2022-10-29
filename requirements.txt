@@ -1,4 +1,4 @@
-discord.py[voice]
+git+https://github.com/CDE90/discord.py#egg=discord.py[voice]
 gtts
 mutagen
 git+https://github.com/top-gg/python-sdk/ # topggpy
@@ -10,4 +10,3 @@ prisma
 orjson>=3.5.4 # these are discord.py's speed modules
 aiodns>=1.1
 Brotli
-cchardet==2.1.7

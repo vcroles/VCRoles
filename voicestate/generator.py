@@ -1,8 +1,7 @@
 from string import Template
 
 import discord
-
-from prisma.enums import VoiceGeneratorType, VoiceGeneratorOption
+from prisma.enums import VoiceGeneratorOption, VoiceGeneratorType
 
 from utils.client import VCRolesClient
 from utils.types import JoinableChannel

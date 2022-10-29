@@ -1,6 +1,7 @@
-from typing import Any
+from typing import Any, Literal, Optional
 
 import discord
+from typing_extensions import Self
 
 from utils.database import DatabaseUtils
 from utils.generator import GeneratorUtils
@@ -15,6 +16,17 @@ class Interface(discord.ui.View):
         super().__init__(timeout=None)
         self.db = db
         self.utils = GeneratorUtils(db)
+
+        self.add_item(
+            MentionableDropdown(
+                "Permit Roles/Members", "permit", self.utils, "voicegen:permit"
+            )
+        )
+        self.add_item(
+            MentionableDropdown(
+                "Restrict Roles/Members", "restrict", self.utils, "voicegen:restrict"
+            )
+        )
 
     @discord.ui.button(
         label="Lock",
@@ -129,10 +141,6 @@ class Interface(discord.ui.View):
     ):
         await interaction.response.send_modal(RenameModal(self.db))
 
-    # Waiting for discord.py https://github.com/Rapptz/discord.py/pull/9013 to be
-    # merged and released to add restrict/permit roles/members functionality to
-    # interface view.
-
     @discord.ui.button(
         label="Claim", style=discord.ButtonStyle.green, custom_id="voicegen:claim"
     )
@@ -145,6 +153,43 @@ class Interface(discord.ui.View):
             )
 
         message = await self.utils.claim(interaction.user)
+
+        await interaction.response.send_message(
+            message,
+            ephemeral=True,
+        )
+
+
+class MentionableDropdown(discord.ui.MentionableSelect[Self]):
+    def __init__(
+        self,
+        placeholder: str,
+        action: Literal["restrict", "permit"],
+        utils: GeneratorUtils,
+        custom_id: Optional[str] = None,
+    ) -> None:
+        if custom_id:
+            super().__init__(
+                placeholder=placeholder, max_values=10, custom_id=custom_id
+            )
+        else:
+            super().__init__(placeholder=placeholder, max_values=10)
+
+        self.action: Literal["restrict", "permit"] = action
+        self.utils = utils
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        if not isinstance(interaction.user, discord.Member):
+            return await interaction.response.send_message(
+                "You must be in a guild to use this."
+            )
+
+        values = [x for x in self.values if not isinstance(x, discord.User)]
+
+        if self.action == "permit":
+            message = await self.utils.permit(interaction.user, values)
+        else:
+            message = await self.utils.restrict(interaction.user, values)
 
         await interaction.response.send_message(
             message,

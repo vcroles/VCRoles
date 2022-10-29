@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 
 import discord
 from discord import app_commands
@@ -6,6 +6,7 @@ from discord.ext import commands
 
 from utils import GeneratorUtils
 from utils.client import VCRolesClient
+from views.interface import MentionableDropdown
 
 
 class GenInterface(commands.Cog):
@@ -130,10 +131,6 @@ class GenInterface(commands.Cog):
 
         return self.client.incr_counter("interface_rename")
 
-    # Waiting for discord.py https://github.com/Rapptz/discord.py/pull/9013 to be
-    # merged and released to add restrict/permit roles/members functionality to
-    # commands.
-
     @interface_commands.command(name="claim")
     async def claim_channel(self, interaction: discord.Interaction):
         """Claim a generated channel (if owner has left)"""
@@ -180,6 +177,52 @@ class GenInterface(commands.Cog):
             return_message += f"\nCould not DM {user.display_name}"
 
         await interaction.response.send_message(return_message, ephemeral=True)
+
+    @interface_commands.command(name="permit")
+    async def permit_mentionable(self, interaction: discord.Interaction):
+        """Permits roles/users to join you."""
+        if not isinstance(interaction.user, discord.Member):
+            return await interaction.response.send_message(
+                "You must be in a guild to use this."
+            )
+
+        await interaction.response.send_message(
+            ephemeral=True,
+            view=MentionableView(
+                "Permit Roles/Members", "permit", self.utils, timeout=60
+            ),
+            delete_after=60,
+        )
+
+    @interface_commands.command(name="restrict")
+    async def restrict_mentionable(self, interaction: discord.Interaction):
+        """Restricts roles/users to join you."""
+        if not isinstance(interaction.user, discord.Member):
+            return await interaction.response.send_message(
+                "You must be in a guild to use this."
+            )
+
+        await interaction.response.send_message(
+            ephemeral=True,
+            view=MentionableView(
+                "Restrict Roles/Members", "restrict", self.utils, timeout=60
+            ),
+            delete_after=60,
+        )
+
+
+class MentionableView(discord.ui.View):
+    def __init__(
+        self,
+        placeholder: str,
+        action: Literal["permit", "restrict"],
+        utils: GeneratorUtils,
+        *,
+        timeout: Optional[int] = 180,
+    ):
+        super().__init__(timeout=timeout)
+
+        self.add_item(MentionableDropdown(placeholder, action, utils))
 
 
 async def setup(client: VCRolesClient):
