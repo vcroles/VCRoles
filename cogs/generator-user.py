@@ -154,9 +154,16 @@ class GenInterface(commands.Cog):
         message: Optional[str],
     ):
         """Invite a user to your channel"""
-        if not isinstance(interaction.user, discord.Member):
+        if not isinstance(interaction.user, discord.Member) or not interaction.guild:
             return await interaction.response.send_message(
                 "You must be in a guild to use this.", ephemeral=True
+            )
+
+        is_premium = (await self.client.db.get_guild_data(interaction.guild.id)).premium
+        if not is_premium:
+            return await interaction.response.send_message(
+                "Sorry, you cannot use this command in this server - consider upgrading to premium to unlock this. https://cde90.gumroad.com/l/vcroles",
+                ephemeral=True,
             )
 
         return_message = await self.utils.permit(interaction.user, [user])
@@ -180,6 +187,8 @@ class GenInterface(commands.Cog):
 
         await interaction.response.send_message(return_message, ephemeral=True)
 
+        return self.client.incr_counter("interface_invite")
+
     @interface_commands.command(name="permit")
     async def permit_mentionable(self, interaction: discord.Interaction):
         """Permits roles/users to join you."""
@@ -201,6 +210,8 @@ class GenInterface(commands.Cog):
             delete_after=60,
         )
 
+        return self.client.incr_counter("interface_permit")
+
     @interface_commands.command(name="restrict")
     async def restrict_mentionable(self, interaction: discord.Interaction):
         """Restricts roles/users to join you."""
@@ -221,6 +232,8 @@ class GenInterface(commands.Cog):
             ),
             delete_after=60,
         )
+
+        return self.client.incr_counter("interface_restrict")
 
 
 class MentionableView(discord.ui.View):

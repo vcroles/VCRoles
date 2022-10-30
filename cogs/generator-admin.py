@@ -134,6 +134,20 @@ class VoiceGen(commands.Cog):
             )
         return (category, voice_channel, interface_channel, interface_message)
 
+    async def check_generator_limit(self, interaction: discord.Interaction) -> bool:
+        """A check to see if a generator can be made"""
+        assert interaction.guild
+
+        guild_data = await self.client.db.get_guild_data(interaction.guild.id)
+        is_premium = guild_data.premium
+
+        num_generators = await self.client.db.db.voicegenerator.count(
+            where={"guildId": str(interaction.guild.id)}
+        )
+        if num_generators > 0 and not is_premium:
+            return False
+        return True
+
     generator_commands = app_commands.Group(
         name="generator", description="Generator channel commands"
     )
@@ -172,6 +186,12 @@ class VoiceGen(commands.Cog):
         if not interaction.guild:
             return await interaction.response.send_message(
                 "This command can only be used in a server"
+            )
+
+        if not await self.check_generator_limit(interaction):
+            await interaction.response.send_message(
+                "You can only have one generator in this server - consider upgrading to premium for unlimited generators. https://cde90.gumroad.com/l/vcroles",
+                ephemeral=True,
             )
 
         if not user_editable:
@@ -247,6 +267,12 @@ class VoiceGen(commands.Cog):
                 "This command can only be used in a server"
             )
 
+        if not await self.check_generator_limit(interaction):
+            await interaction.response.send_message(
+                "You can only have one generator in this server - consider upgrading to premium for unlimited generators. https://cde90.gumroad.com/l/vcroles",
+                ephemeral=True,
+            )
+
         if not user_editable:
             create_interface_channel = False
 
@@ -315,6 +341,12 @@ class VoiceGen(commands.Cog):
         if not interaction.guild:
             return await interaction.response.send_message(
                 "This command can only be used in a server"
+            )
+
+        if not await self.check_generator_limit(interaction):
+            await interaction.response.send_message(
+                "You can only have one generator in this server - consider upgrading to premium for unlimited generators. https://cde90.gumroad.com/l/vcroles",
+                ephemeral=True,
             )
 
         if not user_editable:
@@ -387,6 +419,12 @@ class VoiceGen(commands.Cog):
         if not interaction.guild:
             return await interaction.response.send_message(
                 "This command can only be used in a server"
+            )
+
+        if not await self.check_generator_limit(interaction):
+            await interaction.response.send_message(
+                "You can only have one generator in this server - consider upgrading to premium for unlimited generators. https://cde90.gumroad.com/l/vcroles",
+                ephemeral=True,
             )
 
         if not user_editable:
@@ -490,6 +528,16 @@ class VoiceGen(commands.Cog):
             return await interaction.response.send_message(
                 "This command can only be used in a server"
             )
+
+        if option == VoiceGeneratorOption.TEXT:
+            is_premium = (
+                await self.client.db.get_guild_data(interaction.guild.id)
+            ).premium
+            if not is_premium:
+                return await interaction.response.send_message(
+                    "Sorry, you cannot enable text channel generation in this server - consider upgrading to premium to unlock this. https://cde90.gumroad.com/l/vcroles",
+                    ephemeral=True,
+                )
 
         gen_data = await self.client.db.get_generator(
             interaction.guild.id, generator.id

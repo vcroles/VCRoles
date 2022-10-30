@@ -17,6 +17,7 @@ model Guild {
     logging        String?
     links          Link[]
     voiceGenerator VoiceGenerator[]
+    premium        Boolean          @default(false)
 }
 
 enum LinkType {
