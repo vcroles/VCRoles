@@ -103,6 +103,7 @@ class GenInterface(commands.Cog):
         return self.client.incr_counter("interface_decrease")
 
     @interface_commands.command(name="limit")
+    @app_commands.describe(limit="The value to set the member limit to.")
     async def set_limit(
         self, interaction: discord.Interaction, limit: app_commands.Range[int, 0, 100]
     ):
@@ -145,6 +146,7 @@ class GenInterface(commands.Cog):
         return self.client.incr_counter("interface_claim")
 
     @interface_commands.command(name="invite")
+    @app_commands.describe(user="The user to invite.", message="The message to send.")
     async def invite_user(
         self,
         interaction: discord.Interaction,

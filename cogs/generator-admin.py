@@ -150,7 +150,7 @@ class VoiceGen(commands.Cog):
         voice_channel_name="Name of voice channel",
         interface_channel_name="Name of interface channel",
         user_editable="Whether users can edit their generated channel",
-        channel_limit="The maximum of generated channels allowed",
+        channel_limit="The maximum number of generated channels allowed",
         create_interface_channel="Whether to create an interface channel",
         default_user_limit="The default user limit for created channels.",
     )
@@ -221,7 +221,7 @@ class VoiceGen(commands.Cog):
         generated_channel_name="Name of generated voice channel",
         interface_channel_name="Name of interface channel",
         user_editable="Whether users can edit their generated channel",
-        channel_limit="The maximum of generated channels allowed",
+        channel_limit="The maximum number of generated channels allowed",
         create_interface_channel="Whether to create an interface channel",
         voice_channel_name="Name of joinable channel",
         default_user_limit="The default user limit for created channels.",
@@ -295,7 +295,7 @@ class VoiceGen(commands.Cog):
         voice_channel_name="Name of voice channel",
         interface_channel_name="Name of interface channel",
         user_editable="Whether users can edit their generated channel",
-        channel_limit="The maximum of generated channels allowed",
+        channel_limit="The maximum number of generated channels allowed",
         create_interface_channel="Whether to create an interface channel",
     )
     @check_any(command_available, is_owner)
@@ -363,7 +363,7 @@ class VoiceGen(commands.Cog):
         generated_channel_name="Name of voice channel variables: $username, $count",
         interface_channel_name="Name of interface channel",
         user_editable="Whether users can edit their generated channel",
-        channel_limit="The maximum of generated channels allowed",
+        channel_limit="The maximum number of generated channels allowed",
         create_interface_channel="Whether to create an interface channel",
         voice_channel_name="The name of the generating channel",
         default_user_limit="The default user limit for created channels.",
