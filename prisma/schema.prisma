@@ -17,6 +17,7 @@ model Guild {
     logging        String?
     links          Link[]
     voiceGenerator VoiceGenerator[]
+    premium        Boolean          @default(false)
 }
 
 enum LinkType {
@@ -42,13 +43,46 @@ model Link {
     @@id([id, type])
 }
 
+enum VoiceGeneratorType {
+    DEFAULT
+    NUMBERED
+    CLONED
+    CUSTOM_NAME
+}
+
+enum VoiceGeneratorOption {
+    LOCK
+    HIDE
+    TEXT
+    EDITABLE
+    OWNER
+}
+
 model VoiceGenerator {
-    id               String   @id @default(cuid())
-    guild            Guild    @relation(fields: [guildId], references: [id])
-    guildId          String   @unique
-    categoryId       String?
-    generatorId      String?
+    id               String                 @id @default(cuid())
+    guild            Guild                  @relation(fields: [guildId], references: [id])
+    guildId          String
+    categoryId       String
+    generatorId      String
     interfaceChannel String?
     interfaceMessage String?
-    openChannels     String[]
+    openChannels     GeneratedChannel[]
+    type             VoiceGeneratorType     @default(DEFAULT)
+    defaultOptions   VoiceGeneratorOption[]
+    defaultUserLimit Int                    @default(0)
+    channelLimit     Int                    @default(100)
+    defaultRole      String?
+    channelName      String?
+
+    @@unique([guildId, generatorId])
+}
+
+model GeneratedChannel {
+    id               String         @id @default(cuid())
+    channelId        String         @unique
+    ownerId          String
+    textChannelId    String?
+    VoiceGenerator   VoiceGenerator @relation(fields: [voiceGeneratorId], references: [id], onDelete: Cascade)
+    voiceGeneratorId String
+    userEditable     Boolean        @default(true)
 }

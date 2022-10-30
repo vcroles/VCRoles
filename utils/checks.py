@@ -6,6 +6,7 @@ from typing import Awaitable, Callable, TypeVar
 
 from discord import Interaction, app_commands
 
+import config
 from .client import VCRolesClient
 
 T = TypeVar("T")
@@ -25,9 +26,19 @@ async def is_owner(interaction: Interaction) -> bool:
 
 
 async def command_available(interaction: Interaction) -> bool:
+    if config.ENVIRONMENT == "DEV":
+        return True
+
     client = interaction.client
     if not isinstance(client, VCRolesClient):
         return True
+
+    try:
+        premium = await client.ar.hget("premium", str(interaction.user.id))
+        if premium and str(premium) == "1":
+            return True
+    except:
+        pass
 
     cmds_count = await client.ar.hget("commands", str(interaction.user.id))
     try:

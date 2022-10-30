@@ -9,3 +9,4 @@ exports/*.json
 config.py
 env/
 .env
+migration.py

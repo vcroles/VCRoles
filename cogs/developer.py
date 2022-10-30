@@ -53,6 +53,32 @@ class Dev(commands.Cog):
             self.client.loop.create_task(self.client.ar.delete("commands"))
         await ctx.reply("Reset command limit!")
 
+    @commands.command(aliases=["pg"])
+    @commands.is_owner()
+    async def premium_guild(
+        self, ctx: commands.Context[Any], guild_id: int, enabled: bool = True
+    ):
+        res = await self.client.db.db.guild.update(
+            where={"id": str(guild_id)}, data={"premium": enabled}
+        )
+        if not res:
+            await ctx.send(f"Unknown guild ID - {guild_id}")
+        else:
+            await ctx.send(
+                f"{'Enabled' if enabled else 'Disabled'} premium in guild {guild_id}"
+            )
+
+    @commands.command(aliases=["pu"])
+    @commands.is_owner()
+    async def premium_user(
+        self, ctx: commands.Context[Any], user_id: int, enabled: bool = True
+    ):
+        await self.client.ar.hset("premium", str(user_id), int(enabled))
+
+        await ctx.send(
+            f"{'Enabled' if enabled else 'Disabled'} premium for user {user_id}"
+        )
+
 
 async def setup(client: VCRolesClient):
     await client.add_cog(Dev(client))

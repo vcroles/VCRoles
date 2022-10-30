@@ -1,8 +1,10 @@
-from typing import Any
+from typing import Any, Literal, Optional
 
 import discord
+from typing_extensions import Self
 
 from utils.database import DatabaseUtils
+from utils.generator import GeneratorUtils
 
 
 class Interface(discord.ui.View):
@@ -13,27 +15,18 @@ class Interface(discord.ui.View):
     def __init__(self, db: DatabaseUtils):
         super().__init__(timeout=None)
         self.db = db
+        self.utils = GeneratorUtils(db)
 
-    async def in_voice_channel(self, interaction: discord.Interaction) -> bool:
-        if not interaction.guild or not isinstance(interaction.user, discord.Member):
-            return False
-
-        data = await self.db.get_generator(interaction.guild.id)
-
-        if (
-            not interaction.user.voice
-            or not interaction.user.voice.channel
-            or not interaction.user.voice.channel.category
-        ):
-            return False
-
-        if str(interaction.user.voice.channel.category.id) != data.categoryId:
-            return False
-
-        if str(interaction.user.voice.channel.id) == data.generatorId:
-            return False
-
-        return True
+        self.add_item(
+            MentionableDropdown(
+                "Permit Roles/Members", "permit", self.utils, "voicegen:permit"
+            )
+        )
+        self.add_item(
+            MentionableDropdown(
+                "Restrict Roles/Members", "restrict", self.utils, "voicegen:restrict"
+            )
+        )
 
     @discord.ui.button(
         label="Lock",
@@ -43,29 +36,14 @@ class Interface(discord.ui.View):
     async def lock(
         self, interaction: discord.Interaction, button: discord.ui.Button[Any]
     ):
-
-        if not await self.in_voice_channel(interaction):
+        if not isinstance(interaction.user, discord.Member):
             return await interaction.response.send_message(
-                "You must be in a voice channel", ephemeral=True
+                "You must be in a guild to use this.", ephemeral=True
             )
 
-        if (
-            not isinstance(interaction.user, discord.Member)
-            or not interaction.user.voice
-            or not interaction.user.voice.channel
-        ):
-            return
+        message = await self.utils.lock(interaction.user)
 
-        overwrites = interaction.user.voice.channel.overwrites
-        try:
-            overwrites[interaction.user.guild.default_role].connect = False
-        except KeyError:
-            overwrites[
-                interaction.user.guild.default_role
-            ] = discord.PermissionOverwrite(connect=False)
-        await interaction.user.voice.channel.edit(overwrites=overwrites)
-
-        await interaction.response.send_message("Locked voice channel!", ephemeral=True)
+        await interaction.response.send_message(message, ephemeral=True)
 
     @discord.ui.button(
         label="Unlock",
@@ -75,30 +53,14 @@ class Interface(discord.ui.View):
     async def unlock(
         self, interaction: discord.Interaction, button: discord.ui.Button[Any]
     ):
-        if not await self.in_voice_channel(interaction):
+        if not isinstance(interaction.user, discord.Member):
             return await interaction.response.send_message(
-                "You must be in a voice channel", ephemeral=True
+                "You must be in a guild to use this.", ephemeral=True
             )
 
-        if (
-            not isinstance(interaction.user, discord.Member)
-            or not interaction.user.voice
-            or not interaction.user.voice.channel
-        ):
-            return
+        message = await self.utils.unlock(interaction.user)
 
-        overwrites = interaction.user.voice.channel.overwrites
-        try:
-            overwrites[interaction.user.guild.default_role].connect = True
-        except KeyError:
-            overwrites[
-                interaction.user.guild.default_role
-            ] = discord.PermissionOverwrite(connect=True)
-        await interaction.user.voice.channel.edit(overwrites=overwrites)
-
-        await interaction.response.send_message(
-            "Unlocked voice channel!", ephemeral=True
-        )
+        await interaction.response.send_message(message, ephemeral=True)
 
     @discord.ui.button(
         label="Hide",
@@ -108,28 +70,14 @@ class Interface(discord.ui.View):
     async def hide(
         self, interaction: discord.Interaction, button: discord.ui.Button[Any]
     ):
-        if not await self.in_voice_channel(interaction):
+        if not isinstance(interaction.user, discord.Member):
             return await interaction.response.send_message(
-                "You must be in a voice channel", ephemeral=True
+                "You must be in a guild to use this.", ephemeral=True
             )
 
-        if (
-            not isinstance(interaction.user, discord.Member)
-            or not interaction.user.voice
-            or not interaction.user.voice.channel
-        ):
-            return
+        message = await self.utils.hide(interaction.user)
 
-        overwrites = interaction.user.voice.channel.overwrites
-        try:
-            overwrites[interaction.user.guild.default_role].view_channel = False
-        except KeyError:
-            overwrites[
-                interaction.user.guild.default_role
-            ] = discord.PermissionOverwrite(view_channel=False)
-        await interaction.user.voice.channel.edit(overwrites=overwrites)
-
-        await interaction.response.send_message("Hidden voice channel!", ephemeral=True)
+        await interaction.response.send_message(message, ephemeral=True)
 
     @discord.ui.button(
         label="Show",
@@ -139,28 +87,14 @@ class Interface(discord.ui.View):
     async def show(
         self, interaction: discord.Interaction, button: discord.ui.Button[Any]
     ):
-        if not await self.in_voice_channel(interaction):
+        if not isinstance(interaction.user, discord.Member):
             return await interaction.response.send_message(
-                "You must be in a voice channel", ephemeral=True
+                "You must be in a guild to use this.", ephemeral=True
             )
 
-        if (
-            not isinstance(interaction.user, discord.Member)
-            or not interaction.user.voice
-            or not interaction.user.voice.channel
-        ):
-            return
+        message = await self.utils.unhide(interaction.user)
 
-        overwrites = interaction.user.voice.channel.overwrites
-        try:
-            overwrites[interaction.user.guild.default_role].view_channel = True
-        except KeyError:
-            overwrites[
-                interaction.user.guild.default_role
-            ] = discord.PermissionOverwrite(view_channel=True)
-        await interaction.user.voice.channel.edit(overwrites=overwrites)
-
-        await interaction.response.send_message("Shown voice channel!", ephemeral=True)
+        await interaction.response.send_message(message, ephemeral=True)
 
     @discord.ui.button(
         label="Increase Limit",
@@ -170,27 +104,14 @@ class Interface(discord.ui.View):
     async def increase_limit(
         self, interaction: discord.Interaction, button: discord.ui.Button[Any]
     ):
-        if not await self.in_voice_channel(interaction):
+        if not isinstance(interaction.user, discord.Member):
             return await interaction.response.send_message(
-                "You must be in a voice channel", ephemeral=True
+                "You must be in a guild to use this.", ephemeral=True
             )
 
-        if (
-            not isinstance(interaction.user, discord.Member)
-            or not interaction.user.voice
-            or not interaction.user.voice.channel
-        ):
-            return
+        message = await self.utils.increase_limit(interaction.user)
 
-        if not isinstance(interaction.user.voice.channel, discord.VoiceChannel):
-            return
-
-        user_limit = interaction.user.voice.channel.user_limit
-        await interaction.user.voice.channel.edit(user_limit=user_limit + 1)
-
-        await interaction.response.send_message(
-            f"Increased channel limit to {user_limit + 1}!", ephemeral=True
-        )
+        await interaction.response.send_message(message, ephemeral=True)
 
     @discord.ui.button(
         label="Decrease Limit",
@@ -200,26 +121,99 @@ class Interface(discord.ui.View):
     async def decrease_limit(
         self, interaction: discord.Interaction, button: discord.ui.Button[Any]
     ):
-        if not await self.in_voice_channel(interaction):
+        if not isinstance(interaction.user, discord.Member):
             return await interaction.response.send_message(
-                "You must be in a voice channel", ephemeral=True
+                "You must be in a guild to use this.", ephemeral=True
             )
 
-        if (
-            not isinstance(interaction.user, discord.Member)
-            or not interaction.user.voice
-            or not interaction.user.voice.channel
-        ):
-            return
-
-        if not isinstance(interaction.user.voice.channel, discord.VoiceChannel):
-            return
-
-        user_limit = interaction.user.voice.channel.user_limit
-        if user_limit > 0:
-            await interaction.user.voice.channel.edit(user_limit=user_limit - 1)
+        message = await self.utils.decrease_limit(interaction.user)
 
         await interaction.response.send_message(
-            f"Decreased channel limit to {user_limit - 1 if user_limit > 0 else user_limit}!",
+            message,
+            ephemeral=True,
+        )
+
+    @discord.ui.button(
+        label="Rename", style=discord.ButtonStyle.blurple, custom_id="voicegen:rename"
+    )
+    async def rename(
+        self, interaction: discord.Interaction, button: discord.ui.Button[Any]
+    ):
+        await interaction.response.send_modal(RenameModal(self.db))
+
+    @discord.ui.button(
+        label="Claim", style=discord.ButtonStyle.green, custom_id="voicegen:claim"
+    )
+    async def claim_channel(
+        self, interaction: discord.Interaction, button: discord.ui.Button[Any]
+    ):
+        if not isinstance(interaction.user, discord.Member):
+            return await interaction.response.send_message(
+                "You must be in a guild to use this.", ephemeral=True
+            )
+
+        message = await self.utils.claim(interaction.user)
+
+        await interaction.response.send_message(
+            message,
+            ephemeral=True,
+        )
+
+
+class MentionableDropdown(discord.ui.MentionableSelect[Self]):
+    def __init__(
+        self,
+        placeholder: str,
+        action: Literal["restrict", "permit"],
+        utils: GeneratorUtils,
+        custom_id: Optional[str] = None,
+    ) -> None:
+        if custom_id:
+            super().__init__(
+                placeholder=placeholder, max_values=10, custom_id=custom_id
+            )
+        else:
+            super().__init__(placeholder=placeholder, max_values=10)
+
+        self.action: Literal["restrict", "permit"] = action
+        self.utils = utils
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        if not isinstance(interaction.user, discord.Member):
+            return await interaction.response.send_message(
+                "You must be in a guild to use this.", ephemeral=True
+            )
+
+        values = [x for x in self.values if not isinstance(x, discord.User)]
+
+        if self.action == "permit":
+            message = await self.utils.permit(interaction.user, values)
+        else:
+            message = await self.utils.restrict(interaction.user, values)
+
+        await interaction.response.send_message(
+            message,
+            ephemeral=True,
+        )
+
+
+class RenameModal(discord.ui.Modal, title="Rename Channel"):
+    name: discord.ui.TextInput[Any] = discord.ui.TextInput(label="New Name")
+
+    def __init__(self, db: DatabaseUtils):
+        super().__init__()
+
+        self.utils = GeneratorUtils(db)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        if not isinstance(interaction.user, discord.Member):
+            return await interaction.response.send_message(
+                "You must be in a guild to use this.", ephemeral=True
+            )
+
+        message = await self.utils.rename(interaction.user, str(self.name))
+
+        await interaction.response.send_message(
+            message,
             ephemeral=True,
         )
