@@ -85,6 +85,7 @@ class Dev(commands.Cog):
         self,
         ctx: commands.Context[Any],
         status_type: Literal["playing", "streaming", "listening", "watching"],
+        *,
         status_text: str,
     ):
         if status_type == "playing":
