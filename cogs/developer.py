@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 import discord
 from discord.ext import commands
@@ -78,6 +78,31 @@ class Dev(commands.Cog):
         await ctx.send(
             f"{'Enabled' if enabled else 'Disabled'} premium for user {user_id}"
         )
+
+    @commands.command()
+    @commands.is_owner()
+    async def status(
+        self,
+        ctx: commands.Context[Any],
+        status_type: Literal["playing", "streaming", "listening", "watching"],
+        status_text: str,
+    ):
+        if status_type == "playing":
+            activity_type = discord.ActivityType.playing
+        elif status_type == "streaming":
+            activity_type = discord.ActivityType.streaming
+        elif status_type == "listening":
+            activity_type = discord.ActivityType.listening
+        elif status_type == "watching":
+            activity_type = discord.ActivityType.watching
+        else:
+            activity_type = discord.ActivityType.watching
+
+        await self.client.change_presence(
+            activity=discord.Activity(type=activity_type, name=status_text)
+        )
+
+        await ctx.send("Successfully edited status.")
 
 
 async def setup(client: VCRolesClient):
