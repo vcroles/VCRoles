@@ -43,6 +43,7 @@ class DatabaseUtils:
         tts_role: Optional[str] = None,
         tts_leave: Optional[bool] = None,
         logging: Optional[str] = None,
+        bot_master_roles: Optional[list[str]] = None,
     ) -> None:
         data: GuildUpdateInput = {}
 
@@ -64,6 +65,9 @@ class DatabaseUtils:
         if logging == "None":
             data["logging"] = None
 
+        if bot_master_roles is not None:
+            data["botMasterRoles"] = bot_master_roles
+
         res = await self.db.guild.update(where={"id": str(guild_id)}, data=data)
         if not res:
             await self.db.guild.create(
@@ -73,6 +77,7 @@ class DatabaseUtils:
                     "ttsRole": data.get("ttsRole"),
                     "ttsLeave": tts_leave if tts_leave else True,
                     "logging": logging if logging != "None" else None,
+                    "botMasterRoles": bot_master_roles if bot_master_roles else [],
                 }
             )
 
@@ -186,6 +191,8 @@ class DatabaseUtils:
         channel_limit: Optional[int] = None,
         default_role_id: Optional[str] = None,
         channel_name: Optional[str] = None,
+        restrict_role: Optional[str] = None,
+        hide_at_limit: Optional[bool] = None,
     ) -> None:
         data: VoiceGeneratorUpdateInput = {}
 
@@ -212,6 +219,15 @@ class DatabaseUtils:
 
         if channel_name is not None:
             data["channelName"] = channel_name
+
+        if restrict_role is not None:
+            data["restrictRole"] = restrict_role
+
+        if restrict_role == "None":
+            data["restrictRole"] = None
+
+        if hide_at_limit is not None:
+            data["hideAtLimit"] = hide_at_limit
 
         res = await self.db.voicegenerator.update(
             where={

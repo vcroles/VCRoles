@@ -18,6 +18,7 @@ model Guild {
     links          Link[]
     voiceGenerator VoiceGenerator[]
     premium        Boolean          @default(false)
+    botMasterRoles String[]
 }
 
 enum LinkType {
@@ -73,6 +74,8 @@ model VoiceGenerator {
     channelLimit     Int                    @default(100)
     defaultRole      String?
     channelName      String?
+    restrictRole     String?
+    hideAtLimit      Boolean                @default(false)
 
     @@unique([guildId, generatorId])
 }

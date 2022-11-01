@@ -606,7 +606,7 @@ class VoiceGen(commands.Cog):
 
     @generator_commands.command(name="role")
     @app_commands.describe(
-        default_role="The default role the bot edits permissions for",
+        default_role="The default role the bot edits permissions for (for default behaviour, select @everyone)",
         generator="The generator channel to edit.",
     )
     @check_any(command_available, is_owner)
@@ -642,6 +642,46 @@ class VoiceGen(commands.Cog):
 
         await interaction.response.send_message(
             f"Set the default permission role for {generator.mention} to `@{default_role.name}`"
+        )
+
+    @generator_commands.command(name="restrict_role")
+    @app_commands.describe(
+        role="The role to restrict generators for (to remove select @everyone)",
+        generator="The generator channel to edit.",
+    )
+    @check_any(command_available, is_owner)
+    @app_commands.checks.has_permissions(administrator=True)
+    async def set_restrict_role(
+        self,
+        interaction: discord.Interaction,
+        generator: discord.VoiceChannel,
+        role: discord.Role,
+    ):
+        """Sets a role which cannot use the voice generator"""
+
+        if not interaction.guild:
+            return await interaction.response.send_message(
+                "This command can only be used in a server"
+            )
+
+        gen_data = await self.client.db.get_generator(
+            interaction.guild.id, generator.id
+        )
+
+        if not gen_data:
+            return await interaction.response.send_message(
+                "Please select a valid generator channel"
+            )
+
+        await self.client.db.update_generator(
+            interaction.guild.id,
+            generator.id,
+            generator.category.id if generator.category else "",
+            restrict_role=str(role.id),
+        )
+
+        await interaction.response.send_message(
+            f"Set the restricted role for {generator.mention} to `@{role.name}`"
         )
 
 

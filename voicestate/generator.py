@@ -43,8 +43,23 @@ class Generator:
         if not gen_data:
             return
 
+        if gen_data.restrictRole:
+            restricted_role = member.get_role(int(gen_data.restrictRole))
+            if restricted_role:
+                try:
+                    await member.move_to(None)
+                except:
+                    pass
+                finally:
+                    return
+
         count = len(gen_data.openChannels) if gen_data.openChannels else 0
         editable = VoiceGeneratorOption.EDITABLE in gen_data.defaultOptions
+        restricted_role = (
+            member.guild.get_role(int(gen_data.restrictRole))
+            if gen_data.restrictRole
+            else None
+        )
 
         if str(user_channel.id) != gen_data.generatorId:
             return
@@ -80,6 +95,11 @@ class Generator:
                 overwrites[default_role] = discord.PermissionOverwrite(
                     view_channel=False
                 )
+        if restricted_role:
+            try:
+                overwrites[restricted_role].connect = False
+            except KeyError:
+                overwrites[restricted_role] = discord.PermissionOverwrite(connect=False)
 
         if gen_data.type == VoiceGeneratorType.CLONED:
             channel = await user_channel.clone(
