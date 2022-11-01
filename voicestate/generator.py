@@ -187,6 +187,21 @@ class Generator:
             else text_channel,
         )
 
+        if gen_data.hideAtLimit and count + 1 >= gen_data.channelLimit:
+            gen_channel = member.guild.get_channel(int(gen_data.generatorId))
+            if gen_channel:
+                gen_overwrites = gen_channel.overwrites
+                try:
+                    gen_overwrites[default_role].view_channel = False
+                except KeyError:
+                    gen_overwrites[default_role] = discord.PermissionOverwrite(
+                        view_channel=False
+                    )
+                try:
+                    await gen_channel.edit(overwrites=gen_overwrites)
+                except:
+                    pass
+
     async def leave(
         self,
         member: discord.Member,
@@ -205,6 +220,35 @@ class Generator:
                     await text_channel.delete()
 
             await self.client.db.delete_generated_channel(user_channel.id)
+
+            if data.VoiceGenerator and data.VoiceGenerator.hideAtLimit:
+                if data.VoiceGenerator.defaultRole:
+                    default_role = member.guild.get_role(
+                        int(data.VoiceGenerator.defaultRole)
+                    )
+                    if not default_role:
+                        default_role = member.guild.default_role
+                else:
+                    default_role = member.guild.default_role
+
+                count = await self.client.db.db.generatedchannel.count(
+                    where={"voiceGeneratorId": data.voiceGeneratorId}
+                )
+                if count < data.VoiceGenerator.channelLimit:
+                    gen_channel = member.guild.get_channel(
+                        int(data.VoiceGenerator.generatorId)
+                    )
+                    if gen_channel:
+                        overwrites = gen_channel.overwrites
+
+                        try:
+                            overwrites[default_role].view_channel = True
+                        except KeyError:
+                            overwrites[default_role] = discord.PermissionOverwrite(
+                                view_channel=True
+                            )
+
+                        await gen_channel.edit(overwrites=overwrites)
         else:
             if data.textChannelId:
                 text_channel = self.client.get_channel(int(data.textChannelId))

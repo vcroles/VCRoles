@@ -684,6 +684,55 @@ class VoiceGen(commands.Cog):
             f"Set the restricted role for {generator.mention} to `@{role.name}`"
         )
 
+    @generator_commands.command(name="hide_at_limit")
+    @app_commands.describe(
+        enabled="Whether the feature is enabled.",
+        generator="The generator channel to edit.",
+    )
+    @check_any(command_available, is_owner)
+    @app_commands.checks.has_permissions(administrator=True)
+    async def hide_at_limit(
+        self,
+        interaction: discord.Interaction,
+        generator: discord.VoiceChannel,
+        enabled: bool,
+    ):
+        """Controls whether the generator channel is hidden when the channel limit is reached."""
+
+        if not interaction.guild:
+            return await interaction.response.send_message(
+                "This command can only be used in a server"
+            )
+
+        gen_data = await self.client.db.get_generator(
+            interaction.guild.id, generator.id
+        )
+
+        if not gen_data:
+            return await interaction.response.send_message(
+                "Please select a valid generator channel"
+            )
+
+        guild_data = await self.client.db.get_guild_data(interaction.guild.id)
+        assert guild_data
+
+        if not guild_data.premium:
+            return await interaction.response.send_message(
+                "Sorry, you cannot enable this feature in this server - consider upgrading to premium to unlock this. https://cde90.gumroad.com/l/vcroles",
+                ephemeral=True,
+            )
+
+        await self.client.db.update_generator(
+            interaction.guild.id,
+            generator.id,
+            generator.category.id if generator.category else "",
+            hide_at_limit=enabled,
+        )
+
+        await interaction.response.send_message(
+            f"{'Enabled' if enabled else 'Disabled'} voice generator hide at limit in {generator.mention}"
+        )
+
 
 async def setup(client: VCRolesClient):
     await client.add_cog(VoiceGen(client))
