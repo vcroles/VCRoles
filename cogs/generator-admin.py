@@ -95,7 +95,8 @@ class VoiceGen(commands.Cog):
             Optional[discord.Message],
         ]
     ]:
-        assert interaction.guild
+        if not interaction.guild:
+            raise AssertionError
         try:
             category = await interaction.guild.create_category(
                 name=category_name,
@@ -136,7 +137,8 @@ class VoiceGen(commands.Cog):
 
     async def check_generator_limit(self, interaction: discord.Interaction) -> bool:
         """A check to see if a generator can be made"""
-        assert interaction.guild
+        if not interaction.guild:
+            raise AssertionError
 
         guild_data = await self.client.db.get_guild_data(interaction.guild.id)
         is_premium = guild_data.premium
@@ -714,7 +716,8 @@ class VoiceGen(commands.Cog):
             )
 
         guild_data = await self.client.db.get_guild_data(interaction.guild.id)
-        assert guild_data
+        if not guild_data:
+            raise AssertionError
 
         if not guild_data.premium:
             return await interaction.response.send_message(

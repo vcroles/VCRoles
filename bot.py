@@ -56,7 +56,8 @@ if using_topgg:
                 description = f"<@{user.id}> just voted for VC Roles on Top.gg & received unlimited command usage for the rest of the day!\n\nClick [here](https://top.gg/bot/775025797034541107/vote) to vote"
 
             channel = client.get_channel(947070091797856276)
-            assert isinstance(channel, discord.TextChannel)
+            if not isinstance(channel, discord.TextChannel):
+                raise AssertionError
             embed = discord.Embed(
                 colour=discord.Colour.blue(),
                 title=":tada: Top.gg Vote! :tada:",
