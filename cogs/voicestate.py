@@ -114,8 +114,9 @@ class VoiceState(commands.Cog):
                     except discord.errors.HTTPException:
                         pass
 
+    @staticmethod
     def data_converter(
-        self, links: list[Link], channel_id: DiscordID, category_id: Optional[DiscordID]
+        links: list[Link], channel_id: DiscordID, category_id: Optional[DiscordID]
     ) -> VoiceStateData:
         return_data = VoiceStateData()
 

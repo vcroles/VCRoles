@@ -30,7 +30,8 @@ class GeneratorUtils:
             ]
         )
 
-    def is_owner(self, user: discord.Member, gen_data: GeneratedChannel) -> bool:
+    @staticmethod
+    def is_owner(user: discord.Member, gen_data: GeneratedChannel) -> bool:
         if (
             gen_data.VoiceGenerator
             and VoiceGeneratorOption.OWNER in gen_data.VoiceGenerator.defaultOptions

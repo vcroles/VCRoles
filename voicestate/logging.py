@@ -11,8 +11,8 @@ class Logging:
     def __init__(self, client: VCRolesClient):
         self.client = client
 
+    @staticmethod
     def construct_embed(
-        self,
         data: list[VoiceStateReturnData],
     ):
 
