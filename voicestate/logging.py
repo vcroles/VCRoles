@@ -153,7 +153,7 @@ class Logging:
             return
 
         logging_embed = discord.Embed(
-            title=f"Member moved channel",
+            title="Member moved channel",
             description=f"**Before:** {user_before_channel.mention}\n**+After:** {user_after_channel.mention}",
             color=discord.Color.blue(),
             timestamp=datetime.datetime.now(datetime.timezone.utc),

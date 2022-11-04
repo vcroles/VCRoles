@@ -102,7 +102,7 @@ async def on_command_error(
     if isinstance(error, app_commands.CheckFailure):
         embed = discord.Embed(
             title="Command Limit Reached",
-            description=f"You have reached your command limit for today, but **don't worry!** You can get **unlimited** command usage for the rest of the day by [voting for the bot on Top.gg!](https://top.gg/bot/775025797034541107/vote)",
+            description="You have reached your command limit for today, but **don't worry!** You can get **unlimited** command usage for the rest of the day by [voting for the bot on Top.gg!](https://top.gg/bot/775025797034541107/vote)",
             colour=discord.Colour.brand_red(),
             url="https://top.gg/bot/775025797034541107/vote",
         )

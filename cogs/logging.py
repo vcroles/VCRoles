@@ -47,7 +47,7 @@ class Logging(commands.Cog):
                     f"Successfully enabled logging in {channel.mention}"
                 )
             except:
-                await interaction.response.send_message(f"Unable to enable logging")
+                await interaction.response.send_message("Unable to enable logging")
         elif not enabled:
             try:
                 await self.client.db.update_guild_data(
@@ -55,7 +55,7 @@ class Logging(commands.Cog):
                 )
 
                 await interaction.response.send_message(
-                    f"Successfully disabled logging"
+                    "Successfully disabled logging"
                 )
             except:
                 await interaction.response.send_message("Unable to disable logging")

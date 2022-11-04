@@ -75,7 +75,7 @@ class AllLink(commands.Cog):
                 )
         else:
             await interaction.response.send_message(
-                f"The channel and role are already linked."
+                "The channel and role are already linked."
             )
 
         return self.client.incr_counter("all_link")
@@ -112,7 +112,7 @@ class AllLink(commands.Cog):
             )
         else:
             await interaction.response.send_message(
-                f"The channel and role are not linked."
+                "The channel and role are not linked."
             )
 
         return self.client.incr_counter("all_unlink")
@@ -152,10 +152,10 @@ class AllLink(commands.Cog):
                 )
             else:
                 await interaction.response.send_message(
-                    f"The channel is already an exception."
+                    "The channel is already an exception."
                 )
         except:
-            await interaction.response.send_message(f"Unable to add exception")
+            await interaction.response.send_message("Unable to add exception")
 
         return self.client.incr_counter("all_add_exception")
 
@@ -193,7 +193,7 @@ class AllLink(commands.Cog):
             )
         else:
             await interaction.response.send_message(
-                f"Please select a valid exception channel"
+                "Please select a valid exception channel"
             )
 
         return self.client.incr_counter("all_remove_exception")
@@ -279,7 +279,7 @@ class AllLink(commands.Cog):
             )
         else:
             await interaction.response.send_message(
-                f"The role is already a reverse link."
+                "The role is already a reverse link."
             )
 
         return self.client.incr_counter("all_reverse_link")
@@ -320,7 +320,7 @@ class AllLink(commands.Cog):
             except:
                 pass
         else:
-            await interaction.response.send_message(f"The role is not a reverse link.")
+            await interaction.response.send_message("The role is not a reverse link.")
 
         return self.client.incr_counter("all_reverse_unlink")
 
