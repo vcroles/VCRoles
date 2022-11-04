@@ -20,7 +20,7 @@ class Logging:
         removed_chunks: list[str] = []
 
         for item in data:
-            if item.link_type == LinkType.REGULAR or item.link_type == LinkType.STAGE:
+            if item.link_type in (LinkType.REGULAR, LinkType.STAGE):
                 link_title = "Channel: "
             elif item.link_type == LinkType.CATEGORY:
                 link_title = "Category: "
