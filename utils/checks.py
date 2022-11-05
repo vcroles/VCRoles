@@ -37,7 +37,7 @@ async def command_available(interaction: Interaction) -> bool:
         premium = await client.ar.hget("premium", str(interaction.user.id))
         if premium and str(premium) == "1":
             return True
-    except:
+    except Exception:
         pass
 
     cmds_count = await client.ar.hget("commands", str(interaction.user.id))

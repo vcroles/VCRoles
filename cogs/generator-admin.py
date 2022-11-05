@@ -25,7 +25,9 @@ class VoiceGen(commands.Cog):
                     generator_channel, discord.VoiceChannel
                 ):
                     await generator_channel.delete()
-            except:
+            except discord.HTTPException:
+                pass
+            except Exception:
                 pass
 
         if data.interfaceChannel:
@@ -37,7 +39,9 @@ class VoiceGen(commands.Cog):
                     interface_channel, discord.TextChannel
                 ):
                     await interface_channel.delete()
-            except:
+            except discord.HTTPException:
+                pass
+            except Exception:
                 pass
 
         if data.categoryId:
@@ -45,7 +49,11 @@ class VoiceGen(commands.Cog):
                 category = await self.client.fetch_channel(int(data.categoryId))
                 if category and isinstance(category, discord.CategoryChannel):
                     await category.delete()
-            except:
+            except discord.NotFound:
+                pass
+            except discord.Forbidden:
+                pass
+            except discord.HTTPException:
                 pass
 
     def get_interface_embed(self) -> discord.Embed:
@@ -129,7 +137,17 @@ class VoiceGen(commands.Cog):
             else:
                 interface_channel = None
                 interface_message = None
-        except:
+        except discord.Forbidden:
+            return await interaction.response.send_message(
+                "I don't have permission to create channels in this server.",
+                ephemeral=True,
+            )
+        except discord.HTTPException:
+            return await interaction.response.send_message(
+                "Something went wrong while creating your channels.",
+                ephemeral=True,
+            )
+        except Exception:
             return await interaction.followup.send(
                 "Failed to create generator channels. Please check permissions and try again."
             )

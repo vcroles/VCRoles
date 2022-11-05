@@ -13,7 +13,9 @@ async def add_suffix(member: discord.Member, suffix: str):
         if not username.endswith(suffix):
             username += f" {suffix}"
             await member.edit(nick=username)
-    except:
+    except discord.Forbidden:
+        pass
+    except discord.HTTPException:
         pass
 
 
@@ -26,5 +28,7 @@ async def remove_suffix(member: discord.Member, suffix: str):
         username = member.display_name
         if username.endswith(suffix):
             await member.edit(nick=username.removesuffix(suffix))
-    except:
+    except discord.Forbidden:
+        pass
+    except discord.HTTPException:
         pass

@@ -102,7 +102,7 @@ class TTS(commands.Cog):
 
                 try:
                     vc = await interaction.user.voice.channel.connect()
-                except:
+                except discord.ClientException:
                     for c in self.client.voice_clients:
                         if not isinstance(c, discord.VoiceClient):
                             continue

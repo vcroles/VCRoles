@@ -87,7 +87,9 @@ class Logging:
 
         try:
             await channel.send(embed=logging_embed)
-        except:
+        except discord.Forbidden:
+            pass
+        except discord.HTTPException:
             pass
 
     async def log_leave(
@@ -131,7 +133,9 @@ class Logging:
 
         try:
             await channel.send(embed=logging_embed)
-        except:
+        except discord.Forbidden:
+            pass
+        except discord.HTTPException:
             pass
 
     async def log_change(
@@ -194,5 +198,7 @@ class Logging:
 
         try:
             await channel.send(embed=logging_embed)
-        except:
+        except discord.Forbidden:
+            pass
+        except discord.HTTPException:
             pass
