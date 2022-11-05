@@ -54,9 +54,7 @@ class Logging(commands.Cog):
                     interaction.guild.id, logging="None"
                 )
 
-                await interaction.response.send_message(
-                    "Successfully disabled logging"
-                )
+                await interaction.response.send_message("Successfully disabled logging")
             except:
                 await interaction.response.send_message("Unable to disable logging")
 
