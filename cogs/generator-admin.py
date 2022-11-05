@@ -51,7 +51,7 @@ class VoiceGen(commands.Cog):
     def get_interface_embed(self) -> discord.Embed:
         interface_embed = discord.Embed(
             title="Voice Generator Interface",
-            description=f"You can use this interface to customize your private voice channel.",
+            description="You can use this interface to customize your private voice channel.",
             color=discord.Color.blue(),
         )
         interface_embed.set_thumbnail(
@@ -95,7 +95,8 @@ class VoiceGen(commands.Cog):
             Optional[discord.Message],
         ]
     ]:
-        assert interaction.guild
+        if not interaction.guild:
+            raise AssertionError
         try:
             category = await interaction.guild.create_category(
                 name=category_name,
@@ -136,7 +137,8 @@ class VoiceGen(commands.Cog):
 
     async def check_generator_limit(self, interaction: discord.Interaction) -> bool:
         """A check to see if a generator can be made"""
-        assert interaction.guild
+        if not interaction.guild:
+            raise AssertionError
 
         guild_data = await self.client.db.get_guild_data(interaction.guild.id)
         is_premium = guild_data.premium
@@ -502,7 +504,7 @@ class VoiceGen(commands.Cog):
         embed = discord.Embed(
             color=discord.Color.green(),
             title="**Voice Generator Removal**",
-            description=f"The channel will now no longer act as a voice channel generator",
+            description="The channel will now no longer act as a voice channel generator",
         )
         await interaction.followup.send(embed=embed)
 
@@ -597,7 +599,7 @@ class VoiceGen(commands.Cog):
 
         if gen_data.defaultOptions:
             await interaction.response.send_message(
-                f"The currently enabled for {generator.mention} options are: {', '.join([option for option in gen_data.defaultOptions])}"
+                f"The currently enabled for {generator.mention} options are: {', '.join(gen_data.defaultOptions)}"
             )
         else:
             await interaction.response.send_message(
@@ -714,7 +716,8 @@ class VoiceGen(commands.Cog):
             )
 
         guild_data = await self.client.db.get_guild_data(interaction.guild.id)
-        assert guild_data
+        if not guild_data:
+            raise AssertionError
 
         if not guild_data.premium:
             return await interaction.response.send_message(

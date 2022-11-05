@@ -11,8 +11,8 @@ class Logging:
     def __init__(self, client: VCRolesClient):
         self.client = client
 
+    @staticmethod
     def construct_embed(
-        self,
         data: list[VoiceStateReturnData],
     ):
 
@@ -20,7 +20,7 @@ class Logging:
         removed_chunks: list[str] = []
 
         for item in data:
-            if item.link_type == LinkType.REGULAR or item.link_type == LinkType.STAGE:
+            if item.link_type in (LinkType.REGULAR, LinkType.STAGE):
                 link_title = "Channel: "
             elif item.link_type == LinkType.CATEGORY:
                 link_title = "Category: "
@@ -153,7 +153,7 @@ class Logging:
             return
 
         logging_embed = discord.Embed(
-            title=f"Member moved channel",
+            title="Member moved channel",
             description=f"**Before:** {user_before_channel.mention}\n**+After:** {user_after_channel.mention}",
             color=discord.Color.blue(),
             timestamp=datetime.datetime.now(datetime.timezone.utc),

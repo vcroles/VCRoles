@@ -75,16 +75,16 @@ class TTS(commands.Cog):
 
         data = await self.client.db.get_guild_data(interaction.guild.id)
 
-        if data.ttsEnabled == False:
+        if data.ttsEnabled is False:
             return await interaction.response.send_message(
-                f"TTS isn't enabled in this server."
+                "TTS isn't enabled in this server."
             )
         if len(message) > 250 and interaction.user.id not in [
             652797071623192576,
             602235481459261440,
         ]:
             return await interaction.response.send_message(
-                f"The message is over the 250 character limit"
+                "The message is over the 250 character limit"
             )
 
         if data.ttsRole:
@@ -111,7 +111,7 @@ class TTS(commands.Cog):
                             and c.is_playing()
                         ):
                             return await interaction.response.send_message(
-                                f"Please wait for the current TTS message to finish"
+                                "Please wait for the current TTS message to finish"
                             )
                         elif c.channel == interaction.user.voice.channel:
                             vc = c

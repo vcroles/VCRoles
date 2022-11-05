@@ -23,14 +23,13 @@ class GeneratorUtils:
             return False
 
         return any(
-            [
-                str(user.voice.channel.category.id) == d.categoryId
-                and str(user.voice.channel.id) != d.generatorId
-                for d in data
-            ]
+            str(user.voice.channel.category.id) == d.categoryId
+            and str(user.voice.channel.id) != d.generatorId
+            for d in data
         )
 
-    def is_owner(self, user: discord.Member, gen_data: GeneratedChannel) -> bool:
+    @staticmethod
+    def is_owner(user: discord.Member, gen_data: GeneratedChannel) -> bool:
         if (
             gen_data.VoiceGenerator
             and VoiceGeneratorOption.OWNER in gen_data.VoiceGenerator.defaultOptions
@@ -389,7 +388,7 @@ class GeneratorUtils:
         if gen_data.ownerId == str(user.id):
             return "You are already the owner of this channel."
 
-        if any([gen_data.ownerId == str(m.id) for m in user.voice.channel.members]):
+        if any(gen_data.ownerId == str(m.id) for m in user.voice.channel.members):
             return "Cannot claim channel while owner is in channel."
 
         await self.db.update_generated_channel(user.voice.channel.id, owner_id=user.id)
