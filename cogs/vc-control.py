@@ -17,8 +17,9 @@ class VCControl(commands.Cog):
         name="vc", description="Used to control voice channels"
     )
 
+    @staticmethod
     async def get_members(
-        self, guild: discord.Guild, user: discord.Member
+        guild: discord.Guild, user: discord.Member
     ) -> list[discord.Member]:
         mem: list[discord.Member] = []
         for user_id, state in guild._voice_states.items():  # type: ignore

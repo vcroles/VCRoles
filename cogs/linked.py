@@ -15,8 +15,8 @@ class Linked(commands.Cog):
     def __init__(self, client: VCRolesClient):
         self.client = client
 
+    @staticmethod
     def iterate_links(
-        self,
         interaction: discord.Interaction,
         roles: list[str],
         reverse: list[str],
