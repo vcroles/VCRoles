@@ -51,7 +51,7 @@ class VoiceGen(commands.Cog):
     def get_interface_embed(self) -> discord.Embed:
         interface_embed = discord.Embed(
             title="Voice Generator Interface",
-            description=f"You can use this interface to customize your private voice channel.",
+            description="You can use this interface to customize your private voice channel.",
             color=discord.Color.blue(),
         )
         interface_embed.set_thumbnail(
@@ -502,7 +502,7 @@ class VoiceGen(commands.Cog):
         embed = discord.Embed(
             color=discord.Color.green(),
             title="**Voice Generator Removal**",
-            description=f"The channel will now no longer act as a voice channel generator",
+            description="The channel will now no longer act as a voice channel generator",
         )
         await interaction.followup.send(embed=embed)
 

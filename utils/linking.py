@@ -61,7 +61,7 @@ class LinkingUtils:
 
             status = True
         else:
-            message = f"The channel and role are already linked."
+            message = "The channel and role are already linked."
             status = False
 
         return LinkReturnData(status, message, data)
