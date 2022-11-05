@@ -24,8 +24,8 @@ class GeneratorUtils:
 
         return any(
             str(user.voice.channel.category.id) == d.categoryId
-                and str(user.voice.channel.id) != d.generatorId
-                for d in data
+            and str(user.voice.channel.id) != d.generatorId
+            for d in data
         )
 
     def is_owner(self, user: discord.Member, gen_data: GeneratedChannel) -> bool:
