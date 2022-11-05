@@ -75,7 +75,7 @@ class TTS(commands.Cog):
 
         data = await self.client.db.get_guild_data(interaction.guild.id)
 
-        if data.ttsEnabled == False:
+        if data.ttsEnabled is False:
             return await interaction.response.send_message(
                 f"TTS isn't enabled in this server."
             )
