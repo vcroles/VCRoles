@@ -21,7 +21,7 @@ def infer_link_type(channel: LinkableChannel) -> LinkType:
 class Linking(commands.Cog):
     def __init__(self, client: VCRolesClient):
         self.client = client
-        self.linking = LinkingUtils(client)
+        self.linking_utils = LinkingUtils(client)
 
     suffix_commands = app_commands.Group(
         name="suffix", description="Suffix to add to the end of usernames"
@@ -42,7 +42,7 @@ class Linking(commands.Cog):
     ):
         """Use to link a channel with a role"""
 
-        data = await self.linking.link(
+        data = await self.linking_utils.link(
             interaction, channel, role, infer_link_type(channel), RoleCategory.REGULAR
         )
 
@@ -64,7 +64,7 @@ class Linking(commands.Cog):
     ):
         """Use to unlink a channel from a role"""
 
-        data = await self.linking.unlink(
+        data = await self.linking_utils.unlink(
             interaction, channel, role, infer_link_type(channel), RoleCategory.REGULAR
         )
 
@@ -87,7 +87,7 @@ class Linking(commands.Cog):
     ):
         """Use to set a suffix for a channel"""
 
-        data = await self.linking.suffix_add(
+        data = await self.linking_utils.suffix_add(
             interaction, channel, suffix, infer_link_type(channel)
         )
 
@@ -106,7 +106,7 @@ class Linking(commands.Cog):
     ):
         """Use to remove a suffix for a channel"""
 
-        data = await self.linking.suffix_remove(
+        data = await self.linking_utils.suffix_remove(
             interaction, channel, infer_link_type(channel)
         )
 
@@ -128,7 +128,7 @@ class Linking(commands.Cog):
     ):
         """Use to add a reverse role link"""
 
-        data = await self.linking.link(
+        data = await self.linking_utils.link(
             interaction, channel, role, infer_link_type(channel), RoleCategory.REVERSE
         )
 
@@ -150,7 +150,7 @@ class Linking(commands.Cog):
     ):
         """Use to remove a reverse role link"""
 
-        data = await self.linking.unlink(
+        data = await self.linking_utils.unlink(
             interaction, channel, role, infer_link_type(channel), RoleCategory.REVERSE
         )
 
