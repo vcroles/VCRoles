@@ -80,7 +80,7 @@ if using_topgg:
     @topgg.endpoint("/dbl", topgg.WebhookType.BOT, config.DBL.WEBHOOK_PASSWORD)
     def dbl_endpoint(
         vote_data: topgg.types.BotVoteData,
-        client: VCRolesClient = topgg.data(VCRolesClient),
+        _client: VCRolesClient = topgg.data(VCRolesClient),
     ):
         client.dispatch("dbl_vote", vote_data)
 
