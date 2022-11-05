@@ -311,22 +311,17 @@ class AllLink(commands.Cog):
         )
 
         if str(role.id) in data.reverseLinkedRoles:
-            try:
-                data.reverseLinkedRoles.remove(str(role.id))
+            data.reverseLinkedRoles.remove(str(role.id))
 
-                await self.client.db.update_channel_linked(
-                    interaction.guild.id,
-                    LinkType.ALL,
-                    reverse_linked_roles=data.reverseLinkedRoles,
-                )
+            await self.client.db.update_channel_linked(
+                interaction.guild.id,
+                LinkType.ALL,
+                reverse_linked_roles=data.reverseLinkedRoles,
+            )
 
-                await interaction.response.send_message(
-                    f"Removed reverse link: `@{role.name}`"
-                )
-            except Exception:
-                await interaction.response.send_message(
-                    "An error occurred while removing the reverse link."
-                )
+            await interaction.response.send_message(
+                f"Removed reverse link: `@{role.name}`"
+            )
         else:
             await interaction.response.send_message("The role is not a reverse link.")
 
