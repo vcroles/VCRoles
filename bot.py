@@ -51,7 +51,7 @@ if using_topgg:
             try:
                 user = await client.fetch_user(data.user)
                 description = f"{user.mention} ({user.name}) just voted for VC Roles on Top.gg & received unlimited command usage for the rest of the day!\n\nClick [here](https://top.gg/bot/775025797034541107/vote) to vote"
-            except:
+            except discord.NotFound:
                 user = discord.Object(id=int(data.user))
                 description = f"<@{user.id}> just voted for VC Roles on Top.gg & received unlimited command usage for the rest of the day!\n\nClick [here](https://top.gg/bot/775025797034541107/vote) to vote"
 
@@ -80,7 +80,7 @@ if using_topgg:
     @topgg.endpoint("/dbl", topgg.WebhookType.BOT, config.DBL.WEBHOOK_PASSWORD)
     def dbl_endpoint(
         vote_data: topgg.types.BotVoteData,
-        client: VCRolesClient = topgg.data(VCRolesClient),
+        _client: VCRolesClient = topgg.data(VCRolesClient),
     ):
         client.dispatch("dbl_vote", vote_data)
 

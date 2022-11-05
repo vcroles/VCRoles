@@ -154,8 +154,14 @@ class AllLink(commands.Cog):
                 await interaction.response.send_message(
                     "The channel is already an exception."
                 )
-        except:
-            await interaction.response.send_message("Unable to add exception")
+        except AttributeError:
+            await interaction.response.send_message(
+                "You must be in a voice or stage channel."
+            )
+        except Exception:
+            await interaction.response.send_message(
+                "An error occurred while adding the exception."
+            )
 
         return self.client.incr_counter("all_add_exception")
 
@@ -305,20 +311,17 @@ class AllLink(commands.Cog):
         )
 
         if str(role.id) in data.reverseLinkedRoles:
-            try:
-                data.reverseLinkedRoles.remove(str(role.id))
+            data.reverseLinkedRoles.remove(str(role.id))
 
-                await self.client.db.update_channel_linked(
-                    interaction.guild.id,
-                    LinkType.ALL,
-                    reverse_linked_roles=data.reverseLinkedRoles,
-                )
+            await self.client.db.update_channel_linked(
+                interaction.guild.id,
+                LinkType.ALL,
+                reverse_linked_roles=data.reverseLinkedRoles,
+            )
 
-                await interaction.response.send_message(
-                    f"Removed reverse link: `@{role.name}`"
-                )
-            except:
-                pass
+            await interaction.response.send_message(
+                f"Removed reverse link: `@{role.name}`"
+            )
         else:
             await interaction.response.send_message("The role is not a reverse link.")
 

@@ -48,7 +48,7 @@ class Generator:
             if restricted_role:
                 try:
                     await member.move_to(None)
-                except:
+                except discord.HTTPException:
                     pass
                 finally:
                     return
@@ -67,7 +67,7 @@ class Generator:
         if count >= gen_data.channelLimit:
             try:
                 await member.move_to(None)
-            except:
+            except discord.HTTPException:
                 pass
             finally:
                 return
@@ -173,7 +173,7 @@ class Generator:
 
         try:
             await member.move_to(channel)
-        except:
+        except discord.HTTPException:
             pass
 
         await self.client.db.create_generated_channel(
@@ -199,7 +199,9 @@ class Generator:
                     )
                 try:
                     await gen_channel.edit(overwrites=gen_overwrites)
-                except:
+                except discord.Forbidden:
+                    pass
+                except discord.HTTPException:
                     pass
 
     async def leave(

@@ -37,7 +37,7 @@ class VoiceState(commands.Cog):
 
         # Joining
         if not before.channel and after.channel:
-            roles_changed = await self.join(member, before, after)
+            roles_changed = await self.join(member, after)
 
             if roles_changed:
                 await self.logging.log_join(
@@ -48,7 +48,7 @@ class VoiceState(commands.Cog):
 
         # Leaving
         elif before.channel and not after.channel:
-            roles_changed = await self.leave(member, before, after)
+            roles_changed = await self.leave(member, before)
 
             if roles_changed:
                 await self.logging.log_leave(
@@ -60,9 +60,9 @@ class VoiceState(commands.Cog):
         # Changing
         elif before.channel and after.channel and before.channel != after.channel:
 
-            leave_roles_changed = await self.leave(member, before, after)
+            leave_roles_changed = await self.leave(member, before)
 
-            join_roles_changed = await self.join(member, before, after)
+            join_roles_changed = await self.join(member, after)
 
             if leave_roles_changed and join_roles_changed:
                 await self.logging.log_change(
@@ -157,7 +157,6 @@ class VoiceState(commands.Cog):
     async def join(
         self,
         member: discord.Member,
-        before: discord.VoiceState,
         after: discord.VoiceState,
     ) -> list[VoiceStateReturnData]:
         if not after.channel or not after.channel.type:
@@ -243,7 +242,6 @@ class VoiceState(commands.Cog):
         self,
         member: discord.Member,
         before: discord.VoiceState,
-        after: discord.VoiceState,
     ) -> list[VoiceStateReturnData]:
         if not before.channel or not before.channel.type:
             return []

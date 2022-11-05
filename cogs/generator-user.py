@@ -182,7 +182,9 @@ class GenInterface(commands.Cog):
 
         try:
             await user.send(message)
-        except:
+        except discord.Forbidden:
+            return_message += f"\nCould not DM {user.display_name}"
+        except discord.HTTPException:
             return_message += f"\nCould not DM {user.display_name}"
 
         await interaction.response.send_message(return_message, ephemeral=True)

@@ -65,7 +65,7 @@ class VCRolesClient(commands.AutoShardedBot):
         print(f"Bot is in {len(self.guilds)} guilds.")
         print("------")
 
-    async def on_guild_join(self, guild: discord.Guild):
+    async def on_guild_join(self, _guild: discord.Guild):
         self.incr_counter("guilds_join")
 
     async def on_guild_remove(self, guild: discord.Guild):
