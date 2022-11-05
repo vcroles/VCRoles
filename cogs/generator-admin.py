@@ -597,7 +597,7 @@ class VoiceGen(commands.Cog):
 
         if gen_data.defaultOptions:
             await interaction.response.send_message(
-                f"The currently enabled for {generator.mention} options are: {', '.join([option for option in gen_data.defaultOptions])}"
+                f"The currently enabled for {generator.mention} options are: {', '.join(gen_data.defaultOptions)}"
             )
         else:
             await interaction.response.send_message(
