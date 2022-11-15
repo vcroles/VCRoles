@@ -211,17 +211,25 @@ class Generator:
     ):
         data = await self.client.db.get_generated_channel(user_channel.id)
 
+        try:
+            voice_channel = await self.client.fetch_channel(user_channel.id)
+        except discord.HTTPException:
+            return
+
+        if not isinstance(voice_channel, discord.VoiceChannel):
+            return
+
         if not data:
             return
 
-        if not user_channel.members:
-            await user_channel.delete()
+        if not voice_channel.members:
+            await voice_channel.delete()
             if data.textChannelId:
                 text_channel = self.client.get_channel(int(data.textChannelId))
                 if text_channel and isinstance(text_channel, discord.TextChannel):
                     await text_channel.delete()
 
-            await self.client.db.delete_generated_channel(user_channel.id)
+            await self.client.db.delete_generated_channel(voice_channel.id)
 
             if data.VoiceGenerator and data.VoiceGenerator.hideAtLimit:
                 if data.VoiceGenerator.defaultRole:
