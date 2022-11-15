@@ -18,7 +18,7 @@ from views.url import TopGG
 
 setup_logging()
 
-intents = discord.Intents(messages=True, guilds=True, reactions=True, voice_states=True)
+intents = discord.Intents(guilds=True, voice_states=True, dm_messages=True)
 
 ar: aioredis.Redis[Any] = aioredis.Redis(
     host=config.REDIS.HOST,
