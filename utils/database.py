@@ -19,12 +19,12 @@ from utils.types import DiscordID
 class DatabaseUtils:
     """Tools for interacting with the database"""
 
-    guild_cache: TTLCache[Any, Any] = TTLCache(1024, 60 * 60)
-    linked_channel_cache: TTLCache[Any, Any] = TTLCache(1024, 60 * 60)
-    all_channel_cache: TTLCache[Any, Any] = TTLCache(100, 60 * 60)
-    get_generators_cache: TTLCache[Any, Any] = TTLCache(100, 60 * 60)
-    generator_cache: TTLCache[Any, Any] = TTLCache(1024, 60 * 60)
-    generated_channel_cache: TTLCache[Any, Any] = TTLCache(200, 60 * 60)
+    guild_cache: TTLCache[Any, Any] = TTLCache(2**11, 60 * 60)
+    linked_channel_cache: TTLCache[Any, Any] = TTLCache(2**15, 60 * 60)
+    all_channel_cache: TTLCache[Any, Any] = TTLCache(2**8, 60 * 60)
+    get_generators_cache: TTLCache[Any, Any] = TTLCache(2**8, 60 * 60)
+    generator_cache: TTLCache[Any, Any] = TTLCache(2**8, 60 * 60)
+    generated_channel_cache: TTLCache[Any, Any] = TTLCache(2**8, 60 * 60)
 
     def __init__(self) -> None:
         self.db = Prisma()
@@ -48,7 +48,6 @@ class DatabaseUtils:
 
     @cached(guild_cache)
     async def get_guild_data(self, guild_id: DiscordID) -> Guild:
-        print("Getting guild data from database")
         data = await self.db.guild.find_unique(where={"id": str(guild_id)})
         if not data:
             data = await self.db.guild.create({"id": str(guild_id)})
@@ -112,7 +111,6 @@ class DatabaseUtils:
         guild_id: DiscordID,
         link_type: LinkType = LinkType.REGULAR,
     ) -> Link:
-        print("Getting linked channel from database")
         data = await self.db.link.find_first(
             where={"AND": [{"id": str(channel_id)}, {"type": link_type}]}
         )
@@ -179,16 +177,13 @@ class DatabaseUtils:
             pass
 
         try:
-            k = hashkey(
-                self, guild_id
-            )  ### @CDE - Do not type as self=self instead just type self ## TODO: Fix this
+            k = hashkey(self, guild_id)
             del self.all_channel_cache[k]
         except KeyError:
             pass
 
     @cached(all_channel_cache)
     async def get_all_linked(self, guild_id: DiscordID) -> List[Link]:
-        print("Getting all linked channels from database")
         guild = await self.db.guild.find_unique(
             where={"id": str(guild_id)}, include={"links": True}
         )
@@ -201,7 +196,6 @@ class DatabaseUtils:
 
     @cached(get_generators_cache)
     async def get_generators(self, guild_id: DiscordID) -> list[VoiceGenerator]:
-        print("Getting generators from database")
         data = await self.db.voicegenerator.find_many(
             where={"guildId": str(guild_id)}, include={"openChannels": True}
         )
@@ -213,7 +207,6 @@ class DatabaseUtils:
     async def get_generator(
         self, guild_id: DiscordID, generator_id: DiscordID
     ) -> Optional[VoiceGenerator]:
-        print("Getting generator from database")
         data = await self.db.voicegenerator.find_unique(
             where={
                 "guildId_generatorId": {
@@ -311,7 +304,6 @@ class DatabaseUtils:
     async def get_generated_channel(
         self, channel_id: DiscordID
     ) -> Optional[GeneratedChannel]:
-        print("Getting generated channel from database")
         data = await self.db.generatedchannel.find_unique(
             where={"channelId": str(channel_id)}, include={"VoiceGenerator": True}
         )
