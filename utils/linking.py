@@ -36,15 +36,24 @@ class LinkingUtils:
 
             if role_category == RoleCategory.REGULAR:
                 await self.client.db.update_channel_linked(
-                    channel.id, link_type, linked_roles=linked_roles
+                    channel.id,
+                    interaction.guild.id,
+                    link_type,
+                    linked_roles=linked_roles,
                 )
             elif role_category == RoleCategory.REVERSE:
                 await self.client.db.update_channel_linked(
-                    channel.id, link_type, reverse_linked_roles=linked_roles
+                    channel.id,
+                    interaction.guild.id,
+                    link_type,
+                    reverse_linked_roles=linked_roles,
                 )
             elif role_category == RoleCategory.STAGE_SPEAKER:
                 await self.client.db.update_channel_linked(
-                    channel.id, link_type, speaker_roles=linked_roles
+                    channel.id,
+                    interaction.guild.id,
+                    link_type,
+                    speaker_roles=linked_roles,
                 )
 
             message = f"Linked {channel.mention} with role `@{role.name}`"
@@ -93,15 +102,24 @@ class LinkingUtils:
 
             if role_category == RoleCategory.REGULAR:
                 await self.client.db.update_channel_linked(
-                    channel.id, link_type, linked_roles=linked_roles
+                    channel.id,
+                    interaction.guild.id,
+                    link_type,
+                    linked_roles=linked_roles,
                 )
             elif role_category == RoleCategory.REVERSE:
                 await self.client.db.update_channel_linked(
-                    channel.id, link_type, reverse_linked_roles=linked_roles
+                    channel.id,
+                    interaction.guild.id,
+                    link_type,
+                    reverse_linked_roles=linked_roles,
                 )
             elif role_category == RoleCategory.STAGE_SPEAKER:
                 await self.client.db.update_channel_linked(
-                    channel.id, link_type, speaker_roles=linked_roles
+                    channel.id,
+                    interaction.guild.id,
+                    link_type,
+                    speaker_roles=linked_roles,
                 )
 
             message = f"Unlinked {channel.mention} and role: `@{role.name}`"
@@ -128,7 +146,9 @@ class LinkingUtils:
 
         data.suffix = suffix
 
-        await self.client.db.update_channel_linked(channel.id, link_type, suffix=suffix)
+        await self.client.db.update_channel_linked(
+            channel.id, interaction.guild.id, link_type, suffix=suffix
+        )
 
         message = f"Set the suffix for {channel.mention} to `{suffix}`"
 
@@ -143,7 +163,9 @@ class LinkingUtils:
         if not interaction.guild_id or not interaction.guild:
             return LinkReturnData(False, "Guild ID not present", None)
 
-        await self.client.db.update_channel_linked(channel.id, link_type, suffix="")
+        await self.client.db.update_channel_linked(
+            channel.id, interaction.guild.id, link_type, suffix=""
+        )
 
         message = f"Removed the suffix for {channel.mention}"
 

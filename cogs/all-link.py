@@ -54,7 +54,10 @@ class AllLink(commands.Cog):
             data.linkedRoles.append(str(role.id))
 
             await self.client.db.update_channel_linked(
-                interaction.guild.id, LinkType.ALL, linked_roles=data.linkedRoles
+                interaction.guild.id,
+                interaction.guild.id,
+                LinkType.ALL,
+                linked_roles=data.linkedRoles,
             )
 
             await interaction.response.send_message(
@@ -104,7 +107,10 @@ class AllLink(commands.Cog):
             data.linkedRoles.remove(str(role.id))
 
             await self.client.db.update_channel_linked(
-                interaction.guild.id, LinkType.ALL, linked_roles=data.linkedRoles
+                interaction.guild.id,
+                interaction.guild.id,
+                LinkType.ALL,
+                linked_roles=data.linkedRoles,
             )
 
             await interaction.response.send_message(
@@ -142,6 +148,7 @@ class AllLink(commands.Cog):
                 data.excludeChannels.append(str(channel.id))
 
                 await self.client.db.update_channel_linked(
+                    interaction.guild.id,
                     interaction.guild.id,
                     LinkType.ALL,
                     exclude_channels=data.excludeChannels,
@@ -190,6 +197,7 @@ class AllLink(commands.Cog):
 
             await self.client.db.update_channel_linked(
                 interaction.guild.id,
+                interaction.guild.id,
                 LinkType.ALL,
                 exclude_channels=data.excludeChannels,
             )
@@ -223,7 +231,7 @@ class AllLink(commands.Cog):
             )
 
         await self.client.db.update_channel_linked(
-            interaction.guild.id, LinkType.ALL, suffix=suffix
+            interaction.guild.id, interaction.guild.id, LinkType.ALL, suffix=suffix
         )
 
         await interaction.response.send_message(
@@ -244,7 +252,7 @@ class AllLink(commands.Cog):
             )
 
         await self.client.db.update_channel_linked(
-            interaction.guild.id, LinkType.ALL, suffix="None"
+            interaction.guild.id, interaction.guild.id, LinkType.ALL, suffix="None"
         )
 
         await interaction.response.send_message("Removed the username suffix rule")
@@ -275,6 +283,7 @@ class AllLink(commands.Cog):
             data.reverseLinkedRoles.append(str(role.id))
 
             await self.client.db.update_channel_linked(
+                interaction.guild.id,
                 interaction.guild.id,
                 LinkType.ALL,
                 reverse_linked_roles=data.reverseLinkedRoles,
@@ -314,6 +323,7 @@ class AllLink(commands.Cog):
             data.reverseLinkedRoles.remove(str(role.id))
 
             await self.client.db.update_channel_linked(
+                interaction.guild.id,
                 interaction.guild.id,
                 LinkType.ALL,
                 reverse_linked_roles=data.reverseLinkedRoles,

@@ -1,5 +1,8 @@
-from typing import List, Optional
+from typing import Any, List, Optional
 
+from asyncache import cached  # type: ignore
+from cachetools import TTLCache
+from cachetools.keys import hashkey
 from prisma import Prisma
 from prisma.enums import LinkType, VoiceGeneratorOption, VoiceGeneratorType
 from prisma.models import GeneratedChannel, Guild, Link, VoiceGenerator
@@ -16,6 +19,13 @@ from utils.types import DiscordID
 class DatabaseUtils:
     """Tools for interacting with the database"""
 
+    guild_cache: TTLCache[Any, Any] = TTLCache(1024, 60 * 60)
+    linked_channel_cache: TTLCache[Any, Any] = TTLCache(1024, 60 * 60)
+    all_channel_cache: TTLCache[Any, Any] = TTLCache(100, 60 * 60)
+    get_generators_cache: TTLCache[Any, Any] = TTLCache(100, 60 * 60)
+    generator_cache: TTLCache[Any, Any] = TTLCache(1024, 60 * 60)
+    generated_channel_cache: TTLCache[Any, Any] = TTLCache(200, 60 * 60)
+
     def __init__(self) -> None:
         self.db = Prisma()
 
@@ -30,7 +40,15 @@ class DatabaseUtils:
         await self.db.voicegenerator.delete_many(where={"guildId": str(guild_id)})
         await self.db.guild.delete(where={"id": str(guild_id)})
 
+        try:
+            k = hashkey(self, guild_id)
+            del self.guild_cache[k]
+        except KeyError:
+            pass
+
+    @cached(guild_cache)
     async def get_guild_data(self, guild_id: DiscordID) -> Guild:
+        print("Getting guild data from database")
         data = await self.db.guild.find_unique(where={"id": str(guild_id)})
         if not data:
             data = await self.db.guild.create({"id": str(guild_id)})
@@ -81,12 +99,20 @@ class DatabaseUtils:
                 }
             )
 
+        try:
+            k = hashkey(self, guild_id)
+            del self.guild_cache[k]
+        except KeyError:
+            pass
+
+    @cached(linked_channel_cache)
     async def get_channel_linked(
         self,
         channel_id: DiscordID,
         guild_id: DiscordID,
         link_type: LinkType = LinkType.REGULAR,
     ) -> Link:
+        print("Getting linked channel from database")
         data = await self.db.link.find_first(
             where={"AND": [{"id": str(channel_id)}, {"type": link_type}]}
         )
@@ -100,6 +126,7 @@ class DatabaseUtils:
     async def update_channel_linked(
         self,
         channel_id: DiscordID,
+        guild_id: DiscordID,
         link_type: LinkType = LinkType.REGULAR,
         linked_roles: Optional[List[str]] = None,
         reverse_linked_roles: Optional[List[str]] = None,
@@ -145,7 +172,23 @@ class DatabaseUtils:
                 }
             )
 
+        try:
+            k = hashkey(self, channel_id, guild_id, link_type)
+            del self.linked_channel_cache[k]
+        except KeyError:
+            pass
+
+        try:
+            k = hashkey(
+                self, guild_id
+            )  ### @CDE - Do not type as self=self instead just type self ## TODO: Fix this
+            del self.all_channel_cache[k]
+        except KeyError:
+            pass
+
+    @cached(all_channel_cache)
     async def get_all_linked(self, guild_id: DiscordID) -> List[Link]:
+        print("Getting all linked channels from database")
         guild = await self.db.guild.find_unique(
             where={"id": str(guild_id)}, include={"links": True}
         )
@@ -156,7 +199,9 @@ class DatabaseUtils:
 
         return guild.links or []
 
+    @cached(get_generators_cache)
     async def get_generators(self, guild_id: DiscordID) -> list[VoiceGenerator]:
+        print("Getting generators from database")
         data = await self.db.voicegenerator.find_many(
             where={"guildId": str(guild_id)}, include={"openChannels": True}
         )
@@ -164,9 +209,11 @@ class DatabaseUtils:
             return []
         return data
 
+    @cached(generator_cache)
     async def get_generator(
         self, guild_id: DiscordID, generator_id: DiscordID
     ) -> Optional[VoiceGenerator]:
+        print("Getting generator from database")
         data = await self.db.voicegenerator.find_unique(
             where={
                 "guildId_generatorId": {
@@ -248,9 +295,23 @@ class DatabaseUtils:
                 }
             )
 
+        try:
+            k = hashkey(self, guild_id)
+            del self.get_generators_cache[k]
+        except KeyError:
+            pass
+
+        try:
+            k = hashkey(self, guild_id, generator_id)
+            del self.generator_cache[k]
+        except KeyError:
+            pass
+
+    @cached(generated_channel_cache)
     async def get_generated_channel(
         self, channel_id: DiscordID
     ) -> Optional[GeneratedChannel]:
+        print("Getting generated channel from database")
         data = await self.db.generatedchannel.find_unique(
             where={"channelId": str(channel_id)}, include={"VoiceGenerator": True}
         )
@@ -258,6 +319,12 @@ class DatabaseUtils:
 
     async def delete_generated_channel(self, channel_id: DiscordID) -> None:
         await self.db.generatedchannel.delete(where={"channelId": str(channel_id)})
+
+        try:
+            k = hashkey(self, channel_id)
+            del self.generated_channel_cache[k]
+        except KeyError:
+            pass
 
     async def update_generated_channel(
         self,
@@ -284,6 +351,12 @@ class DatabaseUtils:
             where={"channelId": str(channel_id)}, data=data
         )
 
+        try:
+            k = hashkey(self, channel_id)
+            del self.generated_channel_cache[k]
+        except KeyError:
+            pass
+
     async def create_generated_channel(
         self,
         guild_id: DiscordID,
@@ -309,6 +382,25 @@ class DatabaseUtils:
                 "textChannelId": text_channel_id,
             }
         )
+
+        try:
+            k = hashkey(self, guild_id)
+            del self.get_generators_cache[k]
+        except KeyError:
+            pass
+
+        try:
+            k = hashkey(self, guild_id, generator_id)
+            del self.generator_cache[k]
+        except KeyError:
+            pass
+
+        try:
+            k = hashkey(self, channel_id)
+            del self.generated_channel_cache[k]
+        except KeyError:
+            pass
+
         return data
 
     async def delete_generator(
@@ -322,6 +414,18 @@ class DatabaseUtils:
                 }
             }
         )
+
+        try:
+            k = hashkey(self, guild_id)
+            del self.get_generators_cache[k]
+        except KeyError:
+            pass
+
+        try:
+            k = hashkey(self, guild_id, generator_id)
+            del self.generator_cache[k]
+        except KeyError:
+            pass
 
     async def get_all_linked_channel(
         self,

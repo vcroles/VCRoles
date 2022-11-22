@@ -40,6 +40,7 @@ class UnLink(commands.Cog):
             data.excludeChannels.remove(channel_id)
             await self.client.db.update_channel_linked(
                 interaction.guild.id,
+                interaction.guild.id,
                 LinkType.ALL,
                 exclude_channels=data.excludeChannels,
             )
