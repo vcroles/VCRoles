@@ -7,6 +7,9 @@ redis
 pre-commit
 requests
 prisma
+cachetools
+types-cachetools
+asyncache
 orjson>=3.5.4 # these are discord.py's speed modules
 aiodns>=1.1
 Brotli
