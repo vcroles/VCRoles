@@ -39,23 +39,21 @@ class VoiceState(commands.Cog):
         if not before.channel and after.channel:
             roles_changed = await self.join(member, after)
 
-            if roles_changed:
-                await self.logging.log_join(
-                    after.channel,
-                    member,
-                    roles_changed,
-                )
+            await self.logging.log_join(
+                after.channel,
+                member,
+                roles_changed,
+            )
 
         # Leaving
         elif before.channel and not after.channel:
             roles_changed = await self.leave(member, before)
 
-            if roles_changed:
-                await self.logging.log_leave(
-                    before.channel,
-                    member,
-                    roles_changed,
-                )
+            await self.logging.log_leave(
+                before.channel,
+                member,
+                roles_changed,
+            )
 
         # Changing
         elif before.channel and after.channel and before.channel != after.channel:
@@ -64,14 +62,13 @@ class VoiceState(commands.Cog):
 
             join_roles_changed = await self.join(member, after)
 
-            if leave_roles_changed and join_roles_changed:
-                await self.logging.log_change(
-                    before.channel,
-                    after.channel,
-                    member,
-                    leave_roles_changed,
-                    join_roles_changed,
-                )
+            await self.logging.log_change(
+                before.channel,
+                after.channel,
+                member,
+                leave_roles_changed,
+                join_roles_changed,
+            )
 
         if (
             isinstance(before.channel, discord.StageChannel)
