@@ -754,6 +754,28 @@ class VoiceGen(commands.Cog):
             f"{'Enabled' if enabled else 'Disabled'} voice generator hide at limit in {generator.mention}"
         )
 
+    @generator_commands.command(name="force_remove")
+    @check_any(command_available, is_owner)
+    @app_commands.checks.has_permissions(administrator=True)
+    async def force_remove(
+        self,
+        interaction: discord.Interaction,
+    ):
+        """Force removes all generator channels in a server from the database"""
+
+        if not interaction.guild:
+            return await interaction.response.send_message(
+                "This command can only be used in a server"
+            )
+
+        deleted = await self.client.db.db.voicegenerator.delete_many(
+            where={"guildId": str(interaction.guild.id)}
+        )
+
+        await interaction.response.send_message(
+            f"Deleted {deleted} generator channels from the database"
+        )
+
 
 async def setup(client: VCRolesClient):
     await client.add_cog(VoiceGen(client))

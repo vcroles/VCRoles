@@ -80,6 +80,9 @@ class VCRolesClient(commands.AutoShardedBot):
         await self.db.db.link.delete_many(
             where={"id": str(channel.id), "guildId": str(channel.guild.id)}
         )
+        await self.db.db.voicegenerator.delete_many(
+            where={"generatorId": str(channel.id), "guildId": str(channel.guild.id)}
+        )
 
     async def close(self) -> None:
         await self.db.disconnect()
