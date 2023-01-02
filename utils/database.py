@@ -36,8 +36,6 @@ class DatabaseUtils:
         await self.db.disconnect()
 
     async def guild_remove(self, guild_id: DiscordID) -> None:
-        await self.db.link.delete_many(where={"guildId": str(guild_id)})
-        await self.db.voicegenerator.delete_many(where={"guildId": str(guild_id)})
         await self.db.guild.delete(where={"id": str(guild_id)})
 
         try:
@@ -45,6 +43,9 @@ class DatabaseUtils:
             del self.guild_cache[k]
         except KeyError:
             pass
+
+    async def guild_add(self, guild_id: DiscordID) -> None:
+        await self.db.guild.create({"id": str(guild_id)})
 
     @cached(guild_cache)
     async def get_guild_data(self, guild_id: DiscordID) -> Guild:

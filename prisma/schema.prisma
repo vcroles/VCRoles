@@ -33,7 +33,7 @@ model Link {
     dbId               String   @unique @default(cuid())
     id                 String
     type               LinkType @default(REGULAR)
-    guild              Guild    @relation(fields: [guildId], references: [id])
+    guild              Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
     guildId            String
     linkedRoles        String[]
     reverseLinkedRoles String[]
@@ -61,7 +61,7 @@ enum VoiceGeneratorOption {
 
 model VoiceGenerator {
     id               String                 @id @default(cuid())
-    guild            Guild                  @relation(fields: [guildId], references: [id])
+    guild            Guild                  @relation(fields: [guildId], references: [id], onDelete: Cascade)
     guildId          String
     categoryId       String
     generatorId      String
