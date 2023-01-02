@@ -6,7 +6,7 @@ pynacl
 redis
 pre-commit
 requests
-prisma
+prisma==0.7.1
 cachetools
 types-cachetools
 asyncache
