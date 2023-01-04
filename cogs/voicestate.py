@@ -1,21 +1,9 @@
-import asyncio
-from asyncio import Task
-from typing import Optional
-
 import discord
 from discord.ext import commands
 from prisma.enums import LinkType
-from prisma.models import Link
 
 from utils import VCRolesClient
-from utils.types import (
-    DiscordID,
-    MentionableRole,
-    RoleList,
-    VoiceStateData,
-    VoiceStateReturnData,
-)
-from utils.utils import add_suffix, remove_suffix
+from utils.types import MentionableRole, SuffixConstructor, VoiceStateReturnData
 from voicestate import Generator, Logging
 
 
@@ -37,30 +25,36 @@ class VoiceState(commands.Cog):
 
         # Joining
         if not before.channel and after.channel:
-            roles_changed = await self.join(member, after)
+            roles_changed, failed_roles = await self.join(member, after)
 
             await self.logging.log_join(
                 after.channel,
                 member,
                 roles_changed,
+                failed_roles,
             )
 
         # Leaving
         elif before.channel and not after.channel:
-            roles_changed = await self.leave(member, before)
+            roles_changed, failed_roles = await self.leave(member, before)
 
             await self.logging.log_leave(
                 before.channel,
                 member,
                 roles_changed,
+                failed_roles,
             )
 
         # Changing
         elif before.channel and after.channel and before.channel != after.channel:
 
-            leave_roles_changed = await self.leave(member, before)
+            # leave_roles_changed, leave_failed_roles = await self.leave(member, before)
 
-            join_roles_changed = await self.join(member, after)
+            # join_roles_changed, join_failed_roles = await self.join(member, after)
+
+            leave_roles_changed, join_roles_changed, failed_roles = await self.change(
+                member, before, after
+            )
 
             await self.logging.log_change(
                 before.channel,
@@ -68,6 +62,7 @@ class VoiceState(commands.Cog):
                 member,
                 leave_roles_changed,
                 join_roles_changed,
+                failed_roles,
             )
 
         if (
@@ -111,53 +106,13 @@ class VoiceState(commands.Cog):
                     except discord.errors.HTTPException:
                         pass
 
-    @staticmethod
-    def data_converter(
-        links: list[Link], channel_id: DiscordID, category_id: Optional[DiscordID]
-    ) -> VoiceStateData:
-        return_data = VoiceStateData()
-
-        for link in links:
-            if link.type == LinkType.REGULAR:
-                return_data.voice_data = link
-            elif link.type == LinkType.STAGE:
-                return_data.stage_data = link
-            elif link.type == LinkType.CATEGORY:
-                return_data.category_data = link
-            elif link.type == LinkType.PERMANENT:
-                if link.id == str(channel_id):
-                    return_data.permanent_data = link
-                elif category_id and link.id == str(category_id):
-                    return_data.category_perm_data = link
-            elif link.type == LinkType.ALL:
-                return_data.all_data = link
-
-        return_data.suffix = " ".join(
-            list(
-                filter(
-                    None,
-                    [
-                        i.suffix if i and i.suffix else ""
-                        for i in [
-                            return_data.voice_data,
-                            return_data.stage_data,
-                            return_data.category_data,
-                            return_data.all_data,
-                        ]
-                    ],
-                )
-            )
-        )
-
-        return return_data
-
     async def join(
         self,
         member: discord.Member,
         after: discord.VoiceState,
-    ) -> list[VoiceStateReturnData]:
+    ) -> tuple[list[VoiceStateReturnData], list[discord.Role]]:
         if not after.channel or not after.channel.type:
-            return []
+            return [], []
 
         links = await self.client.db.get_all_linked_channel(
             member.guild.id,
@@ -165,83 +120,101 @@ class VoiceState(commands.Cog):
             after.channel.category.id if after.channel.category else None,
         )
 
-        linked_data = self.data_converter(
-            links,
-            after.channel.id,
-            after.channel.category.id if after.channel.category else None,
-        )
+        addable_roles: list[str] = []
+        removeable_roles: list[str] = []
 
-        tasks: list[Task[VoiceStateReturnData]] = []
+        return_data: list[VoiceStateReturnData] = []
+        suffix_data = SuffixConstructor()
 
-        if isinstance(after.channel, discord.VoiceChannel) and linked_data.voice_data:
-            tasks.append(
-                self.client.loop.create_task(
-                    self.handle_join(linked_data.voice_data, member, after.channel.id)
+        for link in links:
+            if str(after.channel.id) in link.excludeChannels:
+                continue
+            addable_roles.extend(link.linkedRoles)
+            removeable_roles.extend(link.reverseLinkedRoles)
+            return_data.append(
+                VoiceStateReturnData(
+                    "join",
+                    link.type,
+                    list(map(lambda x: MentionableRole(x), link.linkedRoles)),
+                    list(map(lambda x: MentionableRole(x), link.reverseLinkedRoles)),
                 )
             )
+            suffix_data.add(link.type, link.suffix or "")
 
-        if isinstance(after.channel, discord.StageChannel) and linked_data.stage_data:
-            tasks.append(
-                self.client.loop.create_task(
-                    self.handle_join(linked_data.stage_data, member, after.channel.id)
-                )
-            )
+        # remove duplicates
+        addable_roles = list(set(addable_roles))
+        removeable_roles = list(set(removeable_roles))
 
-        if after.channel.category and linked_data.category_data:
-            tasks.append(
-                self.client.loop.create_task(
-                    self.handle_join(
-                        linked_data.category_data,
-                        member,
-                        after.channel.id,
-                    )
-                )
-            )
+        # if a role appears in both lists, remove both instances
+        for role in addable_roles:
+            if role in removeable_roles:
+                addable_roles.remove(role)
+                removeable_roles.remove(role)
 
-        if after.channel.category and linked_data.category_perm_data:
-            tasks.append(
-                self.client.loop.create_task(
-                    self.handle_join(
-                        linked_data.category_perm_data,
-                        member,
-                        after.channel.id,
-                    )
-                )
-            )
+        failed_roles: list[discord.Role] = []
 
-        if linked_data.permanent_data:
-            tasks.append(
-                self.client.loop.create_task(
-                    self.handle_join(
-                        linked_data.permanent_data,
-                        member,
-                        after.channel.id,
-                    )
-                )
-            )
+        member_roles = member.roles
 
-        if linked_data.all_data:
-            tasks.append(
-                self.client.loop.create_task(
-                    self.handle_join(linked_data.all_data, member, after.channel.id)
+        for role_id in addable_roles:
+            role = member.guild.get_role(int(role_id))
+            if not role:
+                continue
+
+            if not role.is_assignable():
+                failed_roles.append(role)
+                continue
+
+            if role not in member_roles:
+                member_roles.append(role)
+
+        for role_id in removeable_roles:
+            role = member.guild.get_role(int(role_id))
+            if not role:
+                continue
+
+            if not role.is_assignable():
+                failed_roles.append(role)
+                continue
+
+            if role in member_roles:
+                member_roles.remove(role)
+
+        addable_suffix = f"{suffix_data.permanent_suffix + ' ' if suffix_data.permanent_suffix else ''}{suffix_data.suffix}"
+        if not member.display_name.endswith(addable_suffix):
+            new_user_nickname = f"{member.display_name} {addable_suffix}"
+            if len(new_user_nickname) > 32:
+                new_user_nickname = member.display_name
+        else:
+            new_user_nickname = member.display_name
+
+        if member_roles != member.roles or new_user_nickname != member.display_name:
+            if (
+                member.top_role < member.guild.me.top_role
+                and member.id != member.guild.owner_id
+                and new_user_nickname != member.display_name
+            ):
+                await member.edit(
+                    roles=member_roles,
+                    nick=new_user_nickname,
+                    reason="Joined Voice Channel",
                 )
-            )
+            else:
+                await member.edit(roles=member_roles, reason="Joined Voice Channel")
+
+        self.client.incr_role_counter("added", len(addable_roles))
+        self.client.incr_role_counter("removed", len(removeable_roles))
 
         await self.generator.join(member, after.channel)
 
-        await add_suffix(member, linked_data.suffix)
-
-        results: list[VoiceStateReturnData] = await asyncio.gather(*tasks)
-
-        return results
+        return return_data, list(set(failed_roles))
 
     async def leave(
         self,
         member: discord.Member,
         before: discord.VoiceState,
-    ) -> list[VoiceStateReturnData]:
+    ) -> tuple[list[VoiceStateReturnData], list[discord.Role]]:
         if not before.channel or not before.channel.type:
-            return []
+            return [], []
 
         links = await self.client.db.get_all_linked_channel(
             member.guild.id,
@@ -249,151 +222,233 @@ class VoiceState(commands.Cog):
             before.channel.category.id if before.channel.category else None,
         )
 
-        linked_data = self.data_converter(
-            links,
+        addable_roles: list[str] = []
+        removeable_roles: list[str] = []
+
+        return_data: list[VoiceStateReturnData] = []
+        suffix_data = SuffixConstructor()
+
+        for link in links:
+            if str(before.channel.id) in link.excludeChannels:
+                continue
+            if link.type == LinkType.PERMANENT:
+                continue
+            addable_roles.extend(link.reverseLinkedRoles)
+            removeable_roles.extend(link.linkedRoles)
+            return_data.append(
+                VoiceStateReturnData(
+                    "leave",
+                    link.type,
+                    list(map(lambda x: MentionableRole(x), link.reverseLinkedRoles)),
+                    list(map(lambda x: MentionableRole(x), link.linkedRoles)),
+                )
+            )
+            suffix_data.add(link.type, link.suffix or "")
+
+        # remove duplicates
+        addable_roles = list(set(addable_roles))
+        removeable_roles = list(set(removeable_roles))
+
+        # if a role appears in both lists, remove both instances
+        for role in addable_roles:
+            if role in removeable_roles:
+                addable_roles.remove(role)
+                removeable_roles.remove(role)
+
+        failed_roles: list[discord.Role] = []
+
+        fetched_member = await before.channel.guild.fetch_member(member.id)
+
+        member_roles = fetched_member.roles
+
+        for role_id in addable_roles:
+            role = member.guild.get_role(int(role_id))
+            if not role:
+                continue
+
+            if not role.is_assignable():
+                failed_roles.append(role)
+                continue
+
+            if role not in member_roles:
+                member_roles.append(role)
+
+        for role_id in removeable_roles:
+            role = member.guild.get_role(int(role_id))
+            if not role:
+                continue
+
+            if not role.is_assignable():
+                failed_roles.append(role)
+                continue
+
+            if role in member_roles:
+                member_roles.remove(role)
+
+        new_user_nickname = fetched_member.display_name.removesuffix(suffix_data.suffix)
+
+        if (
+            member_roles != fetched_member.roles
+            or new_user_nickname != fetched_member.display_name
+        ):
+            if (
+                fetched_member.top_role < member.guild.me.top_role
+                and member.id != member.guild.owner_id
+            ):
+                await member.edit(
+                    roles=member_roles,
+                    nick=new_user_nickname,
+                    reason="Left Voice Channel",
+                )
+            else:
+                await member.edit(roles=member_roles, reason="Left Voice Channel")
+
+        self.client.incr_role_counter("added", len(addable_roles))
+        self.client.incr_role_counter("removed", len(removeable_roles))
+
+        await self.generator.leave(member, before.channel)
+
+        return return_data, list(set(failed_roles))
+
+    async def change(
+        self,
+        member: discord.Member,
+        before: discord.VoiceState,
+        after: discord.VoiceState,
+    ) -> tuple[
+        list[VoiceStateReturnData], list[VoiceStateReturnData], list[discord.Role]
+    ]:
+        if not before.channel or not after.channel:
+            raise AssertionError("before.channel is None or after.channel is None")
+
+        before_links = await self.client.db.get_all_linked_channel(
+            member.guild.id,
             before.channel.id,
             before.channel.category.id if before.channel.category else None,
         )
 
-        tasks: list[Task[VoiceStateReturnData]] = []
+        after_links = await self.client.db.get_all_linked_channel(
+            member.guild.id,
+            after.channel.id,
+            after.channel.category.id if after.channel.category else None,
+        )
 
-        if linked_data.all_data:
-            tasks.append(
-                self.client.loop.create_task(
-                    self.handle_leave(linked_data.all_data, member, before.channel.id)
+        addable_roles: list[str] = []
+        removeable_roles: list[str] = []
+
+        leave_return_data: list[VoiceStateReturnData] = []
+        join_return_data: list[VoiceStateReturnData] = []
+
+        leave_suffix_data = SuffixConstructor()
+        join_suffix_data = SuffixConstructor()
+
+        for link in before_links:
+            if str(before.channel.id) in link.excludeChannels:
+                continue
+            if link.type == LinkType.PERMANENT:
+                continue
+            addable_roles.extend(link.reverseLinkedRoles)
+            removeable_roles.extend(link.linkedRoles)
+            leave_return_data.append(
+                VoiceStateReturnData(
+                    "leave",
+                    link.type,
+                    list(map(lambda x: MentionableRole(x), link.reverseLinkedRoles)),
+                    list(map(lambda x: MentionableRole(x), link.linkedRoles)),
                 )
             )
+            leave_suffix_data.add(link.type, link.suffix or "")
 
-        if before.channel.category and linked_data.category_data:
-            tasks.append(
-                self.client.loop.create_task(
-                    self.handle_leave(
-                        linked_data.category_data,
-                        member,
-                        before.channel.id,
-                    )
+        for link in after_links:
+            if str(after.channel.id) in link.excludeChannels:
+                continue
+            addable_roles.extend(link.linkedRoles)
+            removeable_roles.extend(link.reverseLinkedRoles)
+            join_return_data.append(
+                VoiceStateReturnData(
+                    "join",
+                    link.type,
+                    list(map(lambda x: MentionableRole(x), link.linkedRoles)),
+                    list(map(lambda x: MentionableRole(x), link.reverseLinkedRoles)),
                 )
             )
+            join_suffix_data.add(link.type, link.suffix or "")
 
-        if isinstance(before.channel, discord.StageChannel) and linked_data.stage_data:
-            tasks.append(
-                self.client.loop.create_task(
-                    self.handle_leave(
-                        linked_data.stage_data,
-                        member,
-                        before.channel.id,
-                    )
-                )
-            )
+        # remove duplicates
+        addable_roles = list(set(addable_roles))
+        removeable_roles = list(set(removeable_roles))
 
-        if isinstance(before.channel, discord.VoiceChannel) and linked_data.voice_data:
-            tasks.append(
-                self.client.loop.create_task(
-                    self.handle_leave(
-                        linked_data.voice_data,
-                        member,
-                        before.channel.id,
-                    )
+        # if a role appears in both lists, remove both instances
+        for role in addable_roles:
+            if role in removeable_roles:
+                addable_roles.remove(role)
+                removeable_roles.remove(role)
+
+        failed_roles: list[discord.Role] = []
+
+        fetched_member = await before.channel.guild.fetch_member(member.id)
+
+        member_roles = fetched_member.roles
+
+        for role_id in addable_roles:
+            role = member.guild.get_role(int(role_id))
+            if not role:
+                continue
+
+            if not role.is_assignable():
+                failed_roles.append(role)
+                continue
+
+            if role not in member_roles:
+                member_roles.append(role)
+
+        for role_id in removeable_roles:
+            role = member.guild.get_role(int(role_id))
+            if not role:
+                continue
+
+            if not role.is_assignable():
+                failed_roles.append(role)
+                continue
+
+            if role in member_roles:
+                member_roles.remove(role)
+
+        removed_leave_suffix = fetched_member.display_name.removesuffix(
+            leave_suffix_data.suffix
+        )
+        addable_suffix = f" {join_suffix_data.permanent_suffix + ' ' if join_suffix_data.permanent_suffix else ''}{join_suffix_data.suffix}"
+        if len(removed_leave_suffix + addable_suffix) > 32:
+            new_user_nickname = removed_leave_suffix
+        else:
+            if not removed_leave_suffix.endswith(addable_suffix):
+                new_user_nickname = removed_leave_suffix + addable_suffix
+            else:
+                new_user_nickname = removed_leave_suffix
+
+        if (
+            member_roles != fetched_member.roles
+            or new_user_nickname != fetched_member.display_name
+        ):
+            if (
+                fetched_member.top_role < member.guild.me.top_role
+                and member.id != member.guild.owner_id
+            ):
+                await member.edit(
+                    roles=member_roles,
+                    nick=new_user_nickname,
+                    reason="Changed Voice Channel",
                 )
-            )
+            else:
+                await member.edit(roles=member_roles, reason="Changed Voice Channel")
+
+        self.client.incr_role_counter("added", len(addable_roles))
+        self.client.incr_role_counter("removed", len(removeable_roles))
 
         await self.generator.leave(member, before.channel)
+        await self.generator.join(member, after.channel)
 
-        await remove_suffix(member, linked_data.suffix)
-
-        results: list[VoiceStateReturnData] = await asyncio.gather(*tasks)
-
-        return results
-
-    async def handle_join(
-        self,
-        data: Link,
-        member: discord.Member,
-        channel_id: DiscordID,
-    ) -> VoiceStateReturnData:
-        if str(channel_id) in data.excludeChannels:
-            return VoiceStateReturnData("join", data.type)
-
-        if data.type == LinkType.PERMANENT and data.suffix:
-            await add_suffix(member, data.suffix)
-
-        added: RoleList = []
-        for role_id in data.linkedRoles:
-            role = member.guild.get_role(int(role_id))
-            if role:
-                try:
-                    await member.add_roles(role, reason="Joined voice channel")
-                except discord.errors.Forbidden:
-                    pass
-                except discord.errors.HTTPException:
-                    pass
-            else:
-                role = MentionableRole(role_id)
-            added.append(role)
-
-        removed: RoleList = []
-        for role_id in data.reverseLinkedRoles:
-            role = member.guild.get_role(int(role_id))
-            if role:
-                try:
-                    await member.remove_roles(role, reason="Joined voice channel")
-                except discord.errors.Forbidden:
-                    pass
-                except discord.errors.HTTPException:
-                    pass
-            else:
-                role = MentionableRole(role_id)
-            removed.append(role)
-
-        self.client.incr_role_counter("added", len(added))
-        self.client.incr_role_counter("removed", len(removed))
-
-        return VoiceStateReturnData("join", data.type, added, removed)
-
-    async def handle_leave(
-        self,
-        data: Link,
-        member: discord.Member,
-        channel_id: DiscordID,
-    ) -> VoiceStateReturnData:
-        if str(channel_id) in data.excludeChannels:
-            return VoiceStateReturnData("leave", data.type)
-
-        if data.type == LinkType.PERMANENT and data.suffix:
-            await remove_suffix(member, data.suffix)
-
-        added: RoleList = []
-        for role_id in data.reverseLinkedRoles:
-            role = member.guild.get_role(int(role_id))
-            if role:
-                try:
-                    await member.add_roles(role, reason="Left voice channel")
-                except discord.errors.Forbidden:
-                    pass
-                except discord.errors.HTTPException:
-                    pass
-            else:
-                role = MentionableRole(role_id)
-            added.append(role)
-
-        removed: RoleList = []
-        for role_id in data.linkedRoles:
-            role = member.guild.get_role(int(role_id))
-            if role:
-                try:
-                    await member.remove_roles(role, reason="Left voice channel")
-                except discord.errors.Forbidden:
-                    pass
-                except discord.errors.HTTPException:
-                    pass
-            else:
-                role = MentionableRole(role_id)
-            removed.append(role)
-
-        self.client.incr_role_counter("added", len(added))
-        self.client.incr_role_counter("removed", len(removed))
-
-        return VoiceStateReturnData("leave", data.type, added, removed)
+        return leave_return_data, join_return_data, list(set(failed_roles))
 
 
 async def setup(client: VCRolesClient):
