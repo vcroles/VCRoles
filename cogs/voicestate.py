@@ -135,8 +135,8 @@ class VoiceState(commands.Cog):
                 VoiceStateReturnData(
                     "join",
                     link.type,
-                    list(map(lambda x: MentionableRole(x), link.linkedRoles)),
-                    list(map(lambda x: MentionableRole(x), link.reverseLinkedRoles)),
+                    list(map(MentionableRole, link.linkedRoles)),
+                    list(map(MentionableRole, link.reverseLinkedRoles)),
                 )
             )
             suffix_data.add(link.type, link.suffix or "")
@@ -239,8 +239,8 @@ class VoiceState(commands.Cog):
                 VoiceStateReturnData(
                     "leave",
                     link.type,
-                    list(map(lambda x: MentionableRole(x), link.reverseLinkedRoles)),
-                    list(map(lambda x: MentionableRole(x), link.linkedRoles)),
+                    list(map(MentionableRole, link.reverseLinkedRoles)),
+                    list(map(MentionableRole, link.linkedRoles)),
                 )
             )
             suffix_data.add(link.type, link.suffix or "")
@@ -353,8 +353,8 @@ class VoiceState(commands.Cog):
                 VoiceStateReturnData(
                     "leave",
                     link.type,
-                    list(map(lambda x: MentionableRole(x), link.reverseLinkedRoles)),
-                    list(map(lambda x: MentionableRole(x), link.linkedRoles)),
+                    list(map(MentionableRole, link.reverseLinkedRoles)),
+                    list(map(MentionableRole, link.linkedRoles)),
                 )
             )
             leave_suffix_data.add(link.type, link.suffix or "")
@@ -368,8 +368,8 @@ class VoiceState(commands.Cog):
                 VoiceStateReturnData(
                     "join",
                     link.type,
-                    list(map(lambda x: MentionableRole(x), link.linkedRoles)),
-                    list(map(lambda x: MentionableRole(x), link.reverseLinkedRoles)),
+                    list(map(MentionableRole, link.linkedRoles)),
+                    list(map(MentionableRole, link.reverseLinkedRoles)),
                 )
             )
             join_suffix_data.add(link.type, link.suffix or "")
