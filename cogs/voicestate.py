@@ -48,10 +48,6 @@ class VoiceState(commands.Cog):
         # Changing
         elif before.channel and after.channel and before.channel != after.channel:
 
-            # leave_roles_changed, leave_failed_roles = await self.leave(member, before)
-
-            # join_roles_changed, join_failed_roles = await self.join(member, after)
-
             leave_roles_changed, join_roles_changed, failed_roles = await self.change(
                 member, before, after
             )
@@ -111,7 +107,8 @@ class VoiceState(commands.Cog):
         member: discord.Member,
         after: discord.VoiceState,
     ) -> tuple[list[VoiceStateReturnData], list[discord.Role]]:
-        if not after.channel or not after.channel.type:
+        if not after.channel:
+            # Unreachable.
             return [], []
 
         links = await self.client.db.get_all_linked_channel(
@@ -213,7 +210,8 @@ class VoiceState(commands.Cog):
         member: discord.Member,
         before: discord.VoiceState,
     ) -> tuple[list[VoiceStateReturnData], list[discord.Role]]:
-        if not before.channel or not before.channel.type:
+        if not before.channel:
+            # Unreachable.
             return [], []
 
         links = await self.client.db.get_all_linked_channel(
@@ -319,7 +317,8 @@ class VoiceState(commands.Cog):
         list[VoiceStateReturnData], list[VoiceStateReturnData], list[discord.Role]
     ]:
         if not before.channel or not after.channel:
-            raise AssertionError("before.channel is None or after.channel is None")
+            # Unreachable.
+            return [], [], []
 
         before_links = await self.client.db.get_all_linked_channel(
             member.guild.id,
