@@ -36,7 +36,7 @@ class StageSpeaker(commands.Cog):
         """Link a stage channel speaker to a role"""
 
         data = await self.linking.link(
-            interaction, channel, role, LinkType.STAGE, RoleCategory.REGULAR
+            interaction, channel, role, LinkType.STAGE, RoleCategory.STAGE_SPEAKER
         )
 
         await interaction.response.send_message(data.message)
@@ -58,7 +58,7 @@ class StageSpeaker(commands.Cog):
         """Unlink a stage channel speaker from a role"""
 
         data = await self.linking.unlink(
-            interaction, channel, role, LinkType.STAGE, RoleCategory.REGULAR
+            interaction, channel, role, LinkType.STAGE, RoleCategory.STAGE_SPEAKER
         )
 
         await interaction.response.send_message(data.message)
