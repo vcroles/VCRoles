@@ -38,13 +38,6 @@ if using_topgg:
     import topgg
 
     @client.event
-    async def on_autopost_success():
-        with open("guilds.log", "a") as file:
-            file.write(
-                f"{discord.utils.utcnow().strftime('%d/%m/%Y, %H:%M:%S')}: Posted server count ({len(client.guilds)}), shard count ({client.shard_count})\n"
-            )
-
-    @client.event
     async def on_dbl_vote(data: topgg.types.BotVoteData):
         if data.type == "upvote":
             client.loop.create_task(client.ar.hset("commands", str(data.user), -10_000))
@@ -147,9 +140,6 @@ async def main():
         # Setting up topgg integration
 
         if using_topgg:
-            client.topggpy = topgg.DBLClient(
-                config.DBL.TOKEN, autopost=True, post_shard_count=True
-            ).set_data(client)
             client.topgg_webhook = (
                 topgg.WebhookManager().set_data(client).endpoint(dbl_endpoint)
             )

@@ -30,7 +30,6 @@ class VCRolesClient(commands.AutoShardedBot):
         if using_topgg:
             import topgg
 
-            self.topggpy: Optional[topgg.DBLClient] = None
             self.topgg_webhook: Optional[topgg.WebhookManager]
 
     def incr_counter(self, cmd_name: str):
@@ -67,6 +66,13 @@ class VCRolesClient(commands.AutoShardedBot):
 
         print(f"Logged in as {self.user}")
         print(f"Bot is in {len(self.guilds)} guilds.")
+
+        mapping: dict[int, int] = {}
+        for guild in self.guilds:
+            mapping[guild.shard_id] = mapping.get(guild.shard_id, 0) + 1
+        for shard_id, count in mapping.items():
+            print(f"Shard {shard_id}: {count}")
+
         print("------")
 
     async def on_guild_join(self, guild: discord.Guild):

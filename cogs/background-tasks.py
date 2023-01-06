@@ -1,9 +1,11 @@
 import datetime as dt
 
+import aiohttp
 import discord
 from discord.ext import commands, tasks
 
-from utils import LogLevel, VCRolesClient
+import config
+from utils import LogLevel, VCRolesClient, using_topgg
 
 
 class BackgroundTasks(commands.Cog):
@@ -13,12 +15,14 @@ class BackgroundTasks(commands.Cog):
         self.reset_limits.start()
         self.log_queue.start()
         self.rotate_log_file.start()
+        self.update_topgg.start()
 
     async def cog_unload(self) -> None:
         self.save_guild_count.cancel()
         self.reset_limits.cancel()
         self.log_queue.cancel()
         self.rotate_log_file.cancel()
+        self.update_topgg.cancel()
 
         return await super().cog_unload()
 
@@ -82,6 +86,39 @@ class BackgroundTasks(commands.Cog):
 
     @rotate_log_file.before_loop
     async def before_rotate_log_file(self):
+        await self.client.wait_until_ready()
+
+    @tasks.loop(seconds=900)
+    async def update_topgg(self):
+        if not using_topgg or not config.DBL.TOKEN:
+            return
+
+        # for each shard, print how many guilds it's in
+        shard_guilds: dict[int, int] = {}
+        for guild in self.client.guilds:
+            shard_guilds[guild.shard_id] = shard_guilds.get(guild.shard_id, 0) + 1
+
+        async with aiohttp.ClientSession() as session:
+            res = await session.post(
+                f"https://top.gg/api/bots/{self.client.user.id}/stats",  # type: ignore
+                headers={"Authorization": config.DBL.TOKEN},
+                json={"server_count": list(shard_guilds.values())},
+            )
+
+        if res.status != 200:
+            self.client.log(
+                LogLevel.ERROR,
+                f"Failed to update Top.gg stats: {res.status} {await res.text()!r} ({shard_guilds})",
+            )
+            return
+
+        self.client.log(
+            LogLevel.INFO,
+            f"Updated Top.gg stats: {shard_guilds}",
+        )
+
+    @update_topgg.before_loop
+    async def before_update_topgg(self):
         await self.client.wait_until_ready()
 
 
