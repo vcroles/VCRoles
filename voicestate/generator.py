@@ -4,7 +4,7 @@ import discord
 from prisma.enums import VoiceGeneratorOption, VoiceGeneratorType
 
 from utils.client import VCRolesClient
-from utils.types import JoinableChannel
+from utils.types import JoinableChannel, LogLevel
 
 
 class Generator:
@@ -204,6 +204,11 @@ class Generator:
                 except discord.HTTPException:
                     pass
 
+        self.client.log(
+            LogLevel.DEBUG,
+            f"Generated c/{channel.id} m/{member.id} g/{member.guild.id}",
+        )
+
     async def leave(
         self,
         member: discord.Member,
@@ -272,3 +277,8 @@ class Generator:
                             send_messages=False, view_channel=False
                         )
                     await text_channel.edit(overwrites=overwrites)
+
+        self.client.log(
+            LogLevel.DEBUG,
+            f"Generator left c/{voice_channel.id} m/{member.id} g/{member.guild.id}",
+        )

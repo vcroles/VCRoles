@@ -7,6 +7,7 @@ from discord.ext import commands
 
 from utils.checks import check_any, command_available, is_owner
 from utils.client import VCRolesClient
+from utils.types import LogLevel
 
 
 class VCControl(commands.Cog):
@@ -80,6 +81,11 @@ class VCControl(commands.Cog):
 
         await asyncio.gather(*tasks)
 
+        self.client.log(
+            LogLevel.DEBUG,
+            f"Muted: {len(tasks)} g/{interaction.guild_id} c/{interaction.channel_id}",
+        )
+
         return self.client.incr_counter("vc_mute")
 
     @control_commands.command()
@@ -128,6 +134,11 @@ class VCControl(commands.Cog):
 
         await asyncio.gather(*tasks)
 
+        self.client.log(
+            LogLevel.DEBUG,
+            f"Deafened: {len(tasks)} g/{interaction.guild_id} c/{interaction.channel_id}",
+        )
+
         return self.client.incr_counter("vc_deafen")
 
     @control_commands.command()
@@ -164,6 +175,11 @@ class VCControl(commands.Cog):
         await interaction.response.send_message(embed=embed)
 
         await asyncio.gather(*tasks)
+
+        self.client.log(
+            LogLevel.DEBUG,
+            f"Unmuted: {len(tasks)} g/{interaction.guild_id} c/{interaction.channel_id}",
+        )
 
         return self.client.incr_counter("vc_unmute")
 
@@ -202,6 +218,11 @@ class VCControl(commands.Cog):
         await interaction.response.send_message(embed=embed)
 
         await asyncio.gather(*tasks)
+
+        self.client.log(
+            LogLevel.DEBUG,
+            f"Undeafened: {len(tasks)} g/{interaction.guild_id} c/{interaction.channel_id}",
+        )
 
         return self.client.incr_counter("vc_undeafen")
 

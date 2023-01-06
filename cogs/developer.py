@@ -1,9 +1,10 @@
-from typing import Any, Literal, Optional
+from typing import Annotated, Any, Literal, Optional
 
 import discord
 from discord.ext import commands
 
 from utils.client import VCRolesClient
+from utils.types import LogLevel
 
 
 class Dev(commands.Cog):
@@ -104,6 +105,16 @@ class Dev(commands.Cog):
         )
 
         await ctx.send("Successfully edited status.")
+
+    @commands.command(aliases=["ll"])
+    @commands.is_owner()
+    async def loglevel(
+        self,
+        ctx: commands.Context[Any],
+        level: Annotated[LogLevel, LogLevel.from_string],
+    ):
+        self.client.console_log_level = level
+        await ctx.send(f"Set log level to {level.name}")
 
 
 async def setup(client: VCRolesClient):

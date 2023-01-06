@@ -4,10 +4,11 @@ App command checks for the bot.
 
 from typing import Awaitable, Callable, TypeVar
 
-from discord import Interaction, app_commands
 import redis
+from discord import Interaction, app_commands
 
 import config
+
 from .client import VCRolesClient
 
 T = TypeVar("T")

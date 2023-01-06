@@ -6,6 +6,7 @@ from discord.ext import commands
 
 from utils.checks import check_any, command_available, is_owner
 from utils.client import VCRolesClient
+from utils.types import LogLevel
 
 
 class Logging(commands.Cog):
@@ -49,6 +50,11 @@ class Logging(commands.Cog):
             await self.client.db.update_guild_data(interaction.guild.id, logging="None")
 
             await interaction.response.send_message("Successfully disabled logging")
+
+        self.client.log(
+            LogLevel.DEBUG,
+            f"Logging {'enabled' if enabled else 'disabled'} g/{interaction.guild.id}",
+        )
 
         return self.client.incr_counter("logging")
 

@@ -3,7 +3,12 @@ from discord.ext import commands
 from prisma.enums import LinkType
 
 from utils import VCRolesClient
-from utils.types import MentionableRole, SuffixConstructor, VoiceStateReturnData
+from utils.types import (
+    LogLevel,
+    MentionableRole,
+    SuffixConstructor,
+    VoiceStateReturnData,
+)
 from voicestate import Generator, Logging
 
 
@@ -27,6 +32,12 @@ class VoiceState(commands.Cog):
         if not before.channel and after.channel:
             roles_changed, failed_roles = await self.join(member, after)
 
+            if failed_roles:
+                self.client.log(
+                    LogLevel.INFO,
+                    f"Failed to change roles on join: m/{member.id} c/{after.channel.id} g/{member.guild.id} r/({','.join(map(lambda x: str(x.id), failed_roles))})",
+                )
+
             await self.logging.log_join(
                 after.channel,
                 member,
@@ -37,6 +48,12 @@ class VoiceState(commands.Cog):
         # Leaving
         elif before.channel and not after.channel:
             roles_changed, failed_roles = await self.leave(member, before)
+
+            if failed_roles:
+                self.client.log(
+                    LogLevel.INFO,
+                    f"Failed to change roles on leave: m/{member.id} c/{before.channel.id} g/{member.guild.id} r/({','.join(map(lambda x: str(x.id), failed_roles))})",
+                )
 
             await self.logging.log_leave(
                 before.channel,
@@ -51,6 +68,12 @@ class VoiceState(commands.Cog):
             leave_roles_changed, join_roles_changed, failed_roles = await self.change(
                 member, before, after
             )
+
+            if failed_roles:
+                self.client.log(
+                    LogLevel.INFO,
+                    f"Failed to change roles on change: m/{member.id} c/{before.channel.id} g/{member.guild.id} r/({','.join(map(lambda x: str(x.id), failed_roles))})",
+                )
 
             await self.logging.log_change(
                 before.channel,

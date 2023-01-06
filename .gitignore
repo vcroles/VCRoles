@@ -1,11 +1,10 @@
 discord.log
-error.log
-config.json
-guilds.json
+bot.log
+bot.old.log
+guilds.csv
 **/*.pyc
 __pycache__/
 tts/*.mp3
-exports/*.json
 config.py
 env/
 .env

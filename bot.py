@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import os
 from typing import Any
 
@@ -13,7 +12,7 @@ import config
 from utils.client import VCRolesClient
 from utils.database import DatabaseUtils
 from utils.logging import setup_logging
-from utils.types import using_topgg
+from utils.types import LogLevel, using_topgg
 from views.url import TopGG
 
 setup_logging()
@@ -29,7 +28,9 @@ ar: aioredis.Redis[Any] = aioredis.Redis(
 )
 db_utils = DatabaseUtils()
 
-client = VCRolesClient(ar, intents=intents, db=db_utils)
+client = VCRolesClient(
+    ar, intents=intents, db=db_utils, console_log_level=LogLevel.ERROR
+)
 client.remove_command("help")
 
 
@@ -123,12 +124,6 @@ async def on_command_error(
 
 async def main():
 
-    # Removing Export Files
-
-    for filename in os.listdir("exports"):
-        if filename.endswith(".json"):
-            os.remove(f"exports/{filename}")
-
     # Removing TTS Files
 
     for filename in os.listdir("tts"):
@@ -138,11 +133,14 @@ async def main():
     # Setting up guild count file
 
     try:
-        with open("guilds.json", "r") as f:
-            json.load(f)
+        with open("guilds.csv", "r") as f:
+            f.read()
     except FileNotFoundError:
-        with open("guilds.json", "w") as f:
-            json.dump({}, f)
+        with open("guilds.csv", "w") as f:
+            f.write("datetime,guilds,shards\n")
+
+    with open("bot.log", "w") as f:
+        f.write("")
 
     async with client:
 

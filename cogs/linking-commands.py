@@ -6,7 +6,7 @@ from prisma.enums import LinkType
 from utils.checks import check_any, command_available, is_owner
 from utils.client import VCRolesClient
 from utils.linking import LinkingUtils
-from utils.types import LinkableChannel, RoleCategory
+from utils.types import LinkableChannel, LogLevel, RoleCategory
 
 
 def infer_link_type(channel: LinkableChannel) -> LinkType:
@@ -48,6 +48,11 @@ class Linking(commands.Cog):
 
         await interaction.response.send_message(data.message)
 
+        self.client.log(
+            LogLevel.DEBUG,
+            f"Linked c/{channel.id} g/{interaction.guild_id} r/{role.id}",
+        )
+
         return self.client.incr_counter("link")
 
     @app_commands.command()
@@ -69,6 +74,11 @@ class Linking(commands.Cog):
         )
 
         await interaction.response.send_message(data.message)
+
+        self.client.log(
+            LogLevel.DEBUG,
+            f"Unlinked c/{channel.id} g/{interaction.guild_id} r/{role.id}",
+        )
 
         return self.client.incr_counter("unlink")
 
@@ -93,6 +103,11 @@ class Linking(commands.Cog):
 
         await interaction.response.send_message(data.message)
 
+        self.client.log(
+            LogLevel.DEBUG,
+            f"Added suffix c/{channel.id} g/{interaction.guild_id} s/{suffix}",
+        )
+
         return self.client.incr_counter("add_suffix")
 
     @suffix_commands.command()
@@ -111,6 +126,11 @@ class Linking(commands.Cog):
         )
 
         await interaction.response.send_message(data.message)
+
+        self.client.log(
+            LogLevel.DEBUG,
+            f"Removed suffix c/{channel.id} g/{interaction.guild_id}",
+        )
 
         return self.client.incr_counter("remove_suffix")
 
@@ -134,6 +154,11 @@ class Linking(commands.Cog):
 
         await interaction.response.send_message(data.message)
 
+        self.client.log(
+            LogLevel.DEBUG,
+            f"Reverse linked c/{channel.id} g/{interaction.guild_id} r/{role.id}",
+        )
+
         return self.client.incr_counter("reverse_link")
 
     @reverse_commands.command(name="unlink")
@@ -155,6 +180,11 @@ class Linking(commands.Cog):
         )
 
         await interaction.response.send_message(data.message)
+
+        self.client.log(
+            LogLevel.DEBUG,
+            f"Reverse unlinked c/{channel.id} g/{interaction.guild_id} r/{role.id}",
+        )
 
         return self.client.incr_counter("reverse_unlink")
 

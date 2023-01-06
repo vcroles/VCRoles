@@ -8,7 +8,7 @@ from prisma.models import Link
 
 from utils.checks import check_any, command_available, is_owner
 from utils.client import VCRolesClient
-from utils.types import LinkableChannel
+from utils.types import LinkableChannel, LogLevel
 
 
 class Linked(commands.Cog):
@@ -171,6 +171,11 @@ class Linked(commands.Cog):
             await interaction.response.send_message(embed=linked_embed)
         else:
             await interaction.response.send_message("Nothing is linked")
+
+        self.client.log(
+            LogLevel.DEBUG,
+            f"Ran linked command g/{interaction.guild_id} m/{interaction.user.id}",
+        )
 
         return self.client.incr_counter("linked")
 

@@ -6,7 +6,7 @@ from prisma.enums import LinkType
 from utils.checks import check_any, command_available, is_owner
 from utils.client import VCRolesClient
 from utils.linking import LinkingUtils
-from utils.types import LinkableChannel, RoleCategory
+from utils.types import LinkableChannel, LogLevel, RoleCategory
 
 
 class PermLink(commands.Cog):
@@ -46,6 +46,11 @@ class PermLink(commands.Cog):
 
         await interaction.response.send_message(data.message)
 
+        self.client.log(
+            LogLevel.DEBUG,
+            f"Permanent linked c/{channel.id} g/{interaction.guild_id} r/{role.id}",
+        )
+
         return self.client.incr_counter("perm_link")
 
     @perm_commands.command()
@@ -67,6 +72,11 @@ class PermLink(commands.Cog):
         )
 
         await interaction.response.send_message(data.message)
+
+        self.client.log(
+            LogLevel.DEBUG,
+            f"Permanent unlinked c/{channel.id} g/{interaction.guild_id} r/{role.id}",
+        )
 
         return self.client.incr_counter("perm_unlink")
 
@@ -91,6 +101,11 @@ class PermLink(commands.Cog):
 
         await interaction.response.send_message(data.message)
 
+        self.client.log(
+            LogLevel.DEBUG,
+            f"Permanent suffix added c/{channel.id} g/{interaction.guild_id} s/{suffix}",
+        )
+
         return self.client.incr_counter("perm_suffix_add")
 
     @suffix_commands.command()
@@ -109,6 +124,11 @@ class PermLink(commands.Cog):
         )
 
         await interaction.response.send_message(data.message)
+
+        self.client.log(
+            LogLevel.DEBUG,
+            f"Permanent suffix removed c/{channel.id} g/{interaction.guild_id}",
+        )
 
         return self.client.incr_counter("perm_suffix_remove")
 
@@ -134,6 +154,11 @@ class PermLink(commands.Cog):
 
         await interaction.response.send_message(data.message)
 
+        self.client.log(
+            LogLevel.DEBUG,
+            f"Permanent reverse linked c/{channel.id} g/{interaction.guild_id} r/{role.id}",
+        )
+
         return self.client.incr_counter("perm_reverse_link")
 
     @reverse_commands.command(
@@ -157,6 +182,11 @@ class PermLink(commands.Cog):
         )
 
         await interaction.response.send_message(data.message)
+
+        self.client.log(
+            LogLevel.DEBUG,
+            f"Permanent reverse unlinked c/{channel.id} g/{interaction.guild_id} r/{role.id}",
+        )
 
         return self.client.incr_counter("perm_reverse_unlink")
 

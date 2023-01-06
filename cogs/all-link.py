@@ -7,6 +7,7 @@ from prisma.enums import LinkType
 
 from utils.checks import check_any, command_available, is_owner
 from utils.client import VCRolesClient
+from utils.types import LogLevel
 
 
 class AllLink(commands.Cog):
@@ -81,6 +82,10 @@ class AllLink(commands.Cog):
                 "The channel and role are already linked."
             )
 
+        self.client.log(
+            LogLevel.DEBUG, f"All link g/{interaction.guild.id} r/{role.id}"
+        )
+
         return self.client.incr_counter("all_link")
 
     @all_commands.command()
@@ -120,6 +125,10 @@ class AllLink(commands.Cog):
             await interaction.response.send_message(
                 "The channel and role are not linked."
             )
+
+        self.client.log(
+            LogLevel.DEBUG, f"All link g/{interaction.guild.id} r/{role.id}"
+        )
 
         return self.client.incr_counter("all_unlink")
 
@@ -170,6 +179,10 @@ class AllLink(commands.Cog):
                 "An error occurred while adding the exception."
             )
 
+        self.client.log(
+            LogLevel.DEBUG, f"All add exception g/{interaction.guild.id} c/{channel.id}"
+        )
+
         return self.client.incr_counter("all_add_exception")
 
     @exclude_commands.command(name="remove")
@@ -210,6 +223,11 @@ class AllLink(commands.Cog):
                 "Please select a valid exception channel"
             )
 
+        self.client.log(
+            LogLevel.DEBUG,
+            f"All remove exception g/{interaction.guild.id} c/{channel.id}",
+        )
+
         return self.client.incr_counter("all_remove_exception")
 
     @suffix_commands.command(name="add")
@@ -238,6 +256,10 @@ class AllLink(commands.Cog):
             f"When members join any channel, their username will be appended with `{suffix}`"
         )
 
+        self.client.log(
+            LogLevel.DEBUG, f"All add suffix g/{interaction.guild.id} s/{suffix}"
+        )
+
         return self.client.incr_counter("all_add_suffix")
 
     @suffix_commands.command(name="remove")
@@ -256,6 +278,8 @@ class AllLink(commands.Cog):
         )
 
         await interaction.response.send_message("Removed the username suffix rule")
+
+        self.client.log(LogLevel.DEBUG, f"All remove suffix g/{interaction.guild.id}")
 
         return self.client.incr_counter("all_remove_suffix")
 
@@ -297,6 +321,10 @@ class AllLink(commands.Cog):
                 "The role is already a reverse link."
             )
 
+        self.client.log(
+            LogLevel.DEBUG, f"All reverse link g/{interaction.guild.id} r/{role.id}"
+        )
+
         return self.client.incr_counter("all_reverse_link")
 
     @reverse_commands.command(name="unlink")
@@ -334,6 +362,10 @@ class AllLink(commands.Cog):
             )
         else:
             await interaction.response.send_message("The role is not a reverse link.")
+
+        self.client.log(
+            LogLevel.DEBUG, f"All reverse unlink g/{interaction.guild.id} r/{role.id}"
+        )
 
         return self.client.incr_counter("all_reverse_unlink")
 

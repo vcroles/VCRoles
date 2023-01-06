@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 from typing import Any, Optional
 
 import discord
@@ -8,7 +9,7 @@ from discord.ext import commands
 
 import config
 from utils.database import DatabaseUtils
-from utils.types import using_topgg
+from utils.types import LogLevel, using_topgg
 from views.interface import Interface
 
 
@@ -18,9 +19,12 @@ class VCRolesClient(commands.AutoShardedBot):
         ar: aioredis.Redis[Any],
         db: DatabaseUtils,
         intents: discord.Intents,
+        console_log_level: LogLevel,
     ):
         self.ar = ar
         self.db = db
+        self.log_queue: list[str] = []
+        self.console_log_level = console_log_level
         super().__init__(intents=intents, command_prefix=commands.when_mentioned)
         self.persistent_views_added = False
         if using_topgg:
@@ -95,3 +99,22 @@ class VCRolesClient(commands.AutoShardedBot):
         await self.db.connect()
 
         return await super().setup_hook()
+
+    def log(self, level: LogLevel, message: str) -> None:
+        """Logs a message to the console"""
+        timestamp = datetime.datetime.now(datetime.timezone.utc).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+        if level <= self.console_log_level:
+            print(
+                f"\x1b[30;1m{timestamp}\x1b[0m {level}{(8-len(level.name))*' '} \x1b[35minternal.bot\x1b[0m {message}"
+            )
+
+        self.log_queue.append(
+            timestamp
+            + " "
+            + level.name
+            + (8 - len(level.name)) * " "
+            + " internal.bot "
+            + message
+        )

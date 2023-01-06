@@ -5,6 +5,7 @@ from prisma.enums import LinkType
 
 from utils.checks import check_any, command_available, is_owner
 from utils.client import VCRolesClient
+from utils.types import LogLevel
 
 
 class UnLink(commands.Cog):
@@ -47,6 +48,11 @@ class UnLink(commands.Cog):
 
         await interaction.response.send_message(
             f"Any found links to {channel_id} have been removed."
+        )
+
+        self.client.log(
+            LogLevel.DEBUG,
+            f"Force Unlinked c/{channel_id} g/{interaction.guild.id}",
         )
 
         return self.client.incr_counter("forceunlink")
