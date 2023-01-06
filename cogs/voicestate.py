@@ -292,6 +292,7 @@ class VoiceState(commands.Cog):
             if (
                 fetched_member.top_role < member.guild.me.top_role
                 and member.id != member.guild.owner_id
+                and new_user_nickname != fetched_member.display_name
             ):
                 await member.edit(
                     roles=member_roles,
@@ -432,6 +433,7 @@ class VoiceState(commands.Cog):
             if (
                 fetched_member.top_role < member.guild.me.top_role
                 and member.id != member.guild.owner_id
+                and new_user_nickname != fetched_member.display_name
             ):
                 await member.edit(
                     roles=member_roles,

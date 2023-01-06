@@ -202,6 +202,20 @@ class Logging:
             icon_url=member.avatar.url if member.avatar else None,
         )
 
+        for i in leave_roles_changed:
+            matching = [
+                j
+                for j in join_roles_changed
+                if set(map(lambda x: str(x.id), i.added))
+                == set(map(lambda x: str(x.id), j.removed))
+                and set(map(lambda x: str(x.id), i.removed))
+                == set(map(lambda x: str(x.id), j.added))
+                and i.link_type == j.link_type
+            ]
+            if matching:
+                leave_roles_changed.remove(i)
+                join_roles_changed.remove(matching[0])
+
         added_content, removed_content = self.construct_embed(
             leave_roles_changed, failed_roles
         )
