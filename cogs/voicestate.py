@@ -213,13 +213,25 @@ class VoiceState(commands.Cog):
                 and member.id != member.guild.owner_id
                 and new_user_nickname != member.display_name
             ):
-                await member.edit(
-                    roles=member_roles,
-                    nick=new_user_nickname,
-                    reason="Joined Voice Channel",
-                )
+                try:
+                    await member.edit(
+                        roles=member_roles,
+                        nick=new_user_nickname,
+                        reason="Joined Voice Channel",
+                    )
+                except discord.Forbidden:
+                    try:
+                        await member.edit(
+                            roles=member_roles, reason="Joined Voice Channel"
+                        )
+                    except discord.errors.Forbidden:
+                        pass
+
             else:
-                await member.edit(roles=member_roles, reason="Joined Voice Channel")
+                try:
+                    await member.edit(roles=member_roles, reason="Joined Voice Channel")
+                except discord.Forbidden:
+                    pass
 
         self.client.incr_role_counter("added", len(addable_roles))
         self.client.incr_role_counter("removed", len(removeable_roles))
@@ -317,13 +329,24 @@ class VoiceState(commands.Cog):
                 and member.id != member.guild.owner_id
                 and new_user_nickname != fetched_member.display_name
             ):
-                await member.edit(
-                    roles=member_roles,
-                    nick=new_user_nickname,
-                    reason="Left Voice Channel",
-                )
+                try:
+                    await member.edit(
+                        roles=member_roles,
+                        nick=new_user_nickname,
+                        reason="Left Voice Channel",
+                    )
+                except discord.Forbidden:
+                    try:
+                        await member.edit(
+                            roles=member_roles, reason="Left Voice Channel"
+                        )
+                    except discord.Forbidden:
+                        pass
             else:
-                await member.edit(roles=member_roles, reason="Left Voice Channel")
+                try:
+                    await member.edit(roles=member_roles, reason="Left Voice Channel")
+                except discord.Forbidden:
+                    pass
 
         self.client.incr_role_counter("added", len(addable_roles))
         self.client.incr_role_counter("removed", len(removeable_roles))
@@ -458,13 +481,23 @@ class VoiceState(commands.Cog):
                 and member.id != member.guild.owner_id
                 and new_user_nickname != fetched_member.display_name
             ):
-                await member.edit(
-                    roles=member_roles,
-                    nick=new_user_nickname,
-                    reason="Changed Voice Channel",
-                )
+                try:
+                    await member.edit(
+                        roles=member_roles,
+                        nick=new_user_nickname,
+                        reason="Changed Voice Channel",
+                    )
+                except discord.Forbidden:
+                    await member.edit(
+                        roles=member_roles, reason="Changed Voice Channel"
+                    )
             else:
-                await member.edit(roles=member_roles, reason="Changed Voice Channel")
+                try:
+                    await member.edit(
+                        roles=member_roles, reason="Changed Voice Channel"
+                    )
+                except discord.Forbidden:
+                    pass
 
         self.client.incr_role_counter("added", len(addable_roles))
         self.client.incr_role_counter("removed", len(removeable_roles))
