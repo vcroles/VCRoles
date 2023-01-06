@@ -10,6 +10,7 @@ from mutagen.mp3 import MP3
 
 from utils.checks import check_any, command_available, is_owner
 from utils.client import VCRolesClient
+from utils.types import LogLevel
 
 tts_langs = Literal[
     "af: Afrikaans",
@@ -150,6 +151,11 @@ class TTS(commands.Cog):
                 "You don't have the required role to use TTS"
             )
 
+        self.client.log(
+            LogLevel.DEBUG,
+            f"TTS played: g/{interaction.guild.id} m/{interaction.user.id}",
+        )
+
         return self.client.incr_counter("tts_play")
 
     @tts_commands.command()
@@ -172,6 +178,11 @@ class TTS(commands.Cog):
             description="There are no TTS messages being read at the minute",
         )
         await interaction.response.send_message(embed=embed)
+
+        self.client.log(
+            LogLevel.DEBUG,
+            f"TTS stopped: g/{interaction.guild_id} m/{interaction.user.id}",
+        )
 
         return self.client.incr_counter("tts_stop")
 
@@ -206,6 +217,11 @@ class TTS(commands.Cog):
 
         await interaction.response.send_message(
             f"TTS settings updated: Enabled {enabled}, Role {role}, Leave {leave}"
+        )
+
+        self.client.log(
+            LogLevel.DEBUG,
+            f"TTS setup: g/{interaction.guild.id} m/{interaction.user.id}",
         )
 
         return self.client.incr_counter("tts_setup")

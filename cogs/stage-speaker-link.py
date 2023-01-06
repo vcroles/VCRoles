@@ -6,7 +6,7 @@ from prisma.enums import LinkType
 from utils.checks import check_any, command_available, is_owner
 from utils.client import VCRolesClient
 from utils.linking import LinkingUtils
-from utils.types import RoleCategory
+from utils.types import LogLevel, RoleCategory
 
 
 class StageSpeaker(commands.Cog):
@@ -36,10 +36,15 @@ class StageSpeaker(commands.Cog):
         """Link a stage channel speaker to a role"""
 
         data = await self.linking.link(
-            interaction, channel, role, LinkType.STAGE, RoleCategory.REGULAR
+            interaction, channel, role, LinkType.STAGE, RoleCategory.STAGE_SPEAKER
         )
 
         await interaction.response.send_message(data.message)
+
+        self.client.log(
+            LogLevel.DEBUG,
+            f"Speaker linked c/{channel.id} g/{interaction.guild_id} r/{role.id}",
+        )
 
         return self.client.incr_counter("speaker_link")
 
@@ -58,10 +63,15 @@ class StageSpeaker(commands.Cog):
         """Unlink a stage channel speaker from a role"""
 
         data = await self.linking.unlink(
-            interaction, channel, role, LinkType.STAGE, RoleCategory.REGULAR
+            interaction, channel, role, LinkType.STAGE, RoleCategory.STAGE_SPEAKER
         )
 
         await interaction.response.send_message(data.message)
+
+        self.client.log(
+            LogLevel.DEBUG,
+            f"Speaker unlinked c/{channel.id} g/{interaction.guild_id} r/{role.id}",
+        )
 
         return self.client.incr_counter("speaker_unlink")
 

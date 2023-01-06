@@ -33,8 +33,8 @@ class Utils(commands.Cog):
 
         return self.client.incr_counter("mention")
 
-    @app_commands.command()
-    async def discord(self, interaction: discord.Interaction):
+    @app_commands.command(name="discord")
+    async def support_server(self, interaction: discord.Interaction):
         """Use to get an invite to the support server"""
         await interaction.response.send_message(
             content="To join our support server, click the link below", view=Discord()
@@ -128,6 +128,29 @@ class Utils(commands.Cog):
         await interaction.response.send_message(embed=embed, view=Website())
 
         return self.client.incr_counter("help")
+
+    @app_commands.command()
+    @app_commands.checks.has_permissions(administrator=True)
+    async def update_channel(
+        self, interaction: Interaction, channel: discord.TextChannel
+    ):
+        """Use to update the channel the bot sends messages in"""
+        if not interaction.guild:
+            return await interaction.response.send_message(
+                content="You can only use this command in a server"
+            )
+
+        followable_channel = await self.client.fetch_channel(776127112272412672)
+        if not isinstance(followable_channel, discord.TextChannel):
+            return
+
+        await followable_channel.follow(destination=channel)
+
+        await interaction.response.send_message(
+            content=f"Successfully updated the channel to {channel.mention}."
+        )
+
+        return self.client.incr_counter("update_channel")
 
 
 async def setup(client: VCRolesClient):

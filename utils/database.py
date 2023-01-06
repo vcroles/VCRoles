@@ -21,7 +21,7 @@ class DatabaseUtils:
 
     guild_cache: TTLCache[Any, Any] = TTLCache(2**11, 60 * 60)
     linked_channel_cache: TTLCache[Any, Any] = TTLCache(2**15, 60 * 60)
-    all_channel_cache: TTLCache[Any, Any] = TTLCache(2**8, 60 * 60)
+    all_links_cache: TTLCache[Any, Any] = TTLCache(2**8, 60 * 60)
     get_generators_cache: TTLCache[Any, Any] = TTLCache(2**8, 60 * 60)
     generator_cache: TTLCache[Any, Any] = TTLCache(2**8, 60 * 60)
     generated_channel_cache: TTLCache[Any, Any] = TTLCache(2**8, 60 * 60)
@@ -122,7 +122,7 @@ class DatabaseUtils:
             )
         return data
 
-    async def update_channel_linked(
+    async def update_channel_linked(  # TODO: Make cache work
         self,
         channel_id: DiscordID,
         guild_id: DiscordID,
@@ -179,11 +179,11 @@ class DatabaseUtils:
 
         try:
             k = hashkey(self, guild_id)
-            del self.all_channel_cache[k]
+            del self.all_links_cache[k]
         except KeyError:
             pass
 
-    @cached(all_channel_cache)
+    @cached(all_links_cache)
     async def get_all_linked(self, guild_id: DiscordID) -> List[Link]:
         guild = await self.db.guild.find_unique(
             where={"id": str(guild_id)}, include={"links": True}

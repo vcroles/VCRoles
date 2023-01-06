@@ -14,6 +14,7 @@ class Logging:
     @staticmethod
     def construct_embed(
         data: list[VoiceStateReturnData],
+        failed_roles: list[discord.Role],
     ):
 
         added_chunks: list[str] = []
@@ -32,12 +33,26 @@ class Logging:
                 continue
 
             if item.added:
+                role_list = [
+                    role.mention + " "
+                    for role in item.added
+                    if int(role.id) not in map(lambda x: x.id, failed_roles)
+                ]
+                if not role_list:
+                    continue
                 added_chunks.append(link_title)
-                added_chunks.extend([role.mention + " " for role in item.added])
+                added_chunks.extend(role_list)
                 added_chunks.append("\n")
             if item.removed:
+                role_list = [
+                    role.mention + " "
+                    for role in item.removed
+                    if int(role.id) not in map(lambda x: x.id, failed_roles)
+                ]
+                if not role_list:
+                    continue
                 removed_chunks.append(link_title)
-                removed_chunks.extend([role.mention + " " for role in item.removed])
+                removed_chunks.extend(role_list)
                 removed_chunks.append("\n")
 
         added_content = "".join(added_chunks).strip()
@@ -50,6 +65,7 @@ class Logging:
         user_channel: LinkableChannel,
         member: discord.Member,
         roles_changed: list[VoiceStateReturnData],
+        failed_roles: list[discord.Role],
     ) -> None:
         guild_data = await self.client.db.get_guild_data(member.guild.id)
 
@@ -74,7 +90,9 @@ class Logging:
             icon_url=member.avatar.url if member.avatar else None,
         )
 
-        added_content, removed_content = self.construct_embed(roles_changed)
+        added_content, removed_content = self.construct_embed(
+            roles_changed, failed_roles
+        )
 
         if added_content:
             logging_embed.add_field(
@@ -83,6 +101,12 @@ class Logging:
         if removed_content:
             logging_embed.add_field(
                 name="Roles Removed:", value=removed_content, inline=False
+            )
+        if failed_roles:
+            logging_embed.add_field(
+                name="Failed Roles:",
+                value=" ".join([role.mention for role in failed_roles]),
+                inline=False,
             )
 
         try:
@@ -97,6 +121,7 @@ class Logging:
         user_channel: LinkableChannel,
         member: discord.Member,
         roles_changed: list[VoiceStateReturnData],
+        failed_roles: list[discord.Role],
     ) -> None:
         guild_data = await self.client.db.get_guild_data(member.guild.id)
 
@@ -120,7 +145,9 @@ class Logging:
             icon_url=member.avatar.url if member.avatar else None,
         )
 
-        added_content, removed_content = self.construct_embed(roles_changed)
+        added_content, removed_content = self.construct_embed(
+            roles_changed, failed_roles
+        )
 
         if added_content:
             logging_embed.add_field(
@@ -129,6 +156,12 @@ class Logging:
         if removed_content:
             logging_embed.add_field(
                 name="Roles Removed:", value=removed_content, inline=False
+            )
+        if failed_roles:
+            logging_embed.add_field(
+                name="Failed Roles:",
+                value=" ".join([role.mention for role in failed_roles]),
+                inline=False,
             )
 
         try:
@@ -145,6 +178,7 @@ class Logging:
         member: discord.Member,
         leave_roles_changed: list[VoiceStateReturnData],
         join_roles_changed: list[VoiceStateReturnData],
+        failed_roles: list[discord.Role],
     ):
         guild_data = await self.client.db.get_guild_data(member.guild.id)
 
@@ -168,7 +202,23 @@ class Logging:
             icon_url=member.avatar.url if member.avatar else None,
         )
 
-        added_content, removed_content = self.construct_embed(leave_roles_changed)
+        for i in leave_roles_changed:
+            matching = [
+                j
+                for j in join_roles_changed
+                if set(map(lambda x: str(x.id), i.added))
+                == set(map(lambda x: str(x.id), j.removed))
+                and set(map(lambda x: str(x.id), i.removed))
+                == set(map(lambda x: str(x.id), j.added))
+                and i.link_type == j.link_type
+            ]
+            if matching:
+                leave_roles_changed.remove(i)
+                join_roles_changed.remove(matching[0])
+
+        added_content, removed_content = self.construct_embed(
+            leave_roles_changed, failed_roles
+        )
 
         if added_content:
             logging_embed.add_field(
@@ -183,7 +233,9 @@ class Logging:
                 inline=False,
             )
 
-        added_content, removed_content = self.construct_embed(join_roles_changed)
+        added_content, removed_content = self.construct_embed(
+            join_roles_changed, failed_roles
+        )
 
         if added_content:
             logging_embed.add_field(
@@ -193,6 +245,13 @@ class Logging:
             logging_embed.add_field(
                 name="Roles Removed From Join:",
                 value=removed_content,
+                inline=False,
+            )
+
+        if failed_roles:
+            logging_embed.add_field(
+                name="Failed Roles:",
+                value=" ".join([role.mention for role in failed_roles]),
                 inline=False,
             )
 
