@@ -25,7 +25,15 @@ class VCRolesClient(commands.AutoShardedBot):
         self.db = db
         self.log_queue: list[str] = []
         self.console_log_level = console_log_level
-        super().__init__(intents=intents, command_prefix=commands.when_mentioned)
+        super().__init__(
+            intents=intents,
+            command_prefix=commands.when_mentioned,
+            activity=discord.Activity(
+                type=discord.ActivityType.watching,
+                name="Voice Channels",
+            ),
+            status=discord.Status.online,
+        )
         self.persistent_views_added = False
         if using_topgg:
             import topgg
@@ -50,13 +58,6 @@ class VCRolesClient(commands.AutoShardedBot):
         if not self.persistent_views_added:
             self.add_view(Interface(self.db))
             self.persistent_views_added = True
-
-        await self.change_presence(
-            activity=discord.Activity(
-                type=discord.ActivityType.watching, name="Voice Channels"
-            ),
-            status=discord.Status.online,
-        )
 
         if hasattr(self, "topgg_webhook") and self.topgg_webhook and using_topgg:
             if self.topgg_webhook.is_running:

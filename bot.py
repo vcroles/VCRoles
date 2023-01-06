@@ -112,7 +112,10 @@ async def on_command_error(
             embed=embed, ephemeral=True, view=TopGG()
         )
     else:
-        return
+        client.log(
+            LogLevel.ERROR,
+            f"Command Error: g/{interaction.guild_id} {error}",
+        )
 
 
 async def main():
