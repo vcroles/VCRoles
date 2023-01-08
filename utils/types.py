@@ -128,3 +128,15 @@ class LogLevel(enum.Enum):
     def from_string(string: str) -> LogLevel:
         """Get the log level from a string"""
         return LogLevel[string.upper()]
+
+
+class ActiveGuildsData:
+    """Class for storing active guilds"""
+
+    command_active: bool = False  # whether a command is ran
+    voice_active: bool = False  # whether a voice state change is made
+
+    @property
+    def active(self) -> bool:
+        """Whether any of the above are active"""
+        return self.command_active or self.voice_active

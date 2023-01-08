@@ -134,21 +134,21 @@ class Utils(commands.Cog):
     async def update_channel(
         self, interaction: Interaction, channel: discord.TextChannel
     ):
-        """Use to update the channel the bot sends messages in"""
+        """Use to set the channel to send updates to"""
         if not interaction.guild:
             return await interaction.response.send_message(
                 content="You can only use this command in a server"
             )
 
-        followable_channel = await self.client.fetch_channel(776127112272412672)
-        if not isinstance(followable_channel, discord.TextChannel):
-            return
-
-        await followable_channel.follow(destination=channel)
+        # create a webhook in the channel and save the webhook url in redis for later use
+        webhook = await channel.create_webhook(name="VC Roles")
+        await self.client.ar.hset("webhooks", str(interaction.guild.id), webhook.url)
 
         await interaction.response.send_message(
-            content=f"Successfully updated the channel to {channel.mention}."
+            content=f"Successfully set the update channel to {channel.mention}"
         )
+
+        await self.client.send_welcome(interaction.guild.id)
 
         return self.client.incr_counter("update_channel")
 

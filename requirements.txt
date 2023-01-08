@@ -10,6 +10,7 @@ prisma==0.7.1
 cachetools
 types-cachetools
 asyncache
+jishaku
 orjson>=3.5.4 # these are discord.py's speed modules
 aiodns>=1.1
 Brotli

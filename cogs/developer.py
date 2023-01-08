@@ -1,5 +1,6 @@
 from typing import Annotated, Any, Literal, Optional
 
+import aiohttp
 import discord
 from discord.ext import commands
 
@@ -10,18 +11,6 @@ from utils.types import LogLevel
 class Dev(commands.Cog):
     def __init__(self, client: VCRolesClient):
         self.client = client
-
-    @commands.command(description="DEVELOPER COMMAND")
-    @commands.is_owner()
-    async def shards(self, ctx: commands.Context[Any]):
-        if not ctx.guild:
-            return await ctx.send("You must use this command in a guild.")
-        shard_embed = discord.Embed(
-            colour=discord.Colour.blue(),
-            title="Sharding Info:",
-            description=f"There are {len(self.client.shards)} shards.\nThis is shard {ctx.guild.shard_id} - latency: {round(self.client.latency * 1000)} ms",
-        )
-        await ctx.send(embed=shard_embed)
 
     @commands.command(description="DEVELOPER COMMAND")
     @commands.is_owner()
@@ -115,6 +104,70 @@ class Dev(commands.Cog):
     ):
         self.client.console_log_level = level
         await ctx.send(f"Set log level to {level.name}")
+
+    @commands.command(aliases=["su"])
+    @commands.is_owner()
+    async def send_update_message(
+        self, ctx: commands.Context[Any], guilds: str, *, message: str
+    ):
+        webhooks = await self.client.ar.hgetall("webhooks") or {}
+
+        commands = await self.client.tree.fetch_commands()
+        discord_command = list(filter(lambda x: x.name == "discord", commands))[0]
+        invite_command = list(filter(lambda x: x.name == "invite", commands))[0]
+
+        embed = discord.Embed(
+            title="VC Roles",
+            description=message,
+            colour=0x2F3136,
+        )
+        embed.add_field(
+            name="Premium",
+            value="To get premium, visit [our premium page](https://premium.vcroles.com/l/vcroles)",
+            inline=False,
+        )
+        embed.add_field(
+            name="Support",
+            value=f"To join our support server, run {discord_command.mention}",
+        )
+        embed.add_field(
+            name="Invite",
+            value=f"To invite the bot to another server, run {invite_command.mention}",
+        )
+        embed.set_thumbnail(
+            url=self.client.user.avatar.url
+            if self.client.user and self.client.user.avatar
+            else None,
+        )
+
+        if guilds == "all":
+            async with aiohttp.ClientSession() as session:
+                for url in webhooks.values():
+                    webhook = discord.Webhook.from_url(url, session=session)
+                    await webhook.send(
+                        embed=embed,
+                        username="VC Roles Updates",
+                        avatar_url=self.client.user.avatar.url
+                        if self.client.user and self.client.user.avatar
+                        else None,
+                    )
+        else:
+            async with aiohttp.ClientSession() as session:
+                for guild in guilds.split(","):
+                    if guild not in webhooks:
+                        continue
+                    webhook = discord.Webhook.from_url(
+                        str(webhooks.get(guild)), session=session
+                    )
+                    await webhook.send(
+                        embed=embed,
+                        username="VC Roles Updates",
+                        avatar_url=self.client.user.avatar.url
+                        if self.client.user and self.client.user.avatar
+                        else None,
+                    )
+
+        await ctx.send("Sent update message!")
 
 
 async def setup(client: VCRolesClient):

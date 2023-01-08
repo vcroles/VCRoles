@@ -3,13 +3,14 @@ from __future__ import annotations
 import datetime
 from typing import Any, Optional
 
+import aiohttp
 import discord
 import redis.asyncio as aioredis
 from discord.ext import commands
 
 import config
 from utils.database import DatabaseUtils
-from utils.types import LogLevel, using_topgg
+from utils.types import ActiveGuildsData, LogLevel, using_topgg
 from views.interface import Interface
 
 
@@ -25,9 +26,10 @@ class VCRolesClient(commands.AutoShardedBot):
         self.db = db
         self.log_queue: list[str] = []
         self.console_log_level = console_log_level
+        self.active_guilds: dict[int, ActiveGuildsData] = {}
         super().__init__(
             intents=intents,
-            command_prefix=commands.when_mentioned,
+            command_prefix=commands.when_mentioned_or("."),
             activity=discord.Activity(
                 type=discord.ActivityType.watching,
                 name="Voice Channels",
@@ -125,3 +127,96 @@ class VCRolesClient(commands.AutoShardedBot):
             + " internal.bot "
             + message
         )
+
+    async def on_app_command_completion(
+        self,
+        interaction: discord.Interaction,
+        command: discord.app_commands.Command[Any, Any, Any]
+        | discord.app_commands.ContextMenu,
+    ):
+        if interaction.guild is None:
+            return
+
+        active_guild = self.active_guilds.get(interaction.guild.id)
+        if active_guild is None:
+            g = ActiveGuildsData()
+            g.command_active = True
+            self.active_guilds[interaction.guild.id] = g
+        else:
+            active_guild.command_active = True
+            self.active_guilds[interaction.guild.id] = active_guild
+
+        seen_welcome = await self.ar.hget("seen_welcome", str(interaction.guild.id))
+        webhook = await self.ar.hget("webhooks", str(interaction.guild.id))
+        if seen_welcome is None and webhook is None:
+            if (
+                isinstance(interaction.user, discord.Member)
+                and interaction.user.guild_permissions.administrator
+            ):
+                commands = await self.tree.fetch_commands()
+                update_channel_command = list(
+                    filter(lambda x: x.name == "update_channel", commands)
+                )[0]
+                embed = discord.Embed(
+                    title="VC Roles - Welcome",
+                    description="You haven't set up an update channel yet -> Update channels are a great way to keep up to date with the latest changes to VC Roles. We recommend setting one up now!",
+                )
+                embed.add_field(
+                    name="How to set an update channel",
+                    value=f"Run {update_channel_command.mention} command in the channel you want VC Roles to send updates to.",
+                )
+                embed.set_thumbnail(
+                    url=self.user.avatar.url if self.user and self.user.avatar else None
+                )
+                await interaction.followup.send(embed=embed)
+                await self.ar.hset("seen_welcome", str(interaction.guild.id), "1")
+
+    async def send_welcome(self, guild_id: int):
+        webhook_url = await self.ar.hget("webhooks", str(guild_id))
+        if webhook_url is None:
+            return None
+
+        commands = await self.tree.fetch_commands()
+        discord_command = list(filter(lambda x: x.name == "discord", commands))[0]
+        invite_command = list(filter(lambda x: x.name == "invite", commands))[0]
+
+        async with aiohttp.ClientSession() as session:
+            webhook = discord.Webhook.from_url(webhook_url, session=session)
+            embed = discord.Embed(
+                title="VC Roles",
+                description="Welcome to VC Roles! This is the channel where you will receive updates about the bot.",
+                colour=0x2F3136,
+            )
+            embed.add_field(
+                name="Premium",
+                value="To get premium, visit [our premium page](https://premium.vcroles.com/l/vcroles)",
+                inline=False,
+            )
+            embed.add_field(
+                name="Commands",
+                value="To see a list of commands, visit [our website](https://www.vcroles.com/commands)",
+                inline=False,
+            )
+            embed.add_field(
+                name="Support",
+                value=f"To join our support server, run {discord_command.mention}",
+                inline=False,
+            )
+            embed.add_field(
+                name="Invite",
+                value=f"To invite the bot to another server, run {invite_command.mention}",
+                inline=False,
+            )
+            embed.set_thumbnail(
+                url=self.user.avatar.url if self.user and self.user.avatar else None,
+            )
+
+            await webhook.send(
+                embed=embed,
+                username="VC Roles Updates",
+                avatar_url=self.user.avatar.url
+                if self.user and self.user.avatar
+                else None,
+            )
+
+        return True

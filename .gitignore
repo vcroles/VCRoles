@@ -9,3 +9,4 @@ config.py
 env/
 .env
 migration.py
+data/

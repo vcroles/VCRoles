@@ -156,6 +156,8 @@ async def main():
                 await client.load_extension(f"cogs.{filename[:-3]}")
                 print(f"Loaded extension: {filename[:-3]}")
 
+        await client.load_extension("jishaku")
+
         await client.start(config.BOT_TOKEN)
 
 
