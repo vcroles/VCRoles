@@ -131,7 +131,7 @@ class VCRolesClient(commands.AutoShardedBot):
     async def on_app_command_completion(
         self,
         interaction: discord.Interaction,
-        command: discord.app_commands.Command[Any, Any, Any]
+        _command: discord.app_commands.Command[Any, Any, Any]
         | discord.app_commands.ContextMenu,
     ):
         if interaction.guild is None:
@@ -148,37 +148,38 @@ class VCRolesClient(commands.AutoShardedBot):
 
         seen_welcome = await self.ar.hget("seen_welcome", str(interaction.guild.id))
         webhook = await self.ar.hget("webhooks", str(interaction.guild.id))
-        if seen_welcome is None and webhook is None:
-            if (
-                isinstance(interaction.user, discord.Member)
-                and interaction.user.guild_permissions.administrator
-            ):
-                commands = await self.tree.fetch_commands()
-                update_channel_command = list(
-                    filter(lambda x: x.name == "update_channel", commands)
-                )[0]
-                embed = discord.Embed(
-                    title="VC Roles - Welcome",
-                    description="You haven't set up an update channel yet -> Update channels are a great way to keep up to date with the latest changes to VC Roles. We recommend setting one up now!",
-                )
-                embed.add_field(
-                    name="How to set an update channel",
-                    value=f"Run {update_channel_command.mention} command in the channel you want VC Roles to send updates to.",
-                )
-                embed.set_thumbnail(
-                    url=self.user.avatar.url if self.user and self.user.avatar else None
-                )
-                await interaction.followup.send(embed=embed)
-                await self.ar.hset("seen_welcome", str(interaction.guild.id), "1")
+        if (
+            seen_welcome is None
+            and webhook is None
+            and isinstance(interaction.user, discord.Member)
+            and interaction.user.guild_permissions.administrator
+        ):
+            bot_commands = await self.tree.fetch_commands()
+            update_channel_command = list(
+                filter(lambda x: x.name == "update_channel", bot_commands)
+            )[0]
+            embed = discord.Embed(
+                title="VC Roles - Welcome",
+                description="You haven't set up an update channel yet -> Update channels are a great way to keep up to date with the latest changes to VC Roles. We recommend setting one up now!",
+            )
+            embed.add_field(
+                name="How to set an update channel",
+                value=f"Run {update_channel_command.mention} command in the channel you want VC Roles to send updates to.",
+            )
+            embed.set_thumbnail(
+                url=self.user.avatar.url if self.user and self.user.avatar else None
+            )
+            await interaction.followup.send(embed=embed)
+            await self.ar.hset("seen_welcome", str(interaction.guild.id), "1")
 
     async def send_welcome(self, guild_id: int):
         webhook_url = await self.ar.hget("webhooks", str(guild_id))
         if webhook_url is None:
             return None
 
-        commands = await self.tree.fetch_commands()
-        discord_command = list(filter(lambda x: x.name == "discord", commands))[0]
-        invite_command = list(filter(lambda x: x.name == "invite", commands))[0]
+        bot_commands = await self.tree.fetch_commands()
+        discord_command = list(filter(lambda x: x.name == "discord", bot_commands))[0]
+        invite_command = list(filter(lambda x: x.name == "invite", bot_commands))[0]
 
         async with aiohttp.ClientSession() as session:
             webhook = discord.Webhook.from_url(webhook_url, session=session)

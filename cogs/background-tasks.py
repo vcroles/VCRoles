@@ -135,25 +135,35 @@ class BackgroundTasks(commands.Cog):
             )
             data: list[str] = []
             for guild in self.client.guilds:
-                data.append(
-                    ",".join(
-                        [
-                            str(guild.id),
-                            str(guild.member_count),
-                            str(str(guild.id) in map(lambda x: x.id, premium_guilds)),
-                            str(
-                                guild.id in self.client.active_guilds
-                                and self.client.active_guilds[guild.id].command_active
-                            ),
-                            str(
-                                guild.id in self.client.active_guilds
-                                and self.client.active_guilds[guild.id].voice_active
-                            ),
-                            str(guild.owner_id),
-                        ]
+                try:
+                    data.append(
+                        ",".join(
+                            [
+                                str(guild.id),
+                                str(guild.member_count),
+                                str(
+                                    str(guild.id) in map(lambda x: x.id, premium_guilds)
+                                ),
+                                str(
+                                    guild.id in self.client.active_guilds
+                                    and self.client.active_guilds[
+                                        guild.id
+                                    ].command_active
+                                ),
+                                str(
+                                    guild.id in self.client.active_guilds
+                                    and self.client.active_guilds[guild.id].voice_active
+                                ),
+                                str(guild.owner_id),
+                            ]
+                        )
+                        + "\n"
                     )
-                    + "\n"
-                )
+                except Exception as e:
+                    self.client.log(
+                        LogLevel.ERROR,
+                        f"Failed to get data for guild {guild.id}: {e}",
+                    )
             f.writelines(data)
 
         # reset the active guilds

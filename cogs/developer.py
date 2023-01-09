@@ -112,9 +112,9 @@ class Dev(commands.Cog):
     ):
         webhooks = await self.client.ar.hgetall("webhooks") or {}
 
-        commands = await self.client.tree.fetch_commands()
-        discord_command = list(filter(lambda x: x.name == "discord", commands))[0]
-        invite_command = list(filter(lambda x: x.name == "invite", commands))[0]
+        bot_commands = await self.client.tree.fetch_commands()
+        discord_command = list(filter(lambda x: x.name == "discord", bot_commands))[0]
+        invite_command = list(filter(lambda x: x.name == "invite", bot_commands))[0]
 
         embed = discord.Embed(
             title="VC Roles",

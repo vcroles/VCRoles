@@ -420,18 +420,18 @@ class VoiceState(commands.Cog):
                         )
                     except discord.HTTPException:
                         pass
-            elif member.guild.me.guild_permissions.manage_nicknames:
-                if (
-                    member.top_role < member.guild.me.top_role
-                    and member.id != member.guild.owner_id
-                    and new_user_nickname != fetched_member.display_name
-                ):
-                    try:
-                        await member.edit(
-                            nick=new_user_nickname, reason="Left Voice Channel"
-                        )
-                    except discord.HTTPException:
-                        pass
+            elif (
+                member.guild.me.guild_permissions.manage_nicknames
+                and member.top_role < member.guild.me.top_role
+                and member.id != member.guild.owner_id
+                and new_user_nickname != fetched_member.display_name
+            ):
+                try:
+                    await member.edit(
+                        nick=new_user_nickname, reason="Left Voice Channel"
+                    )
+                except discord.HTTPException:
+                    pass
 
         if (
             member_roles != fetched_member.roles
@@ -621,19 +621,19 @@ class VoiceState(commands.Cog):
                         )
                     except discord.HTTPException:
                         pass
-            elif member.guild.me.guild_permissions.manage_nicknames:
-                if (
-                    fetched_member.top_role < member.guild.me.top_role
-                    and member.id != member.guild.owner_id
-                    and new_user_nickname != fetched_member.display_name
-                ):
-                    try:
-                        await member.edit(
-                            nick=new_user_nickname,
-                            reason="Changed Voice Channel",
-                        )
-                    except discord.HTTPException:
-                        pass
+            elif (
+                member.guild.me.guild_permissions.manage_nicknames
+                and fetched_member.top_role < member.guild.me.top_role
+                and member.id != member.guild.owner_id
+                and new_user_nickname != fetched_member.display_name
+            ):
+                try:
+                    await member.edit(
+                        nick=new_user_nickname,
+                        reason="Changed Voice Channel",
+                    )
+                except discord.HTTPException:
+                    pass
 
         if (
             member_roles != fetched_member.roles
