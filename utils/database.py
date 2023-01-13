@@ -28,6 +28,7 @@ class DatabaseUtils:
 
     def __init__(self) -> None:
         self.db = Prisma()
+        self.analytic_guilds: list[Guild] = []
 
     async def connect(self) -> None:
         await self.db.connect()
@@ -62,6 +63,7 @@ class DatabaseUtils:
         tts_leave: Optional[bool] = None,
         logging: Optional[str] = None,
         bot_master_roles: Optional[list[str]] = None,
+        analytics: Optional[str] = None,
     ) -> None:
         data: GuildUpdateInput = {}
 
@@ -86,6 +88,10 @@ class DatabaseUtils:
         if bot_master_roles is not None:
             data["botMasterRoles"] = bot_master_roles
 
+        if analytics is not None:
+            data["analytics"] = analytics
+            self.analytic_guilds = []
+
         res = await self.db.guild.update(where={"id": str(guild_id)}, data=data)
         if not res:
             await self.db.guild.create(
@@ -96,6 +102,7 @@ class DatabaseUtils:
                     "ttsLeave": tts_leave if tts_leave else True,
                     "logging": logging if logging != "None" else None,
                     "botMasterRoles": bot_master_roles if bot_master_roles else [],
+                    "analytics": analytics if analytics else None,
                 }
             )
 
@@ -442,3 +449,15 @@ class DatabaseUtils:
             )
 
         return guild.links or []
+
+    async def get_analytic_guilds(self) -> List[Guild]:
+        if self.analytic_guilds:
+            return self.analytic_guilds
+
+        guilds = await self.db.guild.find_many(
+            where={"NOT": [{"analytics": None}]},
+        )
+
+        self.analytic_guilds = guilds
+
+        return guilds

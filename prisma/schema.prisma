@@ -19,6 +19,7 @@ model Guild {
     voiceGenerator VoiceGenerator[]
     premium        Boolean          @default(false)
     botMasterRoles String[]
+    analytics      String?
 }
 
 enum LinkType {
