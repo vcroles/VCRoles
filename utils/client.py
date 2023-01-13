@@ -53,6 +53,12 @@ class VCRolesClient(commands.AutoShardedBot):
         """
         self.loop.create_task(self.ar.hincrby("counters", f"roles_{action}", count))
 
+    def incr_analytics_counter(self, guild_id: int, item: str, count: int = 1):
+        """Increments the counter for an analytics item"""
+        self.loop.create_task(
+            self.ar.hincrby(f"guild:{guild_id}:analytics", item, count)
+        )
+
     async def on_ready(self):
         """
         Called when the bot is ready.
@@ -136,6 +142,21 @@ class VCRolesClient(commands.AutoShardedBot):
     ):
         if interaction.guild is None:
             return
+
+        if isinstance(_command, discord.app_commands.Command):
+            parent_parent_name = (
+                _command.parent.parent.name + "_"
+                if _command.parent and _command.parent.parent
+                else ""
+            )
+            parent_name = _command.parent.name + "_" if _command.parent else ""
+            command_name = f"{parent_parent_name}{parent_name}{_command.name}"
+
+            self.incr_counter(command_name)
+
+        guild = await self.db.get_guild_data(interaction.guild.id)
+        if guild.premium and guild.analytics:
+            self.incr_analytics_counter(interaction.guild.id, "commands_used")
 
         active_guild = self.active_guilds.get(interaction.guild.id)
         if active_guild is None:

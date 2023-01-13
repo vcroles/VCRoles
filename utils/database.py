@@ -92,6 +92,10 @@ class DatabaseUtils:
             data["analytics"] = analytics
             self.analytic_guilds = []
 
+        if analytics == "None":
+            data["analytics"] = None
+            self.analytic_guilds = []
+
         res = await self.db.guild.update(where={"id": str(guild_id)}, data=data)
         if not res:
             await self.db.guild.create(
@@ -454,8 +458,9 @@ class DatabaseUtils:
         if self.analytic_guilds:
             return self.analytic_guilds
 
+        # find all guilds where premium is enabled and analytics field is not null
         guilds = await self.db.guild.find_many(
-            where={"NOT": [{"analytics": None}]},
+            where={"premium": True, "analytics": {"not": ""}}
         )
 
         self.analytic_guilds = guilds

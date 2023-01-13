@@ -134,6 +134,11 @@ class TTS(commands.Cog):
                     discord.FFmpegPCMAudio(source=f"tts/{interaction.guild_id}.mp3"),
                 )
 
+                if data.premium and data.analytics:
+                    self.client.incr_analytics_counter(
+                        interaction.guild.id, "tts_messages_sent"
+                    )
+
                 await asyncio.sleep(audio.info.length + 1)
 
                 if leave and data.ttsLeave:

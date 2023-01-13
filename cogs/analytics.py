@@ -1,6 +1,6 @@
 import datetime as dt
 import io
-import json
+import csv
 
 import discord
 from discord import Interaction, app_commands
@@ -58,7 +58,7 @@ class Analytics(commands.Cog):
             )
             return await interaction.response.send_message(embed=embed)
 
-        await self.client.db.update_guild_data(interaction.guild.id, analytics=None)
+        await self.client.db.update_guild_data(interaction.guild.id, analytics="None")
         embed = discord.Embed(
             title="Analytics Disabled",
             description="Analytics have been disabled",
@@ -84,6 +84,9 @@ class Analytics(commands.Cog):
             total = 0
             for channel in g.voice_channels:
                 total += len(channel.members)
+
+            if total == 0:
+                continue
 
             await self.client.ar.hincrby(
                 f"guild:{guild.id}:analytics", "voice_minutes", total
@@ -192,6 +195,14 @@ class Analytics(commands.Cog):
             )
             return await interaction.response.send_message(embed=embed)
 
+        if not guild.analytics:
+            embed = discord.Embed(
+                title="Analytics Disabled",
+                description="Analytics have been disabled. Use `/analytics toggle` to enable them",
+                colour=discord.Colour.green(),
+            )
+            return await interaction.response.send_message(embed=embed)
+
         embed = await self.get_analytic_embed(guild.id)
 
         return await interaction.response.send_message(embed=embed)
@@ -224,21 +235,48 @@ class Analytics(commands.Cog):
             )
             return await interaction.response.send_message(embed=embed)
 
-        analytics = await self.client.ar.mget(*analytics)
+        # create a csv file as a buffer
+        buffer = io.StringIO()
+        writer = csv.writer(buffer)
 
-        analytics = [json.loads(a) for a in analytics]
+        # write the header
+        writer.writerow(
+            [
+                "date",
+                "voice_minutes",
+                "voice_channel_joins",
+                "voice_channel_leaves",
+                "voice_channel_changes",
+                "roles_added",
+                "roles_removed",
+                "commands_used",
+                "generated_voice_channels",
+                "tts_messages_sent",
+            ]
+        )
 
-        analytics = {k: sum(d[k] for d in analytics) for k in analytics[0]}
+        for analytic in analytics:
+            date = analytic.split(":")[-1]
+            analytic = await self.client.ar.hgetall(analytic)
+            writer.writerow(
+                [
+                    date,
+                    analytic.get("voice_minutes", 0),
+                    analytic.get("voice_channel_joins", 0),
+                    analytic.get("voice_channel_leaves", 0),
+                    analytic.get("voice_channel_changes", 0),
+                    analytic.get("roles_added", 0),
+                    analytic.get("roles_removed", 0),
+                    analytic.get("commands_used", 0),
+                    analytic.get("generated_voice_channels", 0),
+                    analytic.get("tts_messages_sent", 0),
+                ]
+            )
 
-        analytics = json.dumps(analytics)
+        buffer.seek(0)
 
-        analytics = io.BytesIO(analytics.encode("utf-8"))
-
-        analytics.seek(0)
-
-        return await interaction.response.send_message(
-            "Here is your analytics export",
-            file=discord.File(analytics, filename="analytics.json"),
+        await interaction.response.send_message(
+            "Here is your analytics export", file=discord.File(buffer, "analytics.csv")  # type: ignore
         )
 
 

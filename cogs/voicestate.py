@@ -288,6 +288,16 @@ class VoiceState(commands.Cog):
         self.client.incr_role_counter("added", len(addable_roles))
         self.client.incr_role_counter("removed", len(removeable_roles))
 
+        guild = await self.client.db.get_guild_data(member.guild.id)
+        if guild.premium and guild.analytics:
+            self.client.incr_analytics_counter(member.guild.id, "voice_channel_joins")
+            self.client.incr_analytics_counter(
+                member.guild.id, "roles_added", len(addable_roles)
+            )
+            self.client.incr_analytics_counter(
+                member.guild.id, "roles_removed", len(removeable_roles)
+            )
+
         await self.generator.join(member, after.channel)
 
         return return_data, list(set(failed_roles))
@@ -448,6 +458,16 @@ class VoiceState(commands.Cog):
 
         self.client.incr_role_counter("added", len(addable_roles))
         self.client.incr_role_counter("removed", len(removeable_roles))
+
+        guild = await self.client.db.get_guild_data(member.guild.id)
+        if guild.premium and guild.analytics:
+            self.client.incr_analytics_counter(member.guild.id, "voice_channel_leaves")
+            self.client.incr_analytics_counter(
+                member.guild.id, "roles_added", len(addable_roles)
+            )
+            self.client.incr_analytics_counter(
+                member.guild.id, "roles_removed", len(removeable_roles)
+            )
 
         await self.generator.leave(member, before.channel)
 
@@ -650,6 +670,16 @@ class VoiceState(commands.Cog):
 
         self.client.incr_role_counter("added", len(addable_roles))
         self.client.incr_role_counter("removed", len(removeable_roles))
+
+        guild = await self.client.db.get_guild_data(member.guild.id)
+        if guild.premium and guild.analytics:
+            self.client.incr_analytics_counter(member.guild.id, "voice_channel_changes")
+            self.client.incr_analytics_counter(
+                member.guild.id, "roles_added", len(addable_roles)
+            )
+            self.client.incr_analytics_counter(
+                member.guild.id, "roles_removed", len(removeable_roles)
+            )
 
         await self.generator.leave(member, before.channel)
         await self.generator.join(member, after.channel)
