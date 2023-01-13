@@ -86,8 +86,6 @@ class VCControl(commands.Cog):
             f"Muted: {len(tasks)} g/{interaction.guild_id} c/{interaction.channel_id}",
         )
 
-        return self.client.incr_counter("vc_mute")
-
     @control_commands.command()
     @app_commands.describe(who="Who to deafen:")
     @check_any(command_available, is_owner)
@@ -139,8 +137,6 @@ class VCControl(commands.Cog):
             f"Deafened: {len(tasks)} g/{interaction.guild_id} c/{interaction.channel_id}",
         )
 
-        return self.client.incr_counter("vc_deafen")
-
     @control_commands.command()
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
@@ -180,8 +176,6 @@ class VCControl(commands.Cog):
             LogLevel.DEBUG,
             f"Unmuted: {len(tasks)} g/{interaction.guild_id} c/{interaction.channel_id}",
         )
-
-        return self.client.incr_counter("vc_unmute")
 
     @control_commands.command()
     @check_any(command_available, is_owner)
@@ -223,8 +217,6 @@ class VCControl(commands.Cog):
             LogLevel.DEBUG,
             f"Undeafened: {len(tasks)} g/{interaction.guild_id} c/{interaction.channel_id}",
         )
-
-        return self.client.incr_counter("vc_undeafen")
 
 
 async def setup(client: VCRolesClient):

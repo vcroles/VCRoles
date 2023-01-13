@@ -29,8 +29,6 @@ class GenInterface(commands.Cog):
         message = await self.utils.lock(interaction.user)
         await interaction.response.send_message(message, ephemeral=True)
 
-        return self.client.incr_counter("interface_lock")
-
     @interface_commands.command(
         name="unlock",
     )
@@ -43,8 +41,6 @@ class GenInterface(commands.Cog):
 
         message = await self.utils.unlock(interaction.user)
         await interaction.response.send_message(message, ephemeral=True)
-
-        return self.client.incr_counter("interface_unlock")
 
     @interface_commands.command(
         name="hide",
@@ -59,8 +55,6 @@ class GenInterface(commands.Cog):
         message = await self.utils.hide(interaction.user)
         await interaction.response.send_message(message, ephemeral=True)
 
-        return self.client.incr_counter("interface_hide")
-
     @interface_commands.command(name="show")
     async def unhide_interface(self, interaction: discord.Interaction):
         """Show your generated voice channel"""
@@ -71,8 +65,6 @@ class GenInterface(commands.Cog):
 
         message = await self.utils.unhide(interaction.user)
         await interaction.response.send_message(message, ephemeral=True)
-
-        return self.client.incr_counter("interface_unhide")
 
     @interface_commands.command(
         name="increase",
@@ -87,8 +79,6 @@ class GenInterface(commands.Cog):
         message = await self.utils.increase_limit(interaction.user)
         await interaction.response.send_message(message, ephemeral=True)
 
-        return self.client.incr_counter("interface_increase")
-
     @interface_commands.command(name="decrease")
     async def decrease_limit_interface(self, interaction: discord.Interaction):
         """Decrease your generated voice channel user limit"""
@@ -99,8 +89,6 @@ class GenInterface(commands.Cog):
 
         message = await self.utils.decrease_limit(interaction.user)
         await interaction.response.send_message(message, ephemeral=True)
-
-        return self.client.incr_counter("interface_decrease")
 
     @interface_commands.command(name="limit")
     @app_commands.describe(limit="The value to set the member limit to.")
@@ -116,8 +104,6 @@ class GenInterface(commands.Cog):
         message = await self.utils.set_limit(interaction.user, limit)
         await interaction.response.send_message(message, ephemeral=True)
 
-        return self.client.incr_counter("interface_decrease")
-
     @interface_commands.command(name="rename")
     @app_commands.describe(name="The new name.")
     async def rename_channel(self, interaction: discord.Interaction, name: str):
@@ -130,8 +116,6 @@ class GenInterface(commands.Cog):
         message = await self.utils.rename(interaction.user, name)
         await interaction.response.send_message(message, ephemeral=True)
 
-        return self.client.incr_counter("interface_rename")
-
     @interface_commands.command(name="claim")
     async def claim_channel(self, interaction: discord.Interaction):
         """Claim a generated channel (if owner has left)"""
@@ -143,8 +127,6 @@ class GenInterface(commands.Cog):
         message = await self.utils.claim(interaction.user)
         await interaction.response.send_message(message, ephemeral=True)
 
-        return self.client.incr_counter("interface_claim")
-
     @interface_commands.command(name="invite")
     @app_commands.describe(user="The user to invite.", message="The message to send.")
     async def invite_user(
@@ -153,7 +135,7 @@ class GenInterface(commands.Cog):
         user: discord.Member,
         message: Optional[str],
     ):
-        """Invite a user to your channel"""
+        """PREMIUM - Invite a user to your channel"""
         if not isinstance(interaction.user, discord.Member) or not interaction.guild:
             return await interaction.response.send_message(
                 "You must be in a guild to use this.", ephemeral=True
@@ -189,8 +171,6 @@ class GenInterface(commands.Cog):
 
         await interaction.response.send_message(return_message, ephemeral=True)
 
-        return self.client.incr_counter("interface_invite")
-
     @interface_commands.command(name="permit")
     async def permit_mentionable(self, interaction: discord.Interaction):
         """Permits roles/users to join you."""
@@ -212,8 +192,6 @@ class GenInterface(commands.Cog):
             delete_after=60,
         )
 
-        return self.client.incr_counter("interface_permit")
-
     @interface_commands.command(name="restrict")
     async def restrict_mentionable(self, interaction: discord.Interaction):
         """Restricts roles/users to join you."""
@@ -234,8 +212,6 @@ class GenInterface(commands.Cog):
             ),
             delete_after=60,
         )
-
-        return self.client.incr_counter("interface_restrict")
 
 
 class MentionableView(discord.ui.View):

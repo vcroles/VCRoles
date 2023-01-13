@@ -161,8 +161,6 @@ class TTS(commands.Cog):
             f"TTS played: g/{interaction.guild.id} m/{interaction.user.id}",
         )
 
-        return self.client.incr_counter("tts_play")
-
     @tts_commands.command()
     async def stop(self, interaction: discord.Interaction):
         """Stops the current TTS message & Makes the bot leave the voice channel"""
@@ -176,7 +174,6 @@ class TTS(commands.Cog):
                     description="The current TTS message has been stopped.",
                 )
                 await interaction.response.send_message(embed=embed)
-                return self.client.incr_counter("tts_stop")
 
         embed = discord.Embed(
             colour=discord.Color.green(),
@@ -188,8 +185,6 @@ class TTS(commands.Cog):
             LogLevel.DEBUG,
             f"TTS stopped: g/{interaction.guild_id} m/{interaction.user.id}",
         )
-
-        return self.client.incr_counter("tts_stop")
 
     @tts_commands.command()
     @app_commands.describe(
@@ -228,8 +223,6 @@ class TTS(commands.Cog):
             LogLevel.DEBUG,
             f"TTS setup: g/{interaction.guild.id} m/{interaction.user.id}",
         )
-
-        return self.client.incr_counter("tts_setup")
 
 
 async def setup(client: VCRolesClient):

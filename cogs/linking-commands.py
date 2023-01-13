@@ -53,8 +53,6 @@ class Linking(commands.Cog):
             f"Linked c/{channel.id} g/{interaction.guild_id} r/{role.id}",
         )
 
-        return self.client.incr_counter("link")
-
     @app_commands.command()
     @app_commands.describe(
         channel="Select a channel to unlink", role="Select a role to unlink"
@@ -79,8 +77,6 @@ class Linking(commands.Cog):
             LogLevel.DEBUG,
             f"Unlinked c/{channel.id} g/{interaction.guild_id} r/{role.id}",
         )
-
-        return self.client.incr_counter("unlink")
 
     @suffix_commands.command()
     @app_commands.describe(
@@ -108,8 +104,6 @@ class Linking(commands.Cog):
             f"Added suffix c/{channel.id} g/{interaction.guild_id} s/{suffix}",
         )
 
-        return self.client.incr_counter("add_suffix")
-
     @suffix_commands.command()
     @app_commands.describe(channel="Select a channel to link")
     @check_any(command_available, is_owner)
@@ -131,8 +125,6 @@ class Linking(commands.Cog):
             LogLevel.DEBUG,
             f"Removed suffix c/{channel.id} g/{interaction.guild_id}",
         )
-
-        return self.client.incr_counter("remove_suffix")
 
     @reverse_commands.command(name="link")
     @app_commands.describe(
@@ -159,8 +151,6 @@ class Linking(commands.Cog):
             f"Reverse linked c/{channel.id} g/{interaction.guild_id} r/{role.id}",
         )
 
-        return self.client.incr_counter("reverse_link")
-
     @reverse_commands.command(name="unlink")
     @app_commands.describe(
         channel="Select a channel to link", role="Select a role to link"
@@ -185,8 +175,6 @@ class Linking(commands.Cog):
             LogLevel.DEBUG,
             f"Reverse unlinked c/{channel.id} g/{interaction.guild_id} r/{role.id}",
         )
-
-        return self.client.incr_counter("reverse_unlink")
 
 
 async def setup(client: VCRolesClient):

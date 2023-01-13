@@ -17,8 +17,6 @@ class Ping(commands.Cog):
             f"Pong! {round(self.client.latency*1000,1)} ms"
         )
 
-        return self.client.incr_counter("ping")
-
 
 async def setup(client: VCRolesClient):
     await client.add_cog(Ping(client))

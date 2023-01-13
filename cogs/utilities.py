@@ -31,16 +31,12 @@ class Utils(commands.Cog):
             )
         )
 
-        return self.client.incr_counter("mention")
-
     @app_commands.command(name="discord")
     async def support_server(self, interaction: discord.Interaction):
         """Use to get an invite to the support server"""
         await interaction.response.send_message(
             content="To join our support server, click the link below", view=Discord()
         )
-
-        return self.client.incr_counter("discord")
 
     @app_commands.command()
     async def invite(self, interaction: Interaction):
@@ -50,16 +46,12 @@ class Utils(commands.Cog):
             view=Invite(),
         )
 
-        return self.client.incr_counter("invite")
-
     @app_commands.command()
     async def topgg(self, interaction: Interaction):
         """Use to get a link to the bot's Top.gg page"""
         await interaction.response.send_message(
             content="To visit the bot's Top.gg, click the link below", view=TopGG()
         )
-
-        return self.client.incr_counter("topgg")
 
     @app_commands.command()
     async def about(self, interaction: Interaction):
@@ -115,8 +107,6 @@ class Utils(commands.Cog):
 
         await interaction.response.send_message(embed=embed, view=Combination())
 
-        return self.client.incr_counter("about")
-
     @app_commands.command()
     async def help(self, interaction: Interaction):
         """Use to get help about the bot"""
@@ -126,8 +116,6 @@ class Utils(commands.Cog):
             colour=discord.Colour.light_grey(),
         )
         await interaction.response.send_message(embed=embed, view=Website())
-
-        return self.client.incr_counter("help")
 
     @app_commands.command()
     @app_commands.checks.has_permissions(administrator=True)
@@ -149,8 +137,6 @@ class Utils(commands.Cog):
         )
 
         await self.client.send_welcome(interaction.guild.id)
-
-        return self.client.incr_counter("update_channel")
 
 
 async def setup(client: VCRolesClient):
