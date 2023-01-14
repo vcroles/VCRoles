@@ -292,10 +292,7 @@ class Analytics(commands.Cog):
         self, interaction: Interaction, timeframe: Literal["hour", "day"] = "hour"
     ):
         """PREMIUM - Create a graph of hourly/daily analytics"""
-        # we want to create a graph of the last 30 days of analytics if day is selected
-        # or the last 24 hours if hour is selected
-        # we want to create separate graphs for each of the following:
-        # voice minutes, voice channel joins, voice channel leaves, voice channel changes, roles added, roles removed, commands used, generated voice channels, tts messages sent
+
         if not interaction.guild:
             return await interaction.response.send_message(
                 "This command can only be used in a server"
@@ -328,10 +325,6 @@ class Analytics(commands.Cog):
                     colour=discord.Colour.red(),
                 )
                 return await interaction.response.send_message(embed=embed)
-
-            # create a graph of the last 24 hours of analytics
-            # the keys we want look like this:
-            # f"{item}-{datetime.datetime.utcnow().strftime('%H')}"
 
             hourly_voice_minutes: list[int] = []
             hourly_voice_channel_joins: list[int] = []
@@ -366,33 +359,33 @@ class Analytics(commands.Cog):
 
             def get_figure_hourly() -> Figure:
                 fig = Figure()
-                ax = fig.subplots()
+                ax = fig.subplots()  # type: ignore
 
-                ax.plot(hourly_voice_minutes, label="Voice Minutes")
-                ax.plot(hourly_voice_channel_joins, label="Voice Channel Joins")
-                ax.plot(hourly_voice_channel_leaves, label="Voice Channel Leaves")
-                ax.plot(hourly_voice_channel_changes, label="Voice Channel Changes")
-                ax.plot(hourly_roles_added, label="Roles Added")
-                ax.plot(hourly_roles_removed, label="Roles Removed")
-                ax.plot(hourly_commands_used, label="Commands Used")
-                ax.plot(
+                ax.plot(hourly_voice_minutes, label="Voice Minutes")  # type: ignore
+                ax.plot(hourly_voice_channel_joins, label="Voice Channel Joins")  # type: ignore
+                ax.plot(hourly_voice_channel_leaves, label="Voice Channel Leaves")  # type: ignore
+                ax.plot(hourly_voice_channel_changes, label="Voice Channel Changes")  # type: ignore
+                ax.plot(hourly_roles_added, label="Roles Added")  # type: ignore
+                ax.plot(hourly_roles_removed, label="Roles Removed")  # type: ignore
+                ax.plot(hourly_commands_used, label="Commands Used")  # type: ignore
+                ax.plot(  # type: ignore
                     hourly_generated_voice_channels, label="Generated Voice Channels"
                 )
-                ax.plot(hourly_tts_messages_sent, label="TTS Messages Sent")
+                ax.plot(hourly_tts_messages_sent, label="TTS Messages Sent")  # type: ignore
 
-                ax.set_xlabel("Hour")
-                ax.set_xticks(range(0, 24, 3))
-                ax.set_ylabel("Count")
-                ax.set_title("Hourly Analytics")
+                ax.set_xlabel("Hour")  # type: ignore
+                ax.set_xticks(range(0, 24, 3))  # type: ignore
+                ax.set_ylabel("Count")  # type: ignore
+                ax.set_title("Hourly Analytics")  # type: ignore
 
-                ax.legend()
+                ax.legend()  # type: ignore
 
                 return fig
 
             fig = await self.client.loop.run_in_executor(None, get_figure_hourly)
 
             buffer = io.BytesIO()
-            fig.savefig(buffer, format="png")
+            fig.savefig(buffer, format="png")  # type: ignore
 
             buffer.seek(0)
 
@@ -412,16 +405,8 @@ class Analytics(commands.Cog):
                 )
                 return await interaction.response.send_message(embed=embed)
 
-            # sort analytics by date
-            # the keys look like this:
-            # f"guild:{guild.id}:analytics:{dt.datetime.utcnow().strftime('%Y-%m-%d')}"
             analytic_days.sort()
-            # add the current day to the end of the list
             analytic_days.append(f"guild:{guild.id}:analytics")
-
-            # create a graph of the last 30 days of analytics
-            # the keys we want look like this:
-            # f"{item}"
 
             daily_voice_minutes: list[int] = []
             daily_voice_channel_joins: list[int] = []
@@ -463,39 +448,39 @@ class Analytics(commands.Cog):
 
             def get_figure_daily() -> Figure:
                 fig = Figure()
-                ax = fig.subplots()
+                ax = fig.subplots()  # type: ignore
 
-                ax.plot(dates, daily_voice_minutes, label="Voice Minutes")
-                ax.plot(dates, daily_voice_channel_joins, label="Voice Channel Joins")
-                ax.plot(dates, daily_voice_channel_leaves, label="Voice Channel Leaves")
-                ax.plot(
+                ax.plot(dates, daily_voice_minutes, label="Voice Minutes")  # type: ignore
+                ax.plot(dates, daily_voice_channel_joins, label="Voice Channel Joins")  # type: ignore
+                ax.plot(dates, daily_voice_channel_leaves, label="Voice Channel Leaves")  # type: ignore
+                ax.plot(  # type: ignore
                     dates, daily_voice_channel_changes, label="Voice Channel Changes"
                 )
-                ax.plot(dates, daily_roles_added, label="Roles Added")
-                ax.plot(dates, daily_roles_removed, label="Roles Removed")
-                ax.plot(dates, daily_commands_used, label="Commands Used")
-                ax.plot(
+                ax.plot(dates, daily_roles_added, label="Roles Added")  # type: ignore
+                ax.plot(dates, daily_roles_removed, label="Roles Removed")  # type: ignore
+                ax.plot(dates, daily_commands_used, label="Commands Used")  # type: ignore
+                ax.plot(  # type: ignore
                     dates,
                     daily_generated_voice_channels,
                     label="Generated Voice Channels",
                 )
-                ax.plot(dates, daily_tts_messages_sent, label="TTS Messages Sent")
+                ax.plot(dates, daily_tts_messages_sent, label="TTS Messages Sent")  # type: ignore
 
-                ax.xaxis.set_major_formatter(mdates.DateFormatter("%d/%m/%y"))
+                ax.xaxis.set_major_formatter(mdates.DateFormatter("%d/%m/%y"))  # type: ignore
                 interval = len(dates) // 5
-                ax.xaxis.set_major_locator(mdates.DayLocator(interval=interval))
-                ax.set_xlabel("Day")
-                ax.set_ylabel("Count")
-                ax.set_title("Daily Analytics")
+                ax.xaxis.set_major_locator(mdates.DayLocator(interval=interval))  # type: ignore
+                ax.set_xlabel("Day")  # type: ignore
+                ax.set_ylabel("Count")  # type: ignore
+                ax.set_title("Daily Analytics")  # type: ignore
 
-                ax.legend()
+                ax.legend()  # type: ignore
 
                 return fig
 
             fig = await self.client.loop.run_in_executor(None, get_figure_daily)
 
             buffer = io.BytesIO()
-            fig.savefig(buffer, format="png")
+            fig.savefig(buffer, format="png")  # type: ignore
 
             buffer.seek(0)
 
