@@ -63,7 +63,7 @@ class DatabaseUtils:
         tts_leave: Optional[bool] = None,
         logging: Optional[str] = None,
         bot_master_roles: Optional[list[str]] = None,
-        analytics: Optional[str] = None,
+        analytics: Optional[bool] = None,
     ) -> None:
         data: GuildUpdateInput = {}
 
@@ -92,10 +92,6 @@ class DatabaseUtils:
             data["analytics"] = analytics
             self.analytic_guilds = []
 
-        if analytics == "None":
-            data["analytics"] = None
-            self.analytic_guilds = []
-
         res = await self.db.guild.update(where={"id": str(guild_id)}, data=data)
         if not res:
             await self.db.guild.create(
@@ -106,7 +102,7 @@ class DatabaseUtils:
                     "ttsLeave": tts_leave if tts_leave else True,
                     "logging": logging if logging != "None" else None,
                     "botMasterRoles": bot_master_roles if bot_master_roles else [],
-                    "analytics": analytics if analytics else None,
+                    "analytics": analytics if analytics else False,
                 }
             )
 
@@ -460,7 +456,7 @@ class DatabaseUtils:
 
         # find all guilds where premium is enabled and analytics field is not null
         guilds = await self.db.guild.find_many(
-            where={"premium": True, "analytics": {"not": ""}}
+            where={"premium": True, "analytics": True}
         )
 
         self.analytic_guilds = guilds

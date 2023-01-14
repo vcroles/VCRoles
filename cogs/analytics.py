@@ -33,12 +33,9 @@ class Analytics(commands.Cog):
 
     @analytic_commands.command(name="toggle")
     @app_commands.describe(
-        channel="Channel to send analytics to:",
         enable="Enable analytics:",
     )
-    async def toggle_analytics(
-        self, interaction: Interaction, enable: bool, channel: discord.TextChannel
-    ):
+    async def toggle_analytics(self, interaction: Interaction, enable: bool):
         """PREMIUM - Use to toggle analytics"""
         if not interaction.guild:
             return await interaction.response.send_message(
@@ -56,17 +53,14 @@ class Analytics(commands.Cog):
             return await interaction.response.send_message(embed=embed)
 
         if enable:
-            await self.client.db.update_guild_data(
-                interaction.guild.id, analytics=str(channel.id)
-            )
             embed = discord.Embed(
                 title="Analytics Enabled",
-                description=f"Analytics have been enabled in {channel.mention}",
+                description=f"Analytics have been enabled. To view your analytics, use `/analytics graph`, `/analytics view` or `/analytics export`.\nTo disable analytics, use `/analytics toggle false`",
                 colour=discord.Colour.green(),
             )
             return await interaction.response.send_message(embed=embed)
 
-        await self.client.db.update_guild_data(interaction.guild.id, analytics="None")
+        await self.client.db.update_guild_data(interaction.guild.id, analytics=False)
         embed = discord.Embed(
             title="Analytics Disabled",
             description="Analytics have been disabled",
@@ -158,18 +152,6 @@ class Analytics(commands.Cog):
         for guild in guilds:
             if not guild.analytics:
                 continue
-
-            g = self.client.get_guild(int(guild.id))
-            if not g:
-                continue
-
-            channel = g.get_channel(int(guild.analytics))
-            if not channel or not isinstance(channel, discord.TextChannel):
-                continue
-
-            embed = await self.get_analytic_embed(guild.id)
-
-            await channel.send(embed=embed)
 
             await self.client.ar.rename(  # type: ignore
                 f"guild:{guild.id}:analytics",
