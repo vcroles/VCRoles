@@ -58,6 +58,13 @@ class VCRolesClient(commands.AutoShardedBot):
         self.loop.create_task(
             self.ar.hincrby(f"guild:{guild_id}:analytics", item, count)
         )
+        self.loop.create_task(
+            self.ar.hincrby(
+                f"guild:{guild_id}:analytics",
+                f"{item}-{datetime.datetime.utcnow().strftime('%H')}",
+                count,
+            )
+        )
 
     async def on_ready(self):
         """

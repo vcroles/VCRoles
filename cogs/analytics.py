@@ -1,6 +1,14 @@
 import datetime as dt
+from typing import Literal
 import io
 import csv
+
+import matplotlib
+
+matplotlib.use("Agg")
+
+from matplotlib.figure import Figure
+import matplotlib.dates as mdates
 
 import discord
 from discord import Interaction, app_commands
@@ -278,6 +286,223 @@ class Analytics(commands.Cog):
         await interaction.response.send_message(
             "Here is your analytics export", file=discord.File(buffer, "analytics.csv")  # type: ignore
         )
+
+    @analytic_commands.command(name="graph")
+    async def graph_analytics(
+        self, interaction: Interaction, timeframe: Literal["hour", "day"] = "hour"
+    ):
+        """PREMIUM - Create a graph of hourly/daily analytics"""
+        # we want to create a graph of the last 30 days of analytics if day is selected
+        # or the last 24 hours if hour is selected
+        # we want to create separate graphs for each of the following:
+        # voice minutes, voice channel joins, voice channel leaves, voice channel changes, roles added, roles removed, commands used, generated voice channels, tts messages sent
+        if not interaction.guild:
+            return await interaction.response.send_message(
+                "This command can only be used in a server"
+            )
+
+        guild = await self.client.db.get_guild_data(interaction.guild.id)
+
+        if not guild.premium:
+            embed = discord.Embed(
+                title="Premium Required",
+                description="Sorry, you cannot view analytics in this server - consider upgrading to premium to unlock this. https://cde90.gumroad.com/l/vcroles",
+                colour=discord.Colour.red(),
+            )
+            return await interaction.response.send_message(embed=embed)
+
+        if not guild.analytics:
+            embed = discord.Embed(
+                title="Analytics Disabled",
+                description="Analytics have been disabled. Use `/analytics toggle` to enable them",
+                colour=discord.Colour.green(),
+            )
+            return await interaction.response.send_message(embed=embed)
+
+        if timeframe == "hour":
+            analytics = await self.client.ar.hgetall(f"guild:{guild.id}:analytics")
+            if not analytics:
+                embed = discord.Embed(
+                    title="No Analytics Found",
+                    description="Sorry, there are no analytics to graph",
+                    colour=discord.Colour.red(),
+                )
+                return await interaction.response.send_message(embed=embed)
+
+            # create a graph of the last 24 hours of analytics
+            # the keys we want look like this:
+            # f"{item}-{datetime.datetime.utcnow().strftime('%H')}"
+
+            hourly_voice_minutes: list[int] = []
+            hourly_voice_channel_joins: list[int] = []
+            hourly_voice_channel_leaves: list[int] = []
+            hourly_voice_channel_changes: list[int] = []
+            hourly_roles_added: list[int] = []
+            hourly_roles_removed: list[int] = []
+            hourly_commands_used: list[int] = []
+            hourly_generated_voice_channels: list[int] = []
+            hourly_tts_messages_sent: list[int] = []
+
+            for i in range(24):
+                hourly_voice_minutes.append(int(analytics.get(f"voice_minutes-{i}", 0)))
+                hourly_voice_channel_joins.append(
+                    int(analytics.get(f"voice_channel_joins-{i}", 0))
+                )
+                hourly_voice_channel_leaves.append(
+                    int(analytics.get(f"voice_channel_leaves-{i}", 0))
+                )
+                hourly_voice_channel_changes.append(
+                    int(analytics.get(f"voice_channel_changes-{i}", 0))
+                )
+                hourly_roles_added.append(int(analytics.get(f"roles_added-{i}", 0)))
+                hourly_roles_removed.append(int(analytics.get(f"roles_removed-{i}", 0)))
+                hourly_commands_used.append(int(analytics.get(f"commands_used-{i}", 0)))
+                hourly_generated_voice_channels.append(
+                    int(analytics.get(f"generated_voice_channels-{i}", 0))
+                )
+                hourly_tts_messages_sent.append(
+                    int(analytics.get(f"tts_messages_sent-{i}", 0))
+                )
+
+            def get_figure_hourly() -> Figure:
+                fig = Figure()
+                ax = fig.subplots()
+
+                ax.plot(hourly_voice_minutes, label="Voice Minutes")
+                ax.plot(hourly_voice_channel_joins, label="Voice Channel Joins")
+                ax.plot(hourly_voice_channel_leaves, label="Voice Channel Leaves")
+                ax.plot(hourly_voice_channel_changes, label="Voice Channel Changes")
+                ax.plot(hourly_roles_added, label="Roles Added")
+                ax.plot(hourly_roles_removed, label="Roles Removed")
+                ax.plot(hourly_commands_used, label="Commands Used")
+                ax.plot(
+                    hourly_generated_voice_channels, label="Generated Voice Channels"
+                )
+                ax.plot(hourly_tts_messages_sent, label="TTS Messages Sent")
+
+                ax.set_xlabel("Hour")
+                ax.set_xticks(range(0, 24, 3))
+                ax.set_ylabel("Count")
+                ax.set_title("Hourly Analytics")
+
+                ax.legend()
+
+                return fig
+
+            fig = await self.client.loop.run_in_executor(None, get_figure_hourly)
+
+            buffer = io.BytesIO()
+            fig.savefig(buffer, format="png")
+
+            buffer.seek(0)
+
+            await interaction.response.send_message(
+                "Here is your analytics graph",
+                file=discord.File(buffer, "analytics.png"),
+            )
+
+        elif timeframe == "day":
+            analytic_days = await self.client.ar.keys(f"guild:{guild.id}:analytics:*")
+
+            if not analytic_days:
+                embed = discord.Embed(
+                    title="No Analytics Found",
+                    description="Sorry, there are not enough analytics to graph",
+                    colour=discord.Colour.red(),
+                )
+                return await interaction.response.send_message(embed=embed)
+
+            # sort analytics by date
+            # the keys look like this:
+            # f"guild:{guild.id}:analytics:{dt.datetime.utcnow().strftime('%Y-%m-%d')}"
+            analytic_days.sort()
+            # add the current day to the end of the list
+            analytic_days.append(f"guild:{guild.id}:analytics")
+
+            # create a graph of the last 30 days of analytics
+            # the keys we want look like this:
+            # f"{item}"
+
+            daily_voice_minutes: list[int] = []
+            daily_voice_channel_joins: list[int] = []
+            daily_voice_channel_leaves: list[int] = []
+            daily_voice_channel_changes: list[int] = []
+            daily_roles_added: list[int] = []
+            daily_roles_removed: list[int] = []
+            daily_commands_used: list[int] = []
+            daily_generated_voice_channels: list[int] = []
+            daily_tts_messages_sent: list[int] = []
+
+            dates: list[dt._Date] = []  # type: ignore
+
+            for day in analytic_days:
+                data = await self.client.ar.hgetall(day)
+
+                date = day.split(":")[-1]
+                if date == "analytics":
+                    date = dt.datetime.utcnow().strftime("%Y-%m-%d")
+                dates.append(dt.datetime.strptime(date, "%Y-%m-%d").date())
+
+                daily_voice_minutes.append(int(data.get("voice_minutes", 0)))
+                daily_voice_channel_joins.append(
+                    int(data.get("voice_channel_joins", 0))
+                )
+                daily_voice_channel_leaves.append(
+                    int(data.get("voice_channel_leaves", 0))
+                )
+                daily_voice_channel_changes.append(
+                    int(data.get("voice_channel_changes", 0))
+                )
+                daily_roles_added.append(int(data.get("roles_added", 0)))
+                daily_roles_removed.append(int(data.get("roles_removed", 0)))
+                daily_commands_used.append(int(data.get("commands_used", 0)))
+                daily_generated_voice_channels.append(
+                    int(data.get("generated_voice_channels", 0))
+                )
+                daily_tts_messages_sent.append(int(data.get("tts_messages_sent", 0)))
+
+            def get_figure_daily() -> Figure:
+                fig = Figure()
+                ax = fig.subplots()
+
+                ax.plot(dates, daily_voice_minutes, label="Voice Minutes")
+                ax.plot(dates, daily_voice_channel_joins, label="Voice Channel Joins")
+                ax.plot(dates, daily_voice_channel_leaves, label="Voice Channel Leaves")
+                ax.plot(
+                    dates, daily_voice_channel_changes, label="Voice Channel Changes"
+                )
+                ax.plot(dates, daily_roles_added, label="Roles Added")
+                ax.plot(dates, daily_roles_removed, label="Roles Removed")
+                ax.plot(dates, daily_commands_used, label="Commands Used")
+                ax.plot(
+                    dates,
+                    daily_generated_voice_channels,
+                    label="Generated Voice Channels",
+                )
+                ax.plot(dates, daily_tts_messages_sent, label="TTS Messages Sent")
+
+                ax.xaxis.set_major_formatter(mdates.DateFormatter("%d/%m/%y"))
+                interval = len(dates) // 5
+                ax.xaxis.set_major_locator(mdates.DayLocator(interval=interval))
+                ax.set_xlabel("Day")
+                ax.set_ylabel("Count")
+                ax.set_title("Daily Analytics")
+
+                ax.legend()
+
+                return fig
+
+            fig = await self.client.loop.run_in_executor(None, get_figure_daily)
+
+            buffer = io.BytesIO()
+            fig.savefig(buffer, format="png")
+
+            buffer.seek(0)
+
+            await interaction.response.send_message(
+                "Here is your analytics graph",
+                file=discord.File(buffer, "analytics.png"),
+            )
 
 
 async def setup(client: VCRolesClient):
