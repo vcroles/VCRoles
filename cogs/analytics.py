@@ -35,6 +35,7 @@ class Analytics(commands.Cog):
     @app_commands.describe(
         enable="Enable analytics:",
     )
+    @app_commands.checks.has_permissions(administrator=True)
     async def toggle_analytics(self, interaction: Interaction, enable: bool):
         """PREMIUM - Use to toggle analytics"""
         if not interaction.guild:
@@ -168,6 +169,7 @@ class Analytics(commands.Cog):
         await self.client.wait_until_ready()
 
     @analytic_commands.command(name="view")
+    @app_commands.checks.has_permissions(administrator=True)
     async def view_analytics(self, interaction: Interaction):
         """PREMIUM - Use to view analytics"""
         if not interaction.guild:
@@ -198,6 +200,7 @@ class Analytics(commands.Cog):
         return await interaction.response.send_message(embed=embed)
 
     @analytic_commands.command(name="export")
+    @app_commands.checks.has_permissions(administrator=True)
     async def export_analytics(self, interaction: Interaction):
         """PREMIUM - Export past 30 days of analytics"""
         if not interaction.guild:
@@ -270,6 +273,7 @@ class Analytics(commands.Cog):
         )
 
     @analytic_commands.command(name="graph")
+    @app_commands.checks.has_permissions(administrator=True)
     async def graph_analytics(
         self, interaction: Interaction, timeframe: Literal["hour", "day"] = "hour"
     ):
