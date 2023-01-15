@@ -1,18 +1,17 @@
-import datetime as dt
-from typing import Literal
-import io
 import csv
+import datetime as dt
+import io
+from typing import Literal
 
 import matplotlib
 
 matplotlib.use("Agg")
 
-from matplotlib.figure import Figure
-import matplotlib.dates as mdates
-
 import discord
+import matplotlib.dates as mdates
 from discord import Interaction, app_commands
 from discord.ext import commands, tasks
+from matplotlib.figure import Figure
 
 from utils.client import VCRolesClient
 
