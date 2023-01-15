@@ -21,9 +21,11 @@ class Analytics(commands.Cog):
     def __init__(self, client: VCRolesClient):
         self.client = client
         self.time_spent_loop.start()
+        self.analytics_loop.start()
 
     async def cog_unload(self):
         self.time_spent_loop.cancel()
+        self.analytics_loop.cancel()
 
         return await super().cog_unload()
 
@@ -278,9 +280,10 @@ class Analytics(commands.Cog):
         self, interaction: Interaction, timeframe: Literal["hour", "day"] = "hour"
     ):
         """PREMIUM - Create a graph of hourly/daily analytics"""
+        await interaction.response.defer()
 
         if not interaction.guild:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 "This command can only be used in a server"
             )
 
@@ -292,7 +295,7 @@ class Analytics(commands.Cog):
                 description="Sorry, you cannot view analytics in this server - consider upgrading to premium to unlock this. https://cde90.gumroad.com/l/vcroles",
                 colour=discord.Colour.red(),
             )
-            return await interaction.response.send_message(embed=embed)
+            return await interaction.followup.send(embed=embed)
 
         if not guild.analytics:
             embed = discord.Embed(
@@ -300,7 +303,7 @@ class Analytics(commands.Cog):
                 description="Analytics have been disabled. Use `/analytics toggle` to enable them",
                 colour=discord.Colour.green(),
             )
-            return await interaction.response.send_message(embed=embed)
+            return await interaction.followup.send(embed=embed)
 
         if timeframe == "hour":
             analytics = await self.client.ar.hgetall(f"guild:{guild.id}:analytics")
@@ -310,7 +313,7 @@ class Analytics(commands.Cog):
                     description="Sorry, there are no analytics to graph",
                     colour=discord.Colour.red(),
                 )
-                return await interaction.response.send_message(embed=embed)
+                return await interaction.followup.send(embed=embed)
 
             hourly_voice_minutes: list[int] = []
             hourly_voice_channel_joins: list[int] = []
@@ -375,7 +378,7 @@ class Analytics(commands.Cog):
 
             buffer.seek(0)
 
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "Here is your analytics graph",
                 file=discord.File(buffer, "analytics.png"),
             )
@@ -389,7 +392,7 @@ class Analytics(commands.Cog):
                     description="Sorry, there are not enough analytics to graph",
                     colour=discord.Colour.red(),
                 )
-                return await interaction.response.send_message(embed=embed)
+                return await interaction.followup.send(embed=embed)
 
             analytic_days.sort()
             analytic_days.append(f"guild:{guild.id}:analytics")
@@ -470,7 +473,7 @@ class Analytics(commands.Cog):
 
             buffer.seek(0)
 
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "Here is your analytics graph",
                 file=discord.File(buffer, "analytics.png"),
             )

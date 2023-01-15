@@ -112,6 +112,13 @@ class DatabaseUtils:
         except KeyError:
             pass
 
+    def remove_guild_from_cache(self, guild_id: DiscordID) -> None:
+        try:
+            k = hashkey(self, guild_id)
+            del self.guild_cache[k]
+        except KeyError:
+            pass
+
     @cached(linked_channel_cache)
     async def get_channel_linked(
         self,

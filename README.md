@@ -36,6 +36,7 @@ To get the bot running, you must configure a number of things.
 BOT_TOKEN: str = # the discord bot token
 ENVIRONMENT: Literal["DEV", "PROD"] = # how to run the bot (such as whether to use topgg integration)
 WEBSERVER_PORT: int = # the port to listen for offline status requests
+GUMROAD_PRODUCT_ID: str = # the gumroad product id
 
 class REDIS:
     HOST: str = # the redis host

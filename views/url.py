@@ -4,6 +4,7 @@ INVITE_URL = "https://discord.com/api/oauth2/authorize?client_id=775025797034541
 DISCORD_URL = "https://discord.gg/yHU6qcgNPy"
 WEBSITE_URL = "https://www.vcroles.com"
 TOPGG_URL = "https://top.gg/bot/775025797034541107"
+PREMIUM_URL = "https://premium.vcroles.com/l/vcroles"
 
 
 class Invite(discord.ui.View):
@@ -74,6 +75,23 @@ class TopGG(discord.ui.View):
         )
 
 
+class Premium(discord.ui.View):
+    """
+    Send a Premium button
+    """
+
+    def __init__(self):
+        super().__init__()
+
+        self.add_item(
+            discord.ui.Button(
+                style=discord.ButtonStyle.url,
+                label="Premium",
+                url=PREMIUM_URL,
+            )
+        )
+
+
 class Combination(discord.ui.View):
     """
     Send a button with the:
@@ -81,6 +99,7 @@ class Combination(discord.ui.View):
     - Invite
     - Support Server
     - Top.gg Link
+    - Premium Link
     """
 
     def __init__(self):
@@ -115,5 +134,13 @@ class Combination(discord.ui.View):
                 style=discord.ButtonStyle.url,
                 label="Top.gg",
                 url=TOPGG_URL,
+            )
+        )
+
+        self.add_item(
+            discord.ui.Button(
+                style=discord.ButtonStyle.url,
+                label="Premium",
+                url=PREMIUM_URL,
             )
         )

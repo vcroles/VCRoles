@@ -20,6 +20,17 @@ model Guild {
     premium        Boolean          @default(false)
     botMasterRoles String[]
     analytics      Boolean          @default(false)
+    Premium        Premium?         @relation(fields: [premiumId], references: [id])
+    premiumId      String?
+}
+
+model Premium {
+    id         String  @id @default(cuid())
+    licenseKey String  @unique
+    maxGuilds  Int     @default(1)
+    guilds     Guild[]
+    userId     String
+    strike     Int     @default(0)
 }
 
 enum LinkType {
