@@ -57,7 +57,7 @@ class Analytics(commands.Cog):
         if enable:
             embed = discord.Embed(
                 title="Analytics Enabled",
-                description=f"Analytics have been enabled. To view your analytics, use `/analytics graph`, `/analytics view` or `/analytics export`.\nTo disable analytics, use `/analytics toggle false`",
+                description="Analytics have been enabled. To view your analytics, use `/analytics graph`, `/analytics view` or `/analytics export`.\nTo disable analytics, use `/analytics toggle false`",
                 colour=discord.Colour.green(),
             )
             return await interaction.response.send_message(embed=embed)

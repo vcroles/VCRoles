@@ -26,27 +26,27 @@ class Premium(commands.Cog):
         name="premium", description="Premium commands"
     )
 
-    async def verify_license(self, license_key: str) -> Tuple[bool, int]:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                "https://api.gumroad.com/v2/licenses/verify",
-                json={
-                    "license_key": license_key,
-                    "product_id": config.GUMROAD_PRODUCT_ID,
-                },
-            ) as r:
-                res = await r.json()
-                if res["success"]:
-                    if res["purchase"]["variants"] == "(Premium)":
-                        return True, 1
-                    elif res["purchase"]["variants"] == "(Premium Plus)":
-                        return True, 3
-                    elif res["purchase"]["variants"] == "(Premium Pro)":
-                        return True, 10
-                    else:
-                        return False, 0
+    @staticmethod
+    async def verify_license(license_key: str) -> Tuple[bool, int]:
+        async with aiohttp.ClientSession() as session, session.post(
+            "https://api.gumroad.com/v2/licenses/verify",
+            json={
+                "license_key": license_key,
+                "product_id": config.GUMROAD_PRODUCT_ID,
+            },
+        ) as r:
+            res = await r.json()
+            if res["success"]:
+                if res["purchase"]["variants"] == "(Premium)":
+                    return True, 1
+                elif res["purchase"]["variants"] == "(Premium Plus)":
+                    return True, 3
+                elif res["purchase"]["variants"] == "(Premium Pro)":
+                    return True, 10
                 else:
                     return False, 0
+            else:
+                return False, 0
 
     @premium_commands.command(name="activate")
     async def premium_activate(self, interaction: Interaction, license_key: str):
