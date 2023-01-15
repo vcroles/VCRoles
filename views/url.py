@@ -1,6 +1,6 @@
 import discord
 
-INVITE_URL = "https://discord.com/api/oauth2/authorize?client_id=775025797034541107&permissions=300944400&scope=bot%20applications.commands"
+INVITE_URL = "https://discord.com/api/oauth2/authorize?client_id=775025797034541107&permissions=1039166576&scope=bot%20applications.commands"
 DISCORD_URL = "https://discord.gg/yHU6qcgNPy"
 WEBSITE_URL = "https://www.vcroles.com"
 TOPGG_URL = "https://top.gg/bot/775025797034541107"
