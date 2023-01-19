@@ -60,6 +60,7 @@ class Analytics(commands.Cog):
                 description="Analytics have been enabled. To view your analytics, use `/analytics graph`, `/analytics view` or `/analytics export`.\nTo disable analytics, use `/analytics toggle false`",
                 colour=discord.Colour.green(),
             )
+            await self.client.db.update_guild_data(interaction.guild.id, analytics=True)
             return await interaction.response.send_message(embed=embed)
 
         await self.client.db.update_guild_data(interaction.guild.id, analytics=False)
