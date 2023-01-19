@@ -259,8 +259,6 @@ class VoiceGen(commands.Cog):
             f"Created default generator g/{interaction.guild.id}",
         )
 
-        return self.client.incr_counter("voice_generator_create")
-
     @create_commands.command()
     @app_commands.describe(
         category_name="Name of generator category",
@@ -344,8 +342,6 @@ class VoiceGen(commands.Cog):
             f"Created numbered generator g/{interaction.guild.id}",
         )
 
-        return self.client.incr_counter("voice_generator_create")
-
     @create_commands.command()
     @app_commands.describe(
         category_name="Name of generator category",
@@ -422,8 +418,6 @@ class VoiceGen(commands.Cog):
             LogLevel.DEBUG,
             f"Created cloned generator g/{interaction.guild.id}",
         )
-
-        return self.client.incr_counter("voice_generator_create")
 
     @create_commands.command()
     @app_commands.describe(
@@ -508,8 +502,6 @@ class VoiceGen(commands.Cog):
             f"Created custom name generator g/{interaction.guild.id}",
         )
 
-        return self.client.incr_counter("voice_generator_create")
-
     @generator_commands.command()
     @app_commands.describe(generator="The generator channel to edit.")
     @commands.bot_has_permissions(manage_channels=True)
@@ -551,8 +543,6 @@ class VoiceGen(commands.Cog):
             LogLevel.DEBUG,
             f"Removed generator g/{interaction.guild.id} c/{generator.id}",
         )
-
-        return self.client.incr_counter("voice_generator_remove")
 
     @generator_commands.command()
     @app_commands.describe(
@@ -619,8 +609,6 @@ class VoiceGen(commands.Cog):
             f"Set {option} to {state} in g/{interaction.guild.id} c/{generator.id}",
         )
 
-        return self.client.incr_counter("voice_generator_toggle")
-
     @generator_commands.command()
     @app_commands.describe(
         generator="The generator channel to edit.",
@@ -661,8 +649,6 @@ class VoiceGen(commands.Cog):
             LogLevel.DEBUG,
             f"Listed options for g/{interaction.guild.id} c/{generator.id}",
         )
-
-        return self.client.incr_counter("voice_generator_options")
 
     @generator_commands.command(name="role")
     @app_commands.describe(
@@ -709,8 +695,6 @@ class VoiceGen(commands.Cog):
             f"Set default role for g/{interaction.guild.id} c/{generator.id} to {default_role.id}",
         )
 
-        return self.client.incr_counter("voice_generator_role")
-
     @generator_commands.command(name="restrict_role")
     @app_commands.describe(
         role="The role to restrict generators for (to remove select @everyone)",
@@ -756,8 +740,6 @@ class VoiceGen(commands.Cog):
             f"Set restricted role for g/{interaction.guild.id} c/{generator.id} to {role.id}",
         )
 
-        return self.client.incr_counter("voice_generator_restrict_role")
-
     @generator_commands.command(name="hide_at_limit")
     @app_commands.describe(
         enabled="Whether the feature is enabled.",
@@ -771,7 +753,7 @@ class VoiceGen(commands.Cog):
         generator: discord.VoiceChannel,
         enabled: bool,
     ):
-        """Controls whether the generator channel is hidden when the channel limit is reached."""
+        """PREMIUM - Controls whether the generator channel is hidden when the channel limit is reached."""
 
         if not interaction.guild:
             return await interaction.response.send_message(
@@ -813,8 +795,6 @@ class VoiceGen(commands.Cog):
             f"Set hide at limit for g/{interaction.guild.id} c/{generator.id} to {enabled}",
         )
 
-        return self.client.incr_counter("voice_generator_hide_at_limit")
-
     @generator_commands.command(name="force_remove")
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
@@ -841,8 +821,6 @@ class VoiceGen(commands.Cog):
             LogLevel.DEBUG,
             f"Deleted {deleted} generator channels from the database for g/{interaction.guild.id}",
         )
-
-        return self.client.incr_counter("voice_generator_force_remove")
 
 
 async def setup(client: VCRolesClient):

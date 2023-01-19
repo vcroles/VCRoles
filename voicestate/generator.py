@@ -148,6 +148,12 @@ class Generator:
                 user_limit=gen_data.defaultUserLimit,
             )
 
+        guild = await self.client.db.get_guild_data(member.guild.id)
+        if channel and guild.premium and guild.analytics:
+            self.client.incr_analytics_counter(
+                member.guild.id, "generated_voice_channels", 1
+            )
+
         if VoiceGeneratorOption.TEXT in gen_data.defaultOptions:
             text_channel = await member.guild.create_text_channel(
                 name=f"{member.display_name}-text",

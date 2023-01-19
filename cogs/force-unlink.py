@@ -55,8 +55,6 @@ class UnLink(commands.Cog):
             f"Force Unlinked c/{channel_id} g/{interaction.guild.id}",
         )
 
-        return self.client.incr_counter("forceunlink")
-
 
 async def setup(client: VCRolesClient):
     await client.add_cog(UnLink(client))

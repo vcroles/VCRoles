@@ -51,8 +51,6 @@ class PermLink(commands.Cog):
             f"Permanent linked c/{channel.id} g/{interaction.guild_id} r/{role.id}",
         )
 
-        return self.client.incr_counter("perm_link")
-
     @perm_commands.command()
     @app_commands.describe(
         channel="Select a channel to unlink", role="Select a role to unlink"
@@ -77,8 +75,6 @@ class PermLink(commands.Cog):
             LogLevel.DEBUG,
             f"Permanent unlinked c/{channel.id} g/{interaction.guild_id} r/{role.id}",
         )
-
-        return self.client.incr_counter("perm_unlink")
 
     @suffix_commands.command()
     @app_commands.describe(
@@ -106,8 +102,6 @@ class PermLink(commands.Cog):
             f"Permanent suffix added c/{channel.id} g/{interaction.guild_id} s/{suffix}",
         )
 
-        return self.client.incr_counter("perm_suffix_add")
-
     @suffix_commands.command()
     @app_commands.describe(channel="Select a channel to remove a suffix rule from")
     @check_any(command_available, is_owner)
@@ -129,8 +123,6 @@ class PermLink(commands.Cog):
             LogLevel.DEBUG,
             f"Permanent suffix removed c/{channel.id} g/{interaction.guild_id}",
         )
-
-        return self.client.incr_counter("perm_suffix_remove")
 
     @reverse_commands.command(
         name="link",
@@ -159,8 +151,6 @@ class PermLink(commands.Cog):
             f"Permanent reverse linked c/{channel.id} g/{interaction.guild_id} r/{role.id}",
         )
 
-        return self.client.incr_counter("perm_reverse_link")
-
     @reverse_commands.command(
         name="unlink",
     )
@@ -187,8 +177,6 @@ class PermLink(commands.Cog):
             LogLevel.DEBUG,
             f"Permanent reverse unlinked c/{channel.id} g/{interaction.guild_id} r/{role.id}",
         )
-
-        return self.client.incr_counter("perm_reverse_unlink")
 
 
 async def setup(client: VCRolesClient):

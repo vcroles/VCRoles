@@ -177,8 +177,6 @@ class Linked(commands.Cog):
             f"Ran linked command g/{interaction.guild_id} m/{interaction.user.id}",
         )
 
-        return self.client.incr_counter("linked")
-
 
 async def setup(client: VCRolesClient):
     await client.add_cog(Linked(client))

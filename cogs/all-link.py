@@ -86,8 +86,6 @@ class AllLink(commands.Cog):
             LogLevel.DEBUG, f"All link g/{interaction.guild.id} r/{role.id}"
         )
 
-        return self.client.incr_counter("all_link")
-
     @all_commands.command()
     @app_commands.describe(role="Select a role to unlink")
     @check_any(command_available, is_owner)
@@ -129,8 +127,6 @@ class AllLink(commands.Cog):
         self.client.log(
             LogLevel.DEBUG, f"All link g/{interaction.guild.id} r/{role.id}"
         )
-
-        return self.client.incr_counter("all_unlink")
 
     @exclude_commands.command(name="add")
     @app_commands.describe(channel="Select a channel to exclude")
@@ -183,8 +179,6 @@ class AllLink(commands.Cog):
             LogLevel.DEBUG, f"All add exception g/{interaction.guild.id} c/{channel.id}"
         )
 
-        return self.client.incr_counter("all_add_exception")
-
     @exclude_commands.command(name="remove")
     @app_commands.describe(channel="Select a channel to un-exclude")
     @check_any(command_available, is_owner)
@@ -228,8 +222,6 @@ class AllLink(commands.Cog):
             f"All remove exception g/{interaction.guild.id} c/{channel.id}",
         )
 
-        return self.client.incr_counter("all_remove_exception")
-
     @suffix_commands.command(name="add")
     @app_commands.describe(
         suffix="The suffix to add to your username when joining any channel"
@@ -260,8 +252,6 @@ class AllLink(commands.Cog):
             LogLevel.DEBUG, f"All add suffix g/{interaction.guild.id} s/{suffix}"
         )
 
-        return self.client.incr_counter("all_add_suffix")
-
     @suffix_commands.command(name="remove")
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
@@ -280,8 +270,6 @@ class AllLink(commands.Cog):
         await interaction.response.send_message("Removed the username suffix rule")
 
         self.client.log(LogLevel.DEBUG, f"All remove suffix g/{interaction.guild.id}")
-
-        return self.client.incr_counter("all_remove_suffix")
 
     @reverse_commands.command(name="link")
     @app_commands.describe(role="Select a role to reverse link")
@@ -325,8 +313,6 @@ class AllLink(commands.Cog):
             LogLevel.DEBUG, f"All reverse link g/{interaction.guild.id} r/{role.id}"
         )
 
-        return self.client.incr_counter("all_reverse_link")
-
     @reverse_commands.command(name="unlink")
     @app_commands.describe(role="Select a role to un-reverse link")
     @check_any(command_available, is_owner)
@@ -366,8 +352,6 @@ class AllLink(commands.Cog):
         self.client.log(
             LogLevel.DEBUG, f"All reverse unlink g/{interaction.guild.id} r/{role.id}"
         )
-
-        return self.client.incr_counter("all_reverse_unlink")
 
 
 async def setup(client: VCRolesClient):

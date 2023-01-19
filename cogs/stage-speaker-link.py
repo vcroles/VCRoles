@@ -46,8 +46,6 @@ class StageSpeaker(commands.Cog):
             f"Speaker linked c/{channel.id} g/{interaction.guild_id} r/{role.id}",
         )
 
-        return self.client.incr_counter("speaker_link")
-
     @speaker_commands.command()
     @app_commands.describe(
         channel="Select a channel to unlink", role="Select a role to unlink"
@@ -72,8 +70,6 @@ class StageSpeaker(commands.Cog):
             LogLevel.DEBUG,
             f"Speaker unlinked c/{channel.id} g/{interaction.guild_id} r/{role.id}",
         )
-
-        return self.client.incr_counter("speaker_unlink")
 
 
 async def setup(client: VCRolesClient):

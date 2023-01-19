@@ -56,8 +56,6 @@ class Logging(commands.Cog):
             f"Logging {'enabled' if enabled else 'disabled'} g/{interaction.guild.id}",
         )
 
-        return self.client.incr_counter("logging")
-
 
 async def setup(client: VCRolesClient):
     await client.add_cog(Logging(client))
