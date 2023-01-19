@@ -143,29 +143,35 @@ class Dev(commands.Cog):
         if guilds == "all":
             async with aiohttp.ClientSession() as session:
                 for url in webhooks.values():
-                    webhook = discord.Webhook.from_url(url, session=session)
-                    await webhook.send(
-                        embed=embed,
-                        username="VC Roles Updates",
-                        avatar_url=self.client.user.avatar.url
-                        if self.client.user and self.client.user.avatar
-                        else None,
-                    )
+                    try:
+                        webhook = discord.Webhook.from_url(url, session=session)
+                        await webhook.send(
+                            embed=embed,
+                            username="VC Roles Updates",
+                            avatar_url=self.client.user.avatar.url
+                            if self.client.user and self.client.user.avatar
+                            else None,
+                        )
+                    except:
+                        pass
         else:
             async with aiohttp.ClientSession() as session:
                 for guild in guilds.split(","):
                     if guild not in webhooks:
                         continue
-                    webhook = discord.Webhook.from_url(
-                        str(webhooks.get(guild)), session=session
-                    )
-                    await webhook.send(
-                        embed=embed,
-                        username="VC Roles Updates",
-                        avatar_url=self.client.user.avatar.url
-                        if self.client.user and self.client.user.avatar
-                        else None,
-                    )
+                    try:
+                        webhook = discord.Webhook.from_url(
+                            str(webhooks.get(guild)), session=session
+                        )
+                        await webhook.send(
+                            embed=embed,
+                            username="VC Roles Updates",
+                            avatar_url=self.client.user.avatar.url
+                            if self.client.user and self.client.user.avatar
+                            else None,
+                        )
+                    except:
+                        pass
 
         await ctx.send("Sent update message!")
 
