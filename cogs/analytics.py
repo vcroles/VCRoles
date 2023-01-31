@@ -457,6 +457,8 @@ class Analytics(commands.Cog):
 
                 ax.xaxis.set_major_formatter(mdates.DateFormatter("%d/%m/%y"))  # type: ignore
                 interval = len(dates) // 5
+                if interval == 0:
+                    interval = 1
                 ax.xaxis.set_major_locator(mdates.DayLocator(interval=interval))  # type: ignore
                 ax.set_xlabel("Day")  # type: ignore
                 ax.set_ylabel("Count")  # type: ignore
