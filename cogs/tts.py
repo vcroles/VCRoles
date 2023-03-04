@@ -101,27 +101,29 @@ class TTS(commands.Cog):
 
                 vc: Optional[discord.VoiceClient] = None
 
-                try:
-                    vc = await interaction.user.voice.channel.connect()
-                except discord.ClientException:
-                    for c in self.client.voice_clients:
-                        if not isinstance(c, discord.VoiceClient):
-                            continue
-                        if (
-                            c.channel == interaction.user.voice.channel
-                            and c.is_playing()
-                        ):
-                            return await interaction.response.send_message(
-                                "Please wait for the current TTS message to finish"
-                            )
-                        elif c.channel == interaction.user.voice.channel:
-                            vc = c
-                            break
+                for x in self.client.voice_clients:
+                    if not isinstance(x, discord.VoiceClient):
+                        continue
+                    if x.guild.id == interaction.guild.id:
+                        vc = x
+                        break
+
+                if vc and vc.is_playing():
+                    return await interaction.response.send_message(
+                        "Please wait for the current TTS message to finish."
+                    )
 
                 if not isinstance(vc, discord.VoiceClient):
-                    return await interaction.response.send_message(
-                        "Unknown error occured. Pleast try again."
-                    )
+                    try:
+                        vc = await interaction.user.voice.channel.connect()
+                    except discord.ClientException:
+                        return await interaction.response.send_message(
+                            "Cannot connect to a voice channel I'm already in."
+                        )
+                    except discord.HTTPException:
+                        return await interaction.response.send_message(
+                            "Failed to connect to the voice channel."
+                        )
 
                 embed = discord.Embed(
                     color=discord.Color.green(),
