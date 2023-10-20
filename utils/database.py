@@ -434,13 +434,12 @@ class DatabaseUtils:
         except KeyError:
             pass
 
-    async def get_all_linked_channel(
+    async def get_all_links_for_channel(
         self,
         guild_id: DiscordID,
         channel_id: DiscordID,
         category_id: Optional[DiscordID] = None,
     ) -> List[Link]:
-
         if category_id:
             s = [str(channel_id), str(category_id), str(guild_id)]
         else:
