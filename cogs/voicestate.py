@@ -130,9 +130,10 @@ class VoiceState(commands.Cog):
                     except discord.errors.HTTPException:
                         pass
 
-    def check_link_criteria(self, link: Link, member: discord.Member) -> bool:
+    @staticmethod
+    def check_link_criteria(link: Link, member: discord.Member) -> bool:
         # Check if the criteria is empty, return True if it is
-        if not link.linkCriteria or bool(link.linkCriteria) == False:
+        if not link.linkCriteria or bool(link.linkCriteria) is False:
             return True
 
         # Define a recursive function to evaluate criteria
