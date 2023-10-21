@@ -5,7 +5,6 @@ git+https://github.com/top-gg/python-sdk/ # topggpy
 pynacl
 redis
 types-redis
-pre-commit
 requests
 prisma
 cachetools
