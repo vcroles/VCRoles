@@ -1,5 +1,5 @@
 generator client {
-    provider             = "prisma-client-py"
+    provider             = "python -m prisma"
     recursive_type_depth = 5
     interface            = "asyncio"
 }
