@@ -3,7 +3,6 @@ from typing import Any, List, Optional
 from asyncache import cached  # type: ignore
 from cachetools import TTLCache
 from cachetools.keys import hashkey
-from prisma import Prisma
 from prisma.enums import LinkType, VoiceGeneratorOption, VoiceGeneratorType
 from prisma.models import GeneratedChannel, Guild, Link, VoiceGenerator
 from prisma.types import (
@@ -13,6 +12,7 @@ from prisma.types import (
     VoiceGeneratorUpdateInput,
 )
 
+from prisma import Json, Prisma
 from utils.types import DiscordID
 
 
@@ -146,6 +146,7 @@ class DatabaseUtils:
         speaker_roles: Optional[List[str]] = None,
         exclude_channels: Optional[List[str]] = None,
         suffix: Optional[str] = None,
+        link_criteria: Optional[dict[str, Any]] = None,
     ) -> None:
         data: LinkUpdateInput = {}
 
@@ -167,6 +168,9 @@ class DatabaseUtils:
         if suffix == "None":
             data["suffix"] = None
 
+        if link_criteria is not None:
+            data["linkCriteria"] = Json(link_criteria)
+
         res = await self.db.link.update(
             where={"id_type": {"id": str(channel_id), "type": link_type}}, data=data
         )
@@ -176,9 +180,7 @@ class DatabaseUtils:
                     "id": str(channel_id),
                     "type": link_type,
                     "linkedRoles": linked_roles if linked_roles else [],
-                    "reverseLinkedRoles": reverse_linked_roles
-                    if reverse_linked_roles
-                    else [],
+                    "reverseLinkedRoles": reverse_linked_roles if reverse_linked_roles else [],
                     "speakerRoles": speaker_roles if speaker_roles else [],
                     "excludeChannels": exclude_channels if exclude_channels else [],
                     "suffix": suffix if suffix != "None" else None,
@@ -203,9 +205,7 @@ class DatabaseUtils:
             where={"id": str(guild_id)}, include={"links": True}
         )
         if not guild:
-            guild = await self.db.guild.create(
-                {"id": str(guild_id)}, include={"links": True}
-            )
+            guild = await self.db.guild.create({"id": str(guild_id)}, include={"links": True})
 
         return guild.links or []
 
@@ -316,9 +316,7 @@ class DatabaseUtils:
             pass
 
     @cached(generated_channel_cache)
-    async def get_generated_channel(
-        self, channel_id: DiscordID
-    ) -> Optional[GeneratedChannel]:
+    async def get_generated_channel(self, channel_id: DiscordID) -> Optional[GeneratedChannel]:
         data = await self.db.generatedchannel.find_unique(
             where={"channelId": str(channel_id)}, include={"VoiceGenerator": True}
         )
@@ -354,9 +352,7 @@ class DatabaseUtils:
         if user_editable is not None:
             data["userEditable"] = user_editable
 
-        await self.db.generatedchannel.update(
-            where={"channelId": str(channel_id)}, data=data
-        )
+        await self.db.generatedchannel.update(where={"channelId": str(channel_id)}, data=data)
 
         try:
             k = hashkey(self, channel_id)
@@ -410,9 +406,7 @@ class DatabaseUtils:
 
         return data
 
-    async def delete_generator(
-        self, guild_id: DiscordID, generator_id: DiscordID
-    ) -> None:
+    async def delete_generator(self, guild_id: DiscordID, generator_id: DiscordID) -> None:
         await self.db.voicegenerator.delete(
             where={
                 "guildId_generatorId": {
@@ -434,13 +428,12 @@ class DatabaseUtils:
         except KeyError:
             pass
 
-    async def get_all_linked_channel(
+    async def get_all_links_for_channel(
         self,
         guild_id: DiscordID,
         channel_id: DiscordID,
         category_id: Optional[DiscordID] = None,
     ) -> List[Link]:
-
         if category_id:
             s = [str(channel_id), str(category_id), str(guild_id)]
         else:
@@ -451,9 +444,7 @@ class DatabaseUtils:
             include={"links": {"where": {"OR": [{"id": i} for i in s]}}},
         )
         if not guild:
-            guild = await self.db.guild.create(
-                {"id": str(guild_id)}, include={"links": True}
-            )
+            guild = await self.db.guild.create({"id": str(guild_id)}, include={"links": True})
 
         return guild.links or []
 
@@ -462,9 +453,7 @@ class DatabaseUtils:
             return self.analytic_guilds
 
         # find all guilds where premium is enabled and analytics field is not null
-        guilds = await self.db.guild.find_many(
-            where={"premium": True, "analytics": True}
-        )
+        guilds = await self.db.guild.find_many(where={"premium": True, "analytics": True})
 
         self.analytic_guilds = guilds
 

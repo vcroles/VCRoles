@@ -119,7 +119,6 @@ async def on_command_error(
 
 
 async def main():
-
     # Removing TTS Files
 
     for filename in os.listdir("tts"):
@@ -139,10 +138,11 @@ async def main():
         f.write("")
 
     async with client:
-
         # Setting up topgg integration
 
         if using_topgg:
+            import topgg
+
             client.topgg_webhook = (
                 topgg.WebhookManager().set_data(client).endpoint(dbl_endpoint)
             )
@@ -162,5 +162,4 @@ async def main():
 
 
 if __name__ == "__main__":
-
     asyncio.run(main())

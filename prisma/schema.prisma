@@ -52,6 +52,7 @@ model Link {
     suffix             String?
     speakerRoles       String[]
     excludeChannels    String[]
+    linkCriteria       Json     @default("{}")
 
     @@id([id, type])
 }

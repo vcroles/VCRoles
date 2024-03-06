@@ -1,6 +1,9 @@
+from typing import Any
 import discord
 from discord.ext import commands
 from prisma.enums import LinkType
+from prisma.models import Link
+from pydantic import Json
 
 from utils import VCRolesClient
 from utils.types import (
@@ -31,7 +34,7 @@ class VoiceState(commands.Cog):
 
         # Joining
         if not before.channel and after.channel:
-            roles_changed, failed_roles = await self.join(member, after)
+            roles_changed, failed_roles = await self.handle_join(member, after)
 
             if failed_roles:
                 self.client.log(
@@ -48,7 +51,7 @@ class VoiceState(commands.Cog):
 
         # Leaving
         elif before.channel and not after.channel:
-            roles_changed, failed_roles = await self.leave(member, before)
+            roles_changed, failed_roles = await self.handle_leave(member, before)
 
             if failed_roles:
                 self.client.log(
@@ -65,10 +68,11 @@ class VoiceState(commands.Cog):
 
         # Changing
         elif before.channel and after.channel and before.channel != after.channel:
-
-            leave_roles_changed, join_roles_changed, failed_roles = await self.change(
-                member, before, after
-            )
+            (
+                leave_roles_changed,
+                join_roles_changed,
+                failed_roles,
+            ) = await self.handle_change(member, before, after)
 
             if failed_roles:
                 self.client.log(
@@ -126,7 +130,43 @@ class VoiceState(commands.Cog):
                     except discord.errors.HTTPException:
                         pass
 
-    async def join(
+    @staticmethod
+    def check_link_criteria(link: Link, member: discord.Member) -> bool:
+        # Check if the criteria is empty, return True if it is
+        if not link.linkCriteria or bool(link.linkCriteria) is False:
+            return True
+
+        # Define a recursive function to evaluate criteria
+        def evaluate_criteria(criteria: Json[Any]) -> bool:
+            # Check for "and," "or," and "not" keys in the criteria
+            if "and" in criteria:
+                return all(evaluate_criteria(c) for c in criteria["and"])
+            if "or" in criteria:
+                return any(evaluate_criteria(c) for c in criteria["or"])
+            if "not" in criteria:
+                return not evaluate_criteria(criteria["not"])
+
+            # If none of the special keys are present, you can now check the criteria
+            if "hasRole" in criteria:
+                role_id = criteria["hasRole"]
+                return any(role.id == role_id for role in member.roles)
+            if "hasPermission" in criteria:
+                permission = criteria["hasPermission"]
+                return any(
+                    p[0] == permission.lower() and p[1]
+                    for p in member.guild_permissions
+                )
+            if "isUser" in criteria:
+                user_id = criteria["isUser"]
+                return str(member.id) == user_id
+
+            # If no recognizable criteria are found, return False
+            return False
+
+        # Start the evaluation with the top-level criteria
+        return evaluate_criteria(link.linkCriteria)
+
+    async def handle_join(
         self,
         member: discord.Member,
         after: discord.VoiceState,
@@ -135,7 +175,7 @@ class VoiceState(commands.Cog):
             # Unreachable.
             return [], []
 
-        links = await self.client.db.get_all_linked_channel(
+        links = await self.client.db.get_all_links_for_channel(
             member.guild.id,
             after.channel.id,
             after.channel.category.id if after.channel.category else None,
@@ -150,6 +190,10 @@ class VoiceState(commands.Cog):
         for link in links:
             if str(after.channel.id) in link.excludeChannels:
                 continue
+
+            if not self.check_link_criteria(link, member):
+                continue
+
             addable_roles.extend(link.linkedRoles)
             removeable_roles.extend(link.reverseLinkedRoles)
             return_data.append(
@@ -302,7 +346,7 @@ class VoiceState(commands.Cog):
 
         return return_data, list(set(failed_roles))
 
-    async def leave(
+    async def handle_leave(
         self,
         member: discord.Member,
         before: discord.VoiceState,
@@ -311,7 +355,7 @@ class VoiceState(commands.Cog):
             # Unreachable.
             return [], []
 
-        links = await self.client.db.get_all_linked_channel(
+        links = await self.client.db.get_all_links_for_channel(
             member.guild.id,
             before.channel.id,
             before.channel.category.id if before.channel.category else None,
@@ -328,6 +372,10 @@ class VoiceState(commands.Cog):
                 continue
             if link.type == LinkType.PERMANENT:
                 continue
+
+            if not self.check_link_criteria(link, member):
+                continue
+
             addable_roles.extend(link.reverseLinkedRoles)
             removeable_roles.extend(link.linkedRoles)
             return_data.append(
@@ -473,7 +521,7 @@ class VoiceState(commands.Cog):
 
         return return_data, list(set(failed_roles))
 
-    async def change(
+    async def handle_change(
         self,
         member: discord.Member,
         before: discord.VoiceState,
@@ -485,13 +533,13 @@ class VoiceState(commands.Cog):
             # Unreachable.
             return [], [], []
 
-        before_links = await self.client.db.get_all_linked_channel(
+        before_links = await self.client.db.get_all_links_for_channel(
             member.guild.id,
             before.channel.id,
             before.channel.category.id if before.channel.category else None,
         )
 
-        after_links = await self.client.db.get_all_linked_channel(
+        after_links = await self.client.db.get_all_links_for_channel(
             member.guild.id,
             after.channel.id,
             after.channel.category.id if after.channel.category else None,
@@ -511,6 +559,10 @@ class VoiceState(commands.Cog):
                 continue
             if link.type == LinkType.PERMANENT:
                 continue
+
+            if not self.check_link_criteria(link, member):
+                continue
+
             addable_roles.extend(link.reverseLinkedRoles)
             removeable_roles.extend(link.linkedRoles)
             leave_return_data.append(
@@ -526,6 +578,10 @@ class VoiceState(commands.Cog):
         for link in after_links:
             if str(after.channel.id) in link.excludeChannels:
                 continue
+
+            if not self.check_link_criteria(link, member):
+                continue
+
             addable_roles.extend(link.linkedRoles)
             removeable_roles.extend(link.reverseLinkedRoles)
             join_return_data.append(

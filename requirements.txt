@@ -4,9 +4,9 @@ mutagen
 git+https://github.com/top-gg/python-sdk/ # topggpy
 pynacl
 redis
-pre-commit
+types-redis
 requests
-prisma==0.7.1
+prisma
 cachetools
 types-cachetools
 asyncache
