@@ -19,6 +19,9 @@ class Generator:
         if isinstance(user_channel, discord.StageChannel):
             return
 
+        if not user_channel:
+            return
+
         channel_data = await self.client.db.get_generated_channel(user_channel.id)
         # add new user to text channel permissions
         if channel_data and channel_data.textChannelId:
@@ -230,6 +233,9 @@ class Generator:
         member: discord.Member,
         user_channel: JoinableChannel,
     ):
+        if not user_channel:
+            return
+
         data = await self.client.db.get_generated_channel(user_channel.id)
 
         try:
