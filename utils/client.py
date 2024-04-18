@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import datetime
 from typing import Any, Optional
+from asyncache import cached  # type: ignore
+from cachetools import TTLCache
 
 import aiohttp
 import discord
@@ -15,6 +17,9 @@ from views.interface import Interface
 
 
 class VCRolesClient(commands.AutoShardedBot):
+
+    entitlements_cache: TTLCache[Any, Any] = TTLCache(2**8, 60 * 60)
+
     def __init__(
         self,
         ar: aioredis.Redis[Any],
@@ -268,6 +273,7 @@ class VCRolesClient(commands.AutoShardedBot):
 
         return valid_premium
 
+    @cached(entitlements_cache)
     async def check_premium_guild(self, guild_id: int) -> bool:
         valid_premium = any(
             [
