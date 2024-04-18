@@ -46,7 +46,7 @@ class Analytics(commands.Cog):
 
         guild = await self.client.db.get_guild_data(interaction.guild.id)
 
-        valid_premium = self.client.check_premium(interaction)
+        valid_premium = await self.client.check_premium_guild(interaction.guild_id)
 
         if not guild.premium or not valid_premium:
             return await interaction.response.require_premium()
@@ -180,7 +180,7 @@ class Analytics(commands.Cog):
 
         guild = await self.client.db.get_guild_data(interaction.guild.id)
 
-        valid_premium = self.client.check_premium(interaction)
+        valid_premium = await self.client.check_premium_guild(interaction.guild_id)
 
         if not guild.premium or not valid_premium:
             return await interaction.response.require_premium()
@@ -208,7 +208,7 @@ class Analytics(commands.Cog):
 
         guild = await self.client.db.get_guild_data(interaction.guild.id)
 
-        valid_premium = self.client.check_premium(interaction)
+        valid_premium = await self.client.check_premium_guild(interaction.guild_id)
 
         if not guild.premium or not valid_premium:
             return await interaction.response.require_premium()
@@ -281,7 +281,7 @@ class Analytics(commands.Cog):
 
         guild = await self.client.db.get_guild_data(interaction.guild.id)
 
-        valid_premium = self.client.check_premium(interaction)
+        valid_premium = await self.client.check_premium_guild(interaction.guild_id)
 
         if not guild.premium or not valid_premium:
             return await interaction.response.require_premium()

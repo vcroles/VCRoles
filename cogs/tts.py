@@ -75,7 +75,7 @@ class TTS(commands.Cog):
             )
 
         guild_data = await self.client.db.get_guild_data(interaction.guild.id)
-        valid_premium = self.client.check_premium(interaction)
+        valid_premium = await self.client.check_premium_guild(interaction.guild_id)
 
         if guild_data.ttsEnabled is False:
             return await interaction.response.send_message(

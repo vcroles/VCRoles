@@ -141,7 +141,7 @@ class GenInterface(commands.Cog):
                 "You must be in a guild to use this.", ephemeral=True
             )
 
-        valid_premium = self.client.check_premium(interaction)
+        valid_premium = await self.client.check_premium_guild(interaction.guild_id)
         is_premium = (
             await self.client.db.get_guild_data(interaction.guild.id)
         ).premium or valid_premium

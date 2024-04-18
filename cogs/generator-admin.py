@@ -162,7 +162,7 @@ class VoiceGen(commands.Cog):
             raise AssertionError
 
         guild_data = await self.client.db.get_guild_data(interaction.guild.id)
-        valid_premium = self.client.check_premium(interaction)
+        valid_premium = await self.client.check_premium_guild(interaction.guild_id)
 
         is_premium = guild_data.premium or valid_premium
 
@@ -586,7 +586,7 @@ class VoiceGen(commands.Cog):
             )
 
         if option == VoiceGeneratorOption.TEXT:
-            valid_premium = self.client.check_premium(interaction)
+            valid_premium = await self.client.check_premium_guild(interaction.guild_id)
             is_premium = (
                 await self.client.db.get_guild_data(interaction.guild.id)
             ).premium or valid_premium
@@ -792,7 +792,7 @@ class VoiceGen(commands.Cog):
             )
 
         guild_data = await self.client.db.get_guild_data(interaction.guild.id)
-        valid_premium = self.client.check_premium(interaction)
+        valid_premium = await self.client.check_premium_guild(interaction.guild_id)
 
         if not guild_data.premium or not valid_premium:
             await interaction.response.require_premium()

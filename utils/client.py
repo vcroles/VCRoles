@@ -258,23 +258,11 @@ class VCRolesClient(commands.AutoShardedBot):
 
         return True
 
-    @staticmethod
-    def check_premium(interaction: discord.Interaction) -> bool:
-        if not interaction.guild:
+    @cached(entitlements_cache)
+    async def check_premium_guild(self, guild_id: int | None) -> bool:
+        if not guild_id:
             return False
 
-        valid_premium = any(
-            [
-                entitlement.is_expired() is False
-                and entitlement.guild_id == interaction.guild_id
-                for entitlement in interaction.entitlements
-            ]
-        )
-
-        return valid_premium
-
-    @cached(entitlements_cache)
-    async def check_premium_guild(self, guild_id: int) -> bool:
         valid_premium = any(
             [
                 entitlement.is_expired() is False and entitlement.guild_id == guild_id
