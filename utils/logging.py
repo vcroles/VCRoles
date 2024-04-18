@@ -87,6 +87,7 @@ def setup_logging():
     logging.getLogger("discord.voice_client").setLevel(logging.WARNING)
     logging.getLogger("discord.player").setLevel(logging.WARNING)
     logging.getLogger("aiohttp").setLevel(logging.WARNING)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
 
     handler.setFormatter(formatter)
     logger.setLevel(level)
