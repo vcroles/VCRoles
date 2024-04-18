@@ -4,7 +4,6 @@ from prisma.enums import LinkType
 
 from utils import VCRolesClient
 from utils.types import (
-    ActiveGuildsData,
     LogLevel,
     MentionableRole,
     SuffixConstructor,
@@ -30,7 +29,7 @@ class VoiceState(commands.Cog):
             return
 
         # Joining
-        if not before.channel and after.channel:
+        if before.channel is None and after.channel is not None:
             roles_changed, failed_roles = await self.join(member, after)
 
             if failed_roles:
@@ -47,7 +46,7 @@ class VoiceState(commands.Cog):
             )
 
         # Leaving
-        elif before.channel and not after.channel:
+        elif before.channel is not None and after.channel is None:
             roles_changed, failed_roles = await self.leave(member, before)
 
             if failed_roles:
@@ -64,7 +63,11 @@ class VoiceState(commands.Cog):
             )
 
         # Changing
-        elif before.channel and after.channel and before.channel != after.channel:
+        elif (
+            before.channel is not None
+            and after.channel is not None
+            and before.channel != after.channel
+        ):
 
             leave_roles_changed, join_roles_changed, failed_roles = await self.change(
                 member, before, after
@@ -174,7 +177,8 @@ class VoiceState(commands.Cog):
 
         failed_roles: list[discord.Role] = []
 
-        member_roles = member.roles
+        to_add: list[discord.Role] = []
+        to_remove: list[discord.Role] = []
 
         for role_id in addable_roles:
             role = member.guild.get_role(int(role_id))
@@ -185,8 +189,10 @@ class VoiceState(commands.Cog):
                 failed_roles.append(role)
                 continue
 
-            if role not in member_roles:
-                member_roles.append(role)
+            if role in member.roles:
+                continue
+
+            to_add.append(role)
 
         for role_id in removeable_roles:
             role = member.guild.get_role(int(role_id))
@@ -197,8 +203,10 @@ class VoiceState(commands.Cog):
                 failed_roles.append(role)
                 continue
 
-            if role in member_roles:
-                member_roles.remove(role)
+            if role not in member.roles:
+                continue
+
+            to_remove.append(role)
 
         addable_suffix = f"{suffix_data.permanent_suffix + ' ' if suffix_data.permanent_suffix else ''}{suffix_data.suffix}"
         if not member.display_name.endswith(addable_suffix):
@@ -208,82 +216,23 @@ class VoiceState(commands.Cog):
         else:
             new_user_nickname = member.display_name
 
-        if member_roles != member.roles or new_user_nickname != member.display_name:
-            # if bot has permission to change roles and nicknames
-            if (
-                member.guild.me.guild_permissions.manage_nicknames
-                and member.guild.me.guild_permissions.manage_roles
-            ):
-                if (
-                    member.top_role < member.guild.me.top_role
-                    and member.id != member.guild.owner_id
-                    and new_user_nickname != member.display_name
-                    and member_roles != member.roles
-                ):
-                    # change nickname and roles
-                    try:
-                        await member.edit(
-                            roles=member_roles,
-                            nick=new_user_nickname,
-                            reason="Joined Voice Channel",
-                        )
-                    except discord.HTTPException:
-                        pass
-                elif (
-                    member.top_role < member.guild.me.top_role
-                    and member.id != member.guild.owner_id
-                    and new_user_nickname != member.display_name
-                ):
-                    # change nickname
-                    try:
-                        await member.edit(
-                            nick=new_user_nickname, reason="Joined Voice Channel"
-                        )
-                    except discord.HTTPException:
-                        pass
-                elif member_roles != member.roles:
-                    # change roles
-                    try:
-                        await member.edit(
-                            roles=member_roles, reason="Joined Voice Channel"
-                        )
-                    except discord.HTTPException:
-                        pass
-            # if bot has permission to change roles
-            elif member.guild.me.guild_permissions.manage_roles:
-                # change roles
-                if member.roles != member_roles:
-                    try:
-                        await member.edit(
-                            roles=member_roles, reason="Joined Voice Channel"
-                        )
-                    except discord.HTTPException:
-                        pass
-            # if bot has permission to change nicknames
-            elif member.guild.me.guild_permissions.manage_nicknames:
-                # change nickname
-                if (
-                    member.top_role < member.guild.me.top_role
-                    and member.id != member.guild.owner_id
-                    and new_user_nickname != member.display_name
-                ):
-                    try:
-                        await member.edit(
-                            nick=new_user_nickname, reason="Joined Voice Channel"
-                        )
-                    except discord.HTTPException:
-                        pass
+        if to_add:
+            try:
+                await member.add_roles(*to_add, reason="Joined Voice Channel")
+            except discord.HTTPException:
+                pass
 
-        if member_roles != member.roles or new_user_nickname != member.display_name:
-            # set active guild for voice state
-            ag = self.client.active_guilds.get(member.guild.id)
-            if ag is None:
-                g = ActiveGuildsData()
-                g.voice_active = True
-                self.client.active_guilds[member.guild.id] = g
-            else:
-                ag.voice_active = True
-                self.client.active_guilds[member.guild.id] = ag
+        if to_remove:
+            try:
+                await member.remove_roles(*to_remove, reason="Joined Voice Channel")
+            except discord.HTTPException:
+                pass
+
+        if new_user_nickname != member.display_name:
+            try:
+                await member.edit(nick=new_user_nickname, reason="Joined Voice Channel")
+            except discord.HTTPException:
+                pass
 
         self.client.incr_role_counter("added", len(addable_roles))
         self.client.incr_role_counter("removed", len(removeable_roles))
@@ -353,9 +302,13 @@ class VoiceState(commands.Cog):
 
         failed_roles: list[discord.Role] = []
 
-        fetched_member = await before.channel.guild.fetch_member(member.id)
+        try:
+            fetched_member = await before.channel.guild.fetch_member(member.id)
+        except:
+            fetched_member = member
 
-        member_roles = fetched_member.roles
+        to_add: list[discord.Role] = []
+        to_remove: list[discord.Role] = []
 
         for role_id in addable_roles:
             role = member.guild.get_role(int(role_id))
@@ -366,8 +319,10 @@ class VoiceState(commands.Cog):
                 failed_roles.append(role)
                 continue
 
-            if role not in member_roles:
-                member_roles.append(role)
+            if role in fetched_member.roles:
+                continue
+
+            to_add.append(role)
 
         for role_id in removeable_roles:
             role = member.guild.get_role(int(role_id))
@@ -378,84 +333,30 @@ class VoiceState(commands.Cog):
                 failed_roles.append(role)
                 continue
 
-            if role in member_roles:
-                member_roles.remove(role)
+            if role not in fetched_member.roles:
+                continue
+
+            to_remove.append(role)
 
         new_user_nickname = fetched_member.display_name.removesuffix(suffix_data.suffix)
 
-        if (
-            member_roles != fetched_member.roles
-            or new_user_nickname != fetched_member.display_name
-        ):
-            if (
-                member.guild.me.guild_permissions.manage_nicknames
-                and member.guild.me.guild_permissions.manage_roles
-            ):
-                if (
-                    member.top_role < member.guild.me.top_role
-                    and member.id != member.guild.owner_id
-                    and new_user_nickname != fetched_member.display_name
-                    and member_roles != fetched_member.roles
-                ):
-                    try:
-                        await member.edit(
-                            roles=member_roles,
-                            nick=new_user_nickname,
-                            reason="Left Voice Channel",
-                        )
-                    except discord.HTTPException:
-                        pass
-                elif (
-                    member.top_role < member.guild.me.top_role
-                    and member.id != member.guild.owner_id
-                    and new_user_nickname != fetched_member.display_name
-                ):
-                    try:
-                        await member.edit(
-                            nick=new_user_nickname, reason="Left Voice Channel"
-                        )
-                    except discord.HTTPException:
-                        pass
-                elif member_roles != fetched_member.roles:
-                    try:
-                        await member.edit(
-                            roles=member_roles, reason="Left Voice Channel"
-                        )
-                    except discord.HTTPException:
-                        pass
-            elif member.guild.me.guild_permissions.manage_roles:
-                if member_roles != fetched_member.roles:
-                    try:
-                        await member.edit(
-                            roles=member_roles, reason="Left Voice Channel"
-                        )
-                    except discord.HTTPException:
-                        pass
-            elif (
-                member.guild.me.guild_permissions.manage_nicknames
-                and member.top_role < member.guild.me.top_role
-                and member.id != member.guild.owner_id
-                and new_user_nickname != fetched_member.display_name
-            ):
-                try:
-                    await member.edit(
-                        nick=new_user_nickname, reason="Left Voice Channel"
-                    )
-                except discord.HTTPException:
-                    pass
+        if to_add:
+            try:
+                await member.add_roles(*to_add, reason="Left Voice Channel")
+            except discord.HTTPException:
+                pass
 
-        if (
-            member_roles != fetched_member.roles
-            or new_user_nickname != fetched_member.display_name
-        ):
-            ag = self.client.active_guilds.get(member.guild.id)
-            if ag is None:
-                g = ActiveGuildsData()
-                g.voice_active = True
-                self.client.active_guilds[member.guild.id] = g
-            else:
-                ag.voice_active = True
-                self.client.active_guilds[member.guild.id] = ag
+        if to_remove:
+            try:
+                await member.remove_roles(*to_remove, reason="Left Voice Channel")
+            except discord.HTTPException:
+                pass
+
+        if new_user_nickname != member.display_name:
+            try:
+                await member.edit(nick=new_user_nickname, reason="Left Voice Channel")
+            except discord.HTTPException:
+                pass
 
         self.client.incr_role_counter("added", len(addable_roles))
         self.client.incr_role_counter("removed", len(removeable_roles))
@@ -552,9 +453,13 @@ class VoiceState(commands.Cog):
 
         failed_roles: list[discord.Role] = []
 
-        fetched_member = await before.channel.guild.fetch_member(member.id)
+        try:
+            fetched_member = await before.channel.guild.fetch_member(member.id)
+        except:
+            fetched_member = member
 
-        member_roles = fetched_member.roles
+        to_add: list[discord.Role] = []
+        to_remove: list[discord.Role] = []
 
         for role_id in addable_roles:
             role = member.guild.get_role(int(role_id))
@@ -565,8 +470,10 @@ class VoiceState(commands.Cog):
                 failed_roles.append(role)
                 continue
 
-            if role not in member_roles:
-                member_roles.append(role)
+            if role in fetched_member.roles:
+                continue
+
+            to_add.append(role)
 
         for role_id in removeable_roles:
             role = member.guild.get_role(int(role_id))
@@ -577,8 +484,10 @@ class VoiceState(commands.Cog):
                 failed_roles.append(role)
                 continue
 
-            if role in member_roles:
-                member_roles.remove(role)
+            if role not in fetched_member.roles:
+                continue
+
+            to_remove.append(role)
 
         removed_leave_suffix = fetched_member.display_name.removesuffix(
             leave_suffix_data.suffix
@@ -592,83 +501,25 @@ class VoiceState(commands.Cog):
             else:
                 new_user_nickname = removed_leave_suffix
 
-        if (
-            member_roles != fetched_member.roles
-            or new_user_nickname != fetched_member.display_name
-        ):
-            if (
-                member.guild.me.guild_permissions.manage_nicknames
-                and member.guild.me.guild_permissions.manage_roles
-            ):
-                if (
-                    fetched_member.top_role < member.guild.me.top_role
-                    and member.id != member.guild.owner_id
-                    and new_user_nickname != fetched_member.display_name
-                    and member_roles != fetched_member.roles
-                ):
-                    try:
-                        await member.edit(
-                            roles=member_roles,
-                            nick=new_user_nickname,
-                            reason="Changed Voice Channel",
-                        )
-                    except discord.HTTPException:
-                        pass
-                elif (
-                    fetched_member.top_role < member.guild.me.top_role
-                    and member.id != member.guild.owner_id
-                    and new_user_nickname != fetched_member.display_name
-                ):
-                    try:
-                        await member.edit(
-                            nick=new_user_nickname,
-                            reason="Changed Voice Channel",
-                        )
-                    except discord.HTTPException:
-                        pass
-                elif member_roles != fetched_member.roles:
-                    try:
-                        await member.edit(
-                            roles=member_roles,
-                            reason="Changed Voice Channel",
-                        )
-                    except discord.HTTPException:
-                        pass
-            elif member.guild.me.guild_permissions.manage_roles:
-                if member_roles != fetched_member.roles:
-                    try:
-                        await member.edit(
-                            roles=member_roles,
-                            reason="Changed Voice Channel",
-                        )
-                    except discord.HTTPException:
-                        pass
-            elif (
-                member.guild.me.guild_permissions.manage_nicknames
-                and fetched_member.top_role < member.guild.me.top_role
-                and member.id != member.guild.owner_id
-                and new_user_nickname != fetched_member.display_name
-            ):
-                try:
-                    await member.edit(
-                        nick=new_user_nickname,
-                        reason="Changed Voice Channel",
-                    )
-                except discord.HTTPException:
-                    pass
+        if to_add:
+            try:
+                await member.add_roles(*to_add, reason="Changed Voice Channel")
+            except discord.HTTPException:
+                pass
 
-        if (
-            member_roles != fetched_member.roles
-            or new_user_nickname != fetched_member.display_name
-        ):
-            ag = self.client.active_guilds.get(member.guild.id)
-            if ag is None:
-                g = ActiveGuildsData()
-                g.voice_active = True
-                self.client.active_guilds[member.guild.id] = g
-            else:
-                ag.voice_active = True
-                self.client.active_guilds[member.guild.id] = ag
+        if to_remove:
+            try:
+                await member.remove_roles(*to_remove, reason="Changed Voice Channel")
+            except discord.HTTPException:
+                pass
+
+        if new_user_nickname != member.display_name:
+            try:
+                await member.edit(
+                    nick=new_user_nickname, reason="Changed Voice Channel"
+                )
+            except discord.HTTPException:
+                pass
 
         self.client.incr_role_counter("added", len(addable_roles))
         self.client.incr_role_counter("removed", len(removeable_roles))

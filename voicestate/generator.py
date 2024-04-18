@@ -4,7 +4,7 @@ import discord
 from prisma.enums import VoiceGeneratorOption, VoiceGeneratorType
 
 from utils.client import VCRolesClient
-from utils.types import ActiveGuildsData, JoinableChannel, LogLevel
+from utils.types import JoinableChannel, LogLevel
 
 
 class Generator:
@@ -219,15 +219,6 @@ class Generator:
             f"Generated c/{channel.id} m/{member.id} g/{member.guild.id}",
         )
 
-        ag = self.client.active_guilds.get(member.guild.id)
-        if ag is None:
-            g = ActiveGuildsData()
-            g.voice_active = True
-            self.client.active_guilds[member.guild.id] = g
-        else:
-            ag.voice_active = True
-            self.client.active_guilds[member.guild.id] = ag
-
     async def leave(
         self,
         member: discord.Member,
@@ -304,12 +295,3 @@ class Generator:
             LogLevel.DEBUG,
             f"Generator left c/{voice_channel.id} m/{member.id} g/{member.guild.id}",
         )
-
-        ag = self.client.active_guilds.get(member.guild.id)
-        if ag is None:
-            g = ActiveGuildsData()
-            g.voice_active = True
-            self.client.active_guilds[member.guild.id] = g
-        else:
-            ag.voice_active = True
-            self.client.active_guilds[member.guild.id] = ag

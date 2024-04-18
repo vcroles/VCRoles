@@ -12,7 +12,7 @@ from discord.ext import commands
 
 import config
 from utils.database import DatabaseUtils
-from utils.types import ActiveGuildsData, LogLevel, using_topgg
+from utils.types import LogLevel, using_topgg
 from views.interface import Interface
 
 
@@ -31,7 +31,6 @@ class VCRolesClient(commands.AutoShardedBot):
         self.db = db
         self.log_queue: list[str] = []
         self.console_log_level = console_log_level
-        self.active_guilds: dict[int, ActiveGuildsData] = {}
         super().__init__(
             intents=intents,
             command_prefix=commands.when_mentioned_or("#"),
@@ -172,15 +171,6 @@ class VCRolesClient(commands.AutoShardedBot):
         valid_premium = await self.check_premium_guild(interaction.guild.id)
         if (guild.premium or valid_premium) and guild.analytics:
             self.incr_analytics_counter(interaction.guild.id, "commands_used")
-
-        active_guild = self.active_guilds.get(interaction.guild.id)
-        if active_guild is None:
-            g = ActiveGuildsData()
-            g.command_active = True
-            self.active_guilds[interaction.guild.id] = g
-        else:
-            active_guild.command_active = True
-            self.active_guilds[interaction.guild.id] = active_guild
 
         seen_welcome = await self.ar.hget("seen_welcome", str(interaction.guild.id))
         webhook = await self.ar.hget("webhooks", str(interaction.guild.id))
