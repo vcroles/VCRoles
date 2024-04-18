@@ -64,9 +64,11 @@ class VoiceGen(commands.Cog):
             color=discord.Color.blue(),
         )
         interface_embed.set_thumbnail(
-            url=self.client.user.avatar.url
-            if self.client.user and self.client.user.avatar
-            else None
+            url=(
+                self.client.user.avatar.url
+                if self.client.user and self.client.user.avatar
+                else None
+            )
         )
         interface_embed.set_footer(text="Use these commands via the buttons below.")
 
@@ -160,7 +162,9 @@ class VoiceGen(commands.Cog):
             raise AssertionError
 
         guild_data = await self.client.db.get_guild_data(interaction.guild.id)
-        is_premium = guild_data.premium
+        valid_premium = self.client.check_premium(interaction)
+
+        is_premium = guild_data.premium or valid_premium
 
         num_generators = await self.client.db.db.voicegenerator.count(
             where={"guildId": str(interaction.guild.id)}
@@ -210,10 +214,12 @@ class VoiceGen(commands.Cog):
             )
 
         if not await self.check_generator_limit(interaction):
-            await interaction.response.send_message(
-                "You can only have one generator in this server - consider upgrading to premium for unlimited generators. https://cde90.gumroad.com/l/vcroles",
+            await interaction.response.require_premium()
+            await interaction.followup.send(
+                "You can only have one generator in this server - consider upgrading to premium for unlimited generators.",
                 ephemeral=True,
             )
+            return
 
         if not user_editable:
             create_interface_channel = False
@@ -240,9 +246,11 @@ class VoiceGen(commands.Cog):
             interface_channel=str(interface_channel.id) if interface_channel else None,
             interface_message=str(interface_message.id) if interface_message else None,
             gen_type=VoiceGeneratorType.DEFAULT,
-            default_options=[VoiceGeneratorOption.EDITABLE, VoiceGeneratorOption.OWNER]
-            if user_editable
-            else [VoiceGeneratorOption.OWNER],
+            default_options=(
+                [VoiceGeneratorOption.EDITABLE, VoiceGeneratorOption.OWNER]
+                if user_editable
+                else [VoiceGeneratorOption.OWNER]
+            ),
             channel_limit=channel_limit,
             default_user_limit=default_user_limit,
         )
@@ -292,10 +300,12 @@ class VoiceGen(commands.Cog):
             )
 
         if not await self.check_generator_limit(interaction):
-            await interaction.response.send_message(
-                "You can only have one generator in this server - consider upgrading to premium for unlimited generators. https://cde90.gumroad.com/l/vcroles",
+            await interaction.response.require_premium()
+            await interaction.followup.send(
+                "You can only have one generator in this server - consider upgrading to premium for unlimited generators.",
                 ephemeral=True,
             )
+            return
 
         if not user_editable:
             create_interface_channel = False
@@ -322,9 +332,11 @@ class VoiceGen(commands.Cog):
             interface_channel=str(interface_channel.id) if interface_channel else None,
             interface_message=str(interface_message.id) if interface_message else None,
             gen_type=VoiceGeneratorType.NUMBERED,
-            default_options=[VoiceGeneratorOption.EDITABLE, VoiceGeneratorOption.OWNER]
-            if user_editable
-            else [VoiceGeneratorOption.OWNER],
+            default_options=(
+                [VoiceGeneratorOption.EDITABLE, VoiceGeneratorOption.OWNER]
+                if user_editable
+                else [VoiceGeneratorOption.OWNER]
+            ),
             channel_limit=channel_limit,
             channel_name=generated_channel_name,
             default_user_limit=default_user_limit,
@@ -371,10 +383,12 @@ class VoiceGen(commands.Cog):
             )
 
         if not await self.check_generator_limit(interaction):
-            await interaction.response.send_message(
-                "You can only have one generator in this server - consider upgrading to premium for unlimited generators. https://cde90.gumroad.com/l/vcroles",
+            await interaction.response.require_premium()
+            await interaction.followup.send(
+                "You can only have one generator in this server - consider upgrading to premium for unlimited generators.",
                 ephemeral=True,
             )
+            return
 
         if not user_editable:
             create_interface_channel = False
@@ -401,9 +415,11 @@ class VoiceGen(commands.Cog):
             interface_channel=str(interface_channel.id) if interface_channel else None,
             interface_message=str(interface_message.id) if interface_message else None,
             gen_type=VoiceGeneratorType.CLONED,
-            default_options=[VoiceGeneratorOption.EDITABLE, VoiceGeneratorOption.OWNER]
-            if user_editable
-            else [VoiceGeneratorOption.OWNER],
+            default_options=(
+                [VoiceGeneratorOption.EDITABLE, VoiceGeneratorOption.OWNER]
+                if user_editable
+                else [VoiceGeneratorOption.OWNER]
+            ),
             channel_limit=channel_limit,
         )
 
@@ -452,10 +468,12 @@ class VoiceGen(commands.Cog):
             )
 
         if not await self.check_generator_limit(interaction):
-            await interaction.response.send_message(
-                "You can only have one generator in this server - consider upgrading to premium for unlimited generators. https://cde90.gumroad.com/l/vcroles",
+            await interaction.response.require_premium()
+            await interaction.followup.send(
+                "You can only have one generator in this server - consider upgrading to premium for unlimited generators.",
                 ephemeral=True,
             )
+            return
 
         if not user_editable:
             create_interface_channel = False
@@ -482,9 +500,11 @@ class VoiceGen(commands.Cog):
             interface_channel=str(interface_channel.id) if interface_channel else None,
             interface_message=str(interface_message.id) if interface_message else None,
             gen_type=VoiceGeneratorType.CUSTOM_NAME,
-            default_options=[VoiceGeneratorOption.EDITABLE, VoiceGeneratorOption.OWNER]
-            if user_editable
-            else [VoiceGeneratorOption.OWNER],
+            default_options=(
+                [VoiceGeneratorOption.EDITABLE, VoiceGeneratorOption.OWNER]
+                if user_editable
+                else [VoiceGeneratorOption.OWNER]
+            ),
             channel_limit=channel_limit,
             channel_name=generated_channel_name,
             default_user_limit=default_user_limit,
@@ -566,12 +586,14 @@ class VoiceGen(commands.Cog):
             )
 
         if option == VoiceGeneratorOption.TEXT:
+            valid_premium = self.client.check_premium(interaction)
             is_premium = (
                 await self.client.db.get_guild_data(interaction.guild.id)
-            ).premium
+            ).premium or valid_premium
             if not is_premium:
-                return await interaction.response.send_message(
-                    "Sorry, you cannot enable text channel generation in this server - consider upgrading to premium to unlock this. https://cde90.gumroad.com/l/vcroles",
+                await interaction.response.require_premium()
+                return await interaction.followup.send(
+                    "Sorry, you cannot enable text channel generation in this server - consider upgrading to premium to unlock this.",
                     ephemeral=True,
                 )
 
@@ -770,12 +792,12 @@ class VoiceGen(commands.Cog):
             )
 
         guild_data = await self.client.db.get_guild_data(interaction.guild.id)
-        if not guild_data:
-            raise AssertionError
+        valid_premium = self.client.check_premium(interaction)
 
-        if not guild_data.premium:
-            return await interaction.response.send_message(
-                "Sorry, you cannot enable this feature in this server - consider upgrading to premium to unlock this. https://cde90.gumroad.com/l/vcroles",
+        if not guild_data.premium or not valid_premium:
+            await interaction.response.require_premium()
+            return await interaction.followup.send(
+                "Sorry, you cannot enable this feature in this server - consider upgrading to premium to unlock this.",
                 ephemeral=True,
             )
 

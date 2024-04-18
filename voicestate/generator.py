@@ -19,6 +19,9 @@ class Generator:
         if isinstance(user_channel, discord.StageChannel):
             return
 
+        if not user_channel:
+            return
+
         channel_data = await self.client.db.get_generated_channel(user_channel.id)
         # add new user to text channel permissions
         if channel_data and channel_data.textChannelId:
@@ -79,9 +82,9 @@ class Generator:
         else:
             default_role = member.guild.default_role
 
-        overwrites: dict[
-            discord.Role | discord.Member, discord.PermissionOverwrite
-        ] = {}
+        overwrites: dict[discord.Role | discord.Member, discord.PermissionOverwrite] = (
+            {}
+        )
 
         if VoiceGeneratorOption.LOCK in gen_data.defaultOptions:
             try:
@@ -149,7 +152,8 @@ class Generator:
             )
 
         guild = await self.client.db.get_guild_data(member.guild.id)
-        if channel and guild.premium and guild.analytics:
+        valid_premium = await self.client.check_premium_guild(member.guild.id)
+        if channel and (guild.premium or valid_premium) and guild.analytics:
             self.client.incr_analytics_counter(
                 member.guild.id, "generated_voice_channels", 1
             )
@@ -188,9 +192,9 @@ class Generator:
             channel.id,
             member.id,
             editable,
-            text_channel_id=str(text_channel.id)
-            if text_channel is not None
-            else text_channel,
+            text_channel_id=(
+                str(text_channel.id) if text_channel is not None else text_channel
+            ),
         )
 
         if gen_data.hideAtLimit and count + 1 >= gen_data.channelLimit:
@@ -229,6 +233,9 @@ class Generator:
         member: discord.Member,
         user_channel: JoinableChannel,
     ):
+        if not user_channel:
+            return
+
         data = await self.client.db.get_generated_channel(user_channel.id)
 
         try:

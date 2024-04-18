@@ -46,13 +46,10 @@ class Analytics(commands.Cog):
 
         guild = await self.client.db.get_guild_data(interaction.guild.id)
 
-        if not guild.premium:
-            embed = discord.Embed(
-                title="Premium Required",
-                description="Sorry, you cannot enable analytics in this server - consider upgrading to premium to unlock this. https://cde90.gumroad.com/l/vcroles",
-                colour=discord.Colour.red(),
-            )
-            return await interaction.response.send_message(embed=embed)
+        valid_premium = self.client.check_premium(interaction)
+
+        if not guild.premium or not valid_premium:
+            return await interaction.response.require_premium()
 
         if enable:
             embed = discord.Embed(
@@ -73,10 +70,11 @@ class Analytics(commands.Cog):
 
     @tasks.loop(minutes=1)
     async def time_spent_loop(self):
-        guilds = await self.client.db.get_analytic_guilds()
+        guilds = await self.client.db.db.guild.find_many(where={"analytics": True})
 
         for guild in guilds:
-            if not guild.analytics:
+            valid_premium = await self.client.check_premium_guild(int(guild.id))
+            if not guild.analytics or (not valid_premium or not guild.premium):
                 continue
 
             # loop through every voice channel in the guild
@@ -150,19 +148,20 @@ class Analytics(commands.Cog):
 
     @tasks.loop(time=dt.time(hour=0, minute=0))
     async def analytics_loop(self):
-        guilds = await self.client.db.get_analytic_guilds()
+        guilds = await self.client.db.db.guild.find_many(where={"analytics": True})
 
         for guild in guilds:
-            if not guild.analytics:
+            valid_premium = await self.client.check_premium_guild(int(guild.id))
+            if not guild.analytics or (not valid_premium or not guild.premium):
                 continue
 
             await self.client.ar.rename(  # type: ignore
                 f"guild:{guild.id}:analytics",
-                f"guild:{guild.id}:analytics:{dt.datetime.utcnow().strftime('%Y-%m-%d')}",
+                f"guild:{guild.id}:analytics:{dt.datetime.now(dt.UTC).strftime('%Y-%m-%d')}",
             )
             # set the new hash to expire in 30 days
             await self.client.ar.expire(
-                f"guild:{guild.id}:analytics:{dt.datetime.utcnow().strftime('%Y-%m-%d')}",
+                f"guild:{guild.id}:analytics:{dt.datetime.now(dt.UTC).strftime('%Y-%m-%d')}",
                 30 * 24 * 60 * 60,
             )
 
@@ -181,13 +180,10 @@ class Analytics(commands.Cog):
 
         guild = await self.client.db.get_guild_data(interaction.guild.id)
 
-        if not guild.premium:
-            embed = discord.Embed(
-                title="Premium Required",
-                description="Sorry, you cannot view analytics in this server - consider upgrading to premium to unlock this. https://cde90.gumroad.com/l/vcroles",
-                colour=discord.Colour.red(),
-            )
-            return await interaction.response.send_message(embed=embed)
+        valid_premium = self.client.check_premium(interaction)
+
+        if not guild.premium or not valid_premium:
+            return await interaction.response.require_premium()
 
         if not guild.analytics:
             embed = discord.Embed(
@@ -212,13 +208,10 @@ class Analytics(commands.Cog):
 
         guild = await self.client.db.get_guild_data(interaction.guild.id)
 
-        if not guild.premium:
-            embed = discord.Embed(
-                title="Premium Required",
-                description="Sorry, you cannot export analytics in this server - consider upgrading to premium to unlock this. https://cde90.gumroad.com/l/vcroles",
-                colour=discord.Colour.red(),
-            )
-            return await interaction.response.send_message(embed=embed)
+        valid_premium = self.client.check_premium(interaction)
+
+        if not guild.premium or not valid_premium:
+            return await interaction.response.require_premium()
 
         analytics = await self.client.ar.keys(f"guild:{guild.id}:analytics:*")
 
@@ -280,22 +273,20 @@ class Analytics(commands.Cog):
         self, interaction: Interaction, timeframe: Literal["hour", "day"] = "hour"
     ):
         """PREMIUM - Create a graph of hourly/daily analytics"""
-        await interaction.response.defer()
 
         if not interaction.guild:
-            return await interaction.followup.send(
+            return await interaction.response.send_message(
                 "This command can only be used in a server"
             )
 
         guild = await self.client.db.get_guild_data(interaction.guild.id)
 
-        if not guild.premium:
-            embed = discord.Embed(
-                title="Premium Required",
-                description="Sorry, you cannot view analytics in this server - consider upgrading to premium to unlock this. https://cde90.gumroad.com/l/vcroles",
-                colour=discord.Colour.red(),
-            )
-            return await interaction.followup.send(embed=embed)
+        valid_premium = self.client.check_premium(interaction)
+
+        if not guild.premium or not valid_premium:
+            return await interaction.response.require_premium()
+
+        await interaction.response.defer()
 
         if not guild.analytics:
             embed = discord.Embed(
@@ -414,7 +405,7 @@ class Analytics(commands.Cog):
 
                 date = day.split(":")[-1]
                 if date == "analytics":
-                    date = dt.datetime.utcnow().strftime("%Y-%m-%d")
+                    date = dt.datetime.now(dt.UTC).strftime("%Y-%m-%d")
                 dates.append(dt.datetime.strptime(date, "%Y-%m-%d").date())
 
                 daily_voice_minutes.append(int(data.get("voice_minutes", 0)))
@@ -443,13 +434,13 @@ class Analytics(commands.Cog):
                 ax.plot(dates, daily_voice_channel_joins, label="Voice Channel Joins")  # type: ignore
                 ax.plot(dates, daily_voice_channel_leaves, label="Voice Channel Leaves")  # type: ignore
                 ax.plot(  # type: ignore
-                    dates, daily_voice_channel_changes, label="Voice Channel Changes"
+                    dates, daily_voice_channel_changes, label="Voice Channel Changes"  # type: ignore
                 )
                 ax.plot(dates, daily_roles_added, label="Roles Added")  # type: ignore
                 ax.plot(dates, daily_roles_removed, label="Roles Removed")  # type: ignore
                 ax.plot(dates, daily_commands_used, label="Commands Used")  # type: ignore
                 ax.plot(  # type: ignore
-                    dates,
+                    dates,  # type: ignore
                     daily_generated_voice_channels,
                     label="Generated Voice Channels",
                 )

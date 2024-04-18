@@ -74,9 +74,10 @@ class TTS(commands.Cog):
                 "You must be in a voice channel to use this commannd."
             )
 
-        data = await self.client.db.get_guild_data(interaction.guild.id)
+        guild_data = await self.client.db.get_guild_data(interaction.guild.id)
+        valid_premium = self.client.check_premium(interaction)
 
-        if data.ttsEnabled is False:
+        if guild_data.ttsEnabled is False:
             return await interaction.response.send_message(
                 "TTS isn't enabled in this server."
             )
@@ -88,12 +89,12 @@ class TTS(commands.Cog):
                 "The message is over the 250 character limit"
             )
 
-        if data.ttsRole:
-            role = interaction.guild.get_role(int(data.ttsRole))
+        if guild_data.ttsRole:
+            role = interaction.guild.get_role(int(guild_data.ttsRole))
         else:
             role = None
 
-        if role in interaction.user.roles or data.ttsRole is None:
+        if role in interaction.user.roles or guild_data.ttsRole is None:
             if interaction.user.voice.channel:
                 tts_message = gTTS(text=message, lang=language_code)
                 tts_message.save(f"tts/{interaction.guild_id}.mp3")  # type: ignore
@@ -136,14 +137,14 @@ class TTS(commands.Cog):
                     discord.FFmpegPCMAudio(source=f"tts/{interaction.guild_id}.mp3"),
                 )
 
-                if data.premium and data.analytics:
+                if (guild_data.premium or valid_premium) and guild_data.analytics:
                     self.client.incr_analytics_counter(
                         interaction.guild.id, "tts_messages_sent"
                     )
 
                 await asyncio.sleep(audio.info.length + 1)
 
-                if leave and data.ttsLeave:
+                if leave and guild_data.ttsLeave:
                     await vc.disconnect()
 
                 os.remove(f"tts/{interaction.guild_id}.mp3")

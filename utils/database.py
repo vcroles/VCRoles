@@ -176,9 +176,9 @@ class DatabaseUtils:
                     "id": str(channel_id),
                     "type": link_type,
                     "linkedRoles": linked_roles if linked_roles else [],
-                    "reverseLinkedRoles": reverse_linked_roles
-                    if reverse_linked_roles
-                    else [],
+                    "reverseLinkedRoles": (
+                        reverse_linked_roles if reverse_linked_roles else []
+                    ),
                     "speakerRoles": speaker_roles if speaker_roles else [],
                     "excludeChannels": exclude_channels if exclude_channels else [],
                     "suffix": suffix if suffix != "None" else None,
@@ -456,16 +456,3 @@ class DatabaseUtils:
             )
 
         return guild.links or []
-
-    async def get_analytic_guilds(self) -> List[Guild]:
-        if self.analytic_guilds:
-            return self.analytic_guilds
-
-        # find all guilds where premium is enabled and analytics field is not null
-        guilds = await self.db.guild.find_many(
-            where={"premium": True, "analytics": True}
-        )
-
-        self.analytic_guilds = guilds
-
-        return guilds

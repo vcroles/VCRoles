@@ -16,7 +16,6 @@ class BackgroundTasks(commands.Cog):
         self.log_queue.start()
         self.rotate_log_file.start()
         self.update_topgg.start()
-        self.data_dump.start()
 
     async def cog_unload(self) -> None:
         self.save_guild_count.cancel()
@@ -24,7 +23,6 @@ class BackgroundTasks(commands.Cog):
         self.log_queue.cancel()
         self.rotate_log_file.cancel()
         self.update_topgg.cancel()
-        self.data_dump.cancel()
 
         return await super().cog_unload()
 
@@ -121,61 +119,6 @@ class BackgroundTasks(commands.Cog):
 
     @update_topgg.before_loop
     async def before_update_topgg(self):
-        await self.client.wait_until_ready()
-
-    @tasks.loop(time=dt.time(hour=0, minute=0))
-    async def data_dump(self):
-        date = dt.datetime.utcnow().strftime("%d-%m-%Y")
-        premium_guilds = await self.client.db.db.guild.find_many(
-            where={"premium": True}
-        )
-        with open(f"data/{date}.csv", "w") as f:
-            f.write(
-                "guild_id,member_count,premium,command_active,voice_active,owner_id\n"
-            )
-            data: list[str] = []
-            for guild in self.client.guilds:
-                try:
-                    data.append(
-                        ",".join(
-                            [
-                                str(guild.id),
-                                str(guild.member_count),
-                                str(
-                                    str(guild.id) in map(lambda x: x.id, premium_guilds)
-                                ),
-                                str(
-                                    guild.id in self.client.active_guilds
-                                    and self.client.active_guilds[
-                                        guild.id
-                                    ].command_active
-                                ),
-                                str(
-                                    guild.id in self.client.active_guilds
-                                    and self.client.active_guilds[guild.id].voice_active
-                                ),
-                                str(guild.owner_id),
-                            ]
-                        )
-                        + "\n"
-                    )
-                except Exception as e:
-                    self.client.log(
-                        LogLevel.ERROR,
-                        f"Failed to get data for guild {guild.id}: {e}",
-                    )
-            f.writelines(data)
-
-        # reset the active guilds
-        self.client.active_guilds = {}
-
-        self.client.log(
-            LogLevel.NONE,
-            f"Saved data dump for {date}",
-        )
-
-    @data_dump.before_loop
-    async def before_data_dump(self):
         await self.client.wait_until_ready()
 
 
