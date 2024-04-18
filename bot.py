@@ -60,11 +60,15 @@ if using_topgg:
             )
             if isinstance(user, discord.Member | discord.User):
                 embed.set_thumbnail(
-                    url=user.avatar.url
-                    if user.avatar
-                    else client.user.avatar.url
-                    if client.user and client.user.avatar
-                    else None
+                    url=(
+                        user.avatar.url
+                        if user.avatar
+                        else (
+                            client.user.avatar.url
+                            if client.user and client.user.avatar
+                            else None
+                        )
+                    )
                 )
             embed.set_footer(text="Thanks for voting!")
             await channel.send(embed=embed)

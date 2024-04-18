@@ -6,7 +6,7 @@ guilds.csv
 __pycache__/
 tts/*.mp3
 config.py
-env/
+.venv/
 .env
 migration.py
 data/

@@ -2,6 +2,7 @@ from typing import Annotated, Any, Literal, Optional
 
 import aiohttp
 import discord
+from discord.enums import EntitlementOwnerType
 from discord.ext import commands
 
 from utils.client import VCRolesClient
@@ -11,6 +12,84 @@ from utils.types import LogLevel
 class Dev(commands.Cog):
     def __init__(self, client: VCRolesClient):
         self.client = client
+
+    @commands.command(description="DEVELOPER COMMAND")
+    @commands.is_owner()
+    async def create_entitlement(
+        self, ctx: commands.Context[Any], sku_id: int, guild: discord.Guild
+    ):
+        skus = await self.client.fetch_skus()
+        sku = None
+        for s in skus:
+            if s.id == sku_id:
+                sku = s
+                break
+
+        if not sku:
+            return await ctx.send("Sku not found")
+
+        await self.client.create_entitlement(sku, guild, EntitlementOwnerType.guild)
+
+        entitlements = self.client.entitlements(guild=guild)
+        entitlement = None
+        async for ent in entitlements:
+            if ent.guild_id == guild.id:
+                entitlement = ent
+                break
+
+        if not entitlement:
+            return await ctx.send("Unable to create entitlement.")
+
+        await ctx.send(
+            f"Created entitlement for {guild.name}. ID: {entitlement.id} | Type: {entitlement.type} | Expired: {entitlement.is_expired()}"
+        )
+
+    @commands.command(description="DEVELOPER COMMAND")
+    @commands.is_owner()
+    async def remove_entitlement(self, ctx: commands.Context[Any], entitlement_id: int):
+        entitlements = self.client.entitlements(guild=ctx.guild)
+        entitlement = None
+        async for ent in entitlements:
+            if ent.id == entitlement_id:
+                entitlement = ent
+                break
+
+        if not entitlement:
+            return await ctx.send("Entitlement not found.")
+
+        guild = entitlement.guild
+        user = entitlement.user
+
+        try:
+            await entitlement.delete()
+        except Exception as e:
+            return await ctx.send(f"Unable to delete entitlement. Error: {e}")
+
+        await ctx.send(
+            f"Removed entitlement for {guild.name if guild else 'Unknown Guild'} ({user.name if user else 'Unknown User'}). ID: {entitlement.id} | Type: {entitlement.type}"
+        )
+
+    @commands.command(description="DEVELOPER COMMAND")
+    @commands.is_owner()
+    async def list_entitlements(self, ctx: commands.Context[Any]):
+        async_entitlements = self.client.entitlements()
+
+        entitlements: list[discord.Entitlement] = []
+        async for ent in async_entitlements:
+            entitlements.append(ent)
+
+        if not entitlements:
+            return await ctx.send("No entitlements found.")
+
+        await ctx.send(
+            f"Entitlements:\n"
+            + "\n".join(
+                [
+                    f"Guild: {ent.guild_id} | User: {ent.user_id} | ID: {ent.id} | Type: {ent.type} | Expired: {ent.is_expired()} | SKU: {ent.sku_id}"
+                    for ent in entitlements
+                ]
+            )
+        )
 
     @commands.command(description="DEVELOPER COMMAND")
     @commands.is_owner()
@@ -42,32 +121,6 @@ class Dev(commands.Cog):
         else:
             self.client.loop.create_task(self.client.ar.delete("commands"))
         await ctx.reply("Reset command limit!")
-
-    @commands.command(aliases=["pg"])
-    @commands.is_owner()
-    async def premium_guild(
-        self, ctx: commands.Context[Any], guild_id: int, enabled: bool = True
-    ):
-        res = await self.client.db.db.guild.update(
-            where={"id": str(guild_id)}, data={"premium": enabled}
-        )
-        if not res:
-            await ctx.send(f"Unknown guild ID - {guild_id}")
-        else:
-            await ctx.send(
-                f"{'Enabled' if enabled else 'Disabled'} premium in guild {guild_id}"
-            )
-
-    @commands.command(aliases=["pu"])
-    @commands.is_owner()
-    async def premium_user(
-        self, ctx: commands.Context[Any], user_id: int, enabled: bool = True
-    ):
-        await self.client.ar.hset("premium", str(user_id), int(enabled))
-
-        await ctx.send(
-            f"{'Enabled' if enabled else 'Disabled'} premium for user {user_id}"
-        )
 
     @commands.command()
     @commands.is_owner()
@@ -123,7 +176,7 @@ class Dev(commands.Cog):
         )
         embed.add_field(
             name="Premium",
-            value="To get premium, visit [our premium page](https://premium.vcroles.com/l/vcroles)",
+            value='To get premium, click "Upgrade" on the bot\'s profile.',
             inline=False,
         )
         embed.add_field(
@@ -135,9 +188,11 @@ class Dev(commands.Cog):
             value=f"To invite the bot to another server, run {invite_command.mention}",
         )
         embed.set_thumbnail(
-            url=self.client.user.avatar.url
-            if self.client.user and self.client.user.avatar
-            else None,
+            url=(
+                self.client.user.avatar.url
+                if self.client.user and self.client.user.avatar
+                else None
+            ),
         )
 
         if guilds == "all":
@@ -148,9 +203,11 @@ class Dev(commands.Cog):
                         await webhook.send(
                             embed=embed,
                             username="VC Roles Updates",
-                            avatar_url=self.client.user.avatar.url
-                            if self.client.user and self.client.user.avatar
-                            else None,
+                            avatar_url=(
+                                self.client.user.avatar.url
+                                if self.client.user and self.client.user.avatar
+                                else None
+                            ),
                         )
                     except:
                         pass
@@ -166,9 +223,11 @@ class Dev(commands.Cog):
                         await webhook.send(
                             embed=embed,
                             username="VC Roles Updates",
-                            avatar_url=self.client.user.avatar.url
-                            if self.client.user and self.client.user.avatar
-                            else None,
+                            avatar_url=(
+                                self.client.user.avatar.url
+                                if self.client.user and self.client.user.avatar
+                                else None
+                            ),
                         )
                     except:
                         pass

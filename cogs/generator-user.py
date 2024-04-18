@@ -141,10 +141,14 @@ class GenInterface(commands.Cog):
                 "You must be in a guild to use this.", ephemeral=True
             )
 
-        is_premium = (await self.client.db.get_guild_data(interaction.guild.id)).premium
+        valid_premium = self.client.check_premium(interaction)
+        is_premium = (
+            await self.client.db.get_guild_data(interaction.guild.id)
+        ).premium or valid_premium
         if not is_premium:
-            return await interaction.response.send_message(
-                "Sorry, you cannot use this command in this server - consider upgrading to premium to unlock this. https://cde90.gumroad.com/l/vcroles",
+            await interaction.response.require_premium()
+            return await interaction.followup.send(
+                "Sorry, you cannot use this command in this server - consider upgrading to premium to unlock this.",
                 ephemeral=True,
             )
 

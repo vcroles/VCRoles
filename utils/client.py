@@ -29,7 +29,7 @@ class VCRolesClient(commands.AutoShardedBot):
         self.active_guilds: dict[int, ActiveGuildsData] = {}
         super().__init__(
             intents=intents,
-            command_prefix=commands.when_mentioned_or("."),
+            command_prefix=commands.when_mentioned_or("#"),
             activity=discord.Activity(
                 type=discord.ActivityType.watching,
                 name="Voice Channels",
@@ -61,7 +61,7 @@ class VCRolesClient(commands.AutoShardedBot):
         self.loop.create_task(
             self.ar.hincrby(
                 f"guild:{guild_id}:analytics",
-                f"{item}-{datetime.datetime.utcnow().strftime('%H')}",
+                f"{item}-{datetime.datetime.now(datetime.UTC).strftime('%H')}",
                 count,
             )
         )
@@ -144,8 +144,10 @@ class VCRolesClient(commands.AutoShardedBot):
     async def on_app_command_completion(
         self,
         interaction: discord.Interaction,
-        _command: discord.app_commands.Command[Any, Any, Any]
-        | discord.app_commands.ContextMenu,
+        _command: (
+            discord.app_commands.Command[Any, Any, Any]
+            | discord.app_commands.ContextMenu
+        ),
     ):
         if interaction.guild is None:
             return
@@ -162,7 +164,8 @@ class VCRolesClient(commands.AutoShardedBot):
             self.incr_counter(command_name)
 
         guild = await self.db.get_guild_data(interaction.guild.id)
-        if guild.premium and guild.analytics:
+        valid_premium = await self.check_premium_guild(interaction.guild.id)
+        if (guild.premium or valid_premium) and guild.analytics:
             self.incr_analytics_counter(interaction.guild.id, "commands_used")
 
         active_guild = self.active_guilds.get(interaction.guild.id)
@@ -218,7 +221,7 @@ class VCRolesClient(commands.AutoShardedBot):
             )
             embed.add_field(
                 name="Premium",
-                value="To get premium, visit [our premium page](https://premium.vcroles.com/l/vcroles)",
+                value='To get premium, click "Upgrade" on the bot\'s profile.',
                 inline=False,
             )
             embed.add_field(
@@ -243,9 +246,34 @@ class VCRolesClient(commands.AutoShardedBot):
             await webhook.send(
                 embed=embed,
                 username="VC Roles Updates",
-                avatar_url=self.user.avatar.url
-                if self.user and self.user.avatar
-                else None,
+                avatar_url=(
+                    self.user.avatar.url if self.user and self.user.avatar else None
+                ),
             )
 
         return True
+
+    @staticmethod
+    def check_premium(interaction: discord.Interaction) -> bool:
+        if not interaction.guild:
+            return False
+
+        valid_premium = any(
+            [
+                entitlement.is_expired() is False
+                and entitlement.guild_id == interaction.guild_id
+                for entitlement in interaction.entitlements
+            ]
+        )
+
+        return valid_premium
+
+    async def check_premium_guild(self, guild_id: int) -> bool:
+        valid_premium = any(
+            [
+                entitlement.is_expired() is False and entitlement.guild_id == guild_id
+                async for entitlement in self.entitlements()
+            ]
+        )
+
+        return valid_premium
