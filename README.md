@@ -1,4 +1,4 @@
-# VC Roles (Rewrite)
+# VC Roles
 
 [![Discord Bots](https://top.gg/api/widget/status/775025797034541107.svg)](https://top.gg/bot/775025797034541107)
 [![Discord Bots](https://top.gg/api/widget/servers/775025797034541107.svg?noavatar=true)](https://top.gg/bot/775025797034541107)
