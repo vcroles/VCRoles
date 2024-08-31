@@ -13,7 +13,6 @@ from utils.client import VCRolesClient
 from utils.database import DatabaseUtils
 from utils.logging import setup_logging
 from utils.types import LogLevel, using_topgg
-from views.url import TopGG
 
 setup_logging()
 

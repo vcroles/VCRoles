@@ -114,7 +114,7 @@ tabulate==0.9.0
     # via jishaku
 tomlkit==0.13.2
     # via prisma
-topggpy @ git+https://github.com/null8626/python-sdk.git@47e96f51766b51c2504b7c440338b5f718c8675b
+topggpy @ git+https://github.com/CDE90/topgg-python-sdk@35cd7bb5187d7cc22f93bcb97bb0ff967a2825f9
     # via -r requirements.in
 types-cachetools==5.3.0.7
     # via -r requirements.in
