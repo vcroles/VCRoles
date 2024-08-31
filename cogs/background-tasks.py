@@ -5,7 +5,8 @@ import discord
 from discord.ext import commands, tasks
 
 import config
-from utils import LogLevel, VCRolesClient, using_topgg
+from utils.client import VCRolesClient
+from utils.types import LogLevel, using_topgg
 
 
 class BackgroundTasks(commands.Cog):

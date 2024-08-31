@@ -44,10 +44,10 @@ if using_topgg:
 
             try:
                 user = await client.fetch_user(data.user)
-                description = f"{user.name} just voted for VC Roles on Top.gg & received unlimited command usage for the rest of the day!\n\nClick [here](https://top.gg/bot/775025797034541107/vote) to vote"
+                description = f"{user.name} just voted for VC Roles on Top.gg\n\nClick [here](https://top.gg/bot/775025797034541107/vote) to vote"
             except discord.NotFound:
                 user = discord.Object(id=int(data.user))
-                description = f"<@{user.id}> just voted for VC Roles on Top.gg & received unlimited command usage for the rest of the day!\n\nClick [here](https://top.gg/bot/775025797034541107/vote) to vote"
+                description = f"<@{user.id}> just voted for VC Roles on Top.gg\n\nClick [here](https://top.gg/bot/775025797034541107/vote) to vote"
 
             channel = client.get_channel(947070091797856276)
             if not isinstance(channel, discord.TextChannel):
@@ -98,23 +98,6 @@ async def on_command_error(
             error,
             ephemeral=True,
         )
-    if isinstance(error, app_commands.CheckFailure):
-        embed = discord.Embed(
-            title="Command Limit Reached",
-            description="You have reached your command limit for today, but **don't worry!** You can get **unlimited** command usage for the rest of the day by [voting for the bot on Top.gg!](https://top.gg/bot/775025797034541107/vote)",
-            colour=discord.Colour.brand_red(),
-            url="https://top.gg/bot/775025797034541107/vote",
-        )
-        embed.set_thumbnail(
-            url=interaction.user.avatar.url if interaction.user.avatar else None
-        )
-        if client.user and client.user.avatar:
-            embed.set_author(name=client.user.name, icon_url=client.user.avatar.url)
-        embed.set_footer(text="Thanks for using the bot!")
-
-        return await interaction.response.send_message(
-            embed=embed, ephemeral=True, view=TopGG()
-        )
     else:
         client.log(
             LogLevel.ERROR,
@@ -123,7 +106,6 @@ async def on_command_error(
 
 
 async def main():
-
     # Removing TTS Files
 
     for filename in os.listdir("tts"):
@@ -143,7 +125,6 @@ async def main():
         f.write("")
 
     async with client:
-
         # Setting up topgg integration
 
         if using_topgg:
@@ -168,5 +149,4 @@ async def main():
 
 
 if __name__ == "__main__":
-
     asyncio.run(main())

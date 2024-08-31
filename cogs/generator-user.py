@@ -4,8 +4,8 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from utils import GeneratorUtils
 from utils.client import VCRolesClient
+from utils.generator import GeneratorUtils
 from views.interface import MentionableDropdown
 
 
@@ -135,21 +135,9 @@ class GenInterface(commands.Cog):
         user: discord.Member,
         message: Optional[str],
     ):
-        """PREMIUM - Invite a user to your channel"""
         if not isinstance(interaction.user, discord.Member) or not interaction.guild:
             return await interaction.response.send_message(
                 "You must be in a guild to use this.", ephemeral=True
-            )
-
-        valid_premium = await self.client.check_premium_guild(interaction.guild_id)
-        is_premium = (
-            await self.client.db.get_guild_data(interaction.guild.id)
-        ).premium or valid_premium
-        if not is_premium:
-            await interaction.response.require_premium()
-            return await interaction.followup.send(
-                "Sorry, you cannot use this command in this server - consider upgrading to premium to unlock this.",
-                ephemeral=True,
             )
 
         return_message = await self.utils.permit(interaction.user, [user])

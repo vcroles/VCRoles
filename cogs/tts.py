@@ -75,7 +75,6 @@ class TTS(commands.Cog):
             )
 
         guild_data = await self.client.db.get_guild_data(interaction.guild.id)
-        valid_premium = await self.client.check_premium_guild(interaction.guild_id)
 
         if guild_data.ttsEnabled is False:
             return await interaction.response.send_message(
@@ -136,11 +135,6 @@ class TTS(commands.Cog):
                 vc.play(
                     discord.FFmpegPCMAudio(source=f"tts/{interaction.guild_id}.mp3"),
                 )
-
-                if (guild_data.premium or valid_premium) and guild_data.analytics:
-                    self.client.incr_analytics_counter(
-                        interaction.guild.id, "tts_messages_sent"
-                    )
 
                 await asyncio.sleep(audio.info.length + 1)
 

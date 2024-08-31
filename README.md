@@ -22,9 +22,9 @@ Please note however that this code is intended for educational purposes only, an
 
 We reccomend using a virtual environment for python. You can do this by:
 
-- Creating a new virtual environment called env `py -m venv env` or `python3 -m venv env`
-- Activating the virtual environment `.\env\Scripts\activate` or `source env/bin/activate`
-- Install the project dependencies `pip install -r requirements.txt`
+-   Creating a new virtual environment called env `py -m venv env` or `python3 -m venv env`
+-   Activating the virtual environment `.\env\Scripts\activate` or `source env/bin/activate`
+-   Install the project dependencies `pip install -r requirements.txt`
 
 ## Config Files
 
@@ -60,19 +60,12 @@ DATABASE_URL="" # the postgres connection string
 
 Use the ['Black'](https://black.readthedocs.io/en/stable/getting_started.html) python code formatter.
 
-- Install with: `python -m pip install black` or `pip install black`
-- Run formatter in terminal with: `python -m black .` or `black .`
-
-## Pre-commit
-
-When cloning the repo for new, make sure you:
-
-- `pip install pre-commit`
-- `pre-commit install`
+-   Install with: `python -m pip install black` or `pip install black`
+-   Run formatter in terminal with: `python -m black .` or `black .`
 
 ## Current Library
 
-Now using stable discord.py release `discord.py[voice]`
+Now using stable discord.py release `discord.py[voice,speed]`
 
 ## Links
 

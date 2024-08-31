@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import datetime
 from typing import Any, Optional
-from asyncache import cached  # type: ignore
-from cachetools import TTLCache
 
 import aiohttp
 import discord
 import redis.asyncio as aioredis
+from cachetools import TTLCache
 from discord.ext import commands
 
 import config
@@ -17,7 +16,6 @@ from views.interface import Interface
 
 
 class VCRolesClient(commands.AutoShardedBot):
-
     entitlements_cache: TTLCache[Any, Any] = TTLCache(2**8, 60 * 60)
 
     def __init__(
@@ -57,18 +55,18 @@ class VCRolesClient(commands.AutoShardedBot):
         """
         self.loop.create_task(self.ar.hincrby("counters", f"roles_{action}", count))
 
-    def incr_analytics_counter(self, guild_id: int, item: str, count: int = 1):
-        """Increments the counter for an analytics item"""
-        self.loop.create_task(
-            self.ar.hincrby(f"guild:{guild_id}:analytics", item, count)
-        )
-        self.loop.create_task(
-            self.ar.hincrby(
-                f"guild:{guild_id}:analytics",
-                f"{item}-{datetime.datetime.now(datetime.UTC).strftime('%H')}",
-                count,
-            )
-        )
+    # def incr_analytics_counter(self, guild_id: int, item: str, count: int = 1):
+    #     """Increments the counter for an analytics item"""
+    #     self.loop.create_task(
+    #         self.ar.hincrby(f"guild:{guild_id}:analytics", item, count)
+    #     )
+    #     self.loop.create_task(
+    #         self.ar.hincrby(
+    #             f"guild:{guild_id}:analytics",
+    #             f"{item}-{datetime.datetime.now(datetime.UTC).strftime('%H')}",
+    #             count,
+    #         )
+    #     )
 
     async def on_ready(self):
         """
@@ -167,11 +165,6 @@ class VCRolesClient(commands.AutoShardedBot):
 
             self.incr_counter(command_name)
 
-        guild = await self.db.get_guild_data(interaction.guild.id)
-        valid_premium = await self.check_premium_guild(interaction.guild.id)
-        if (guild.premium or valid_premium) and guild.analytics:
-            self.incr_analytics_counter(interaction.guild.id, "commands_used")
-
         seen_welcome = await self.ar.hget("seen_welcome", str(interaction.guild.id))
         webhook = await self.ar.hget("webhooks", str(interaction.guild.id))
         if (
@@ -215,11 +208,6 @@ class VCRolesClient(commands.AutoShardedBot):
                 colour=0x2F3136,
             )
             embed.add_field(
-                name="Premium",
-                value='To get premium, click "Upgrade" on the bot\'s profile.',
-                inline=False,
-            )
-            embed.add_field(
                 name="Commands",
                 value="To see a list of commands, visit [our website](https://www.vcroles.com/commands)",
                 inline=False,
@@ -247,17 +235,3 @@ class VCRolesClient(commands.AutoShardedBot):
             )
 
         return True
-
-    @cached(entitlements_cache)
-    async def check_premium_guild(self, guild_id: int | None) -> bool:
-        if not guild_id:
-            return False
-
-        valid_premium = any(
-            [
-                entitlement.is_expired() is False and entitlement.guild_id == guild_id
-                async for entitlement in self.entitlements()
-            ]
-        )
-
-        return valid_premium

@@ -4,7 +4,6 @@ App command checks for the bot.
 
 from typing import Awaitable, Callable, TypeVar
 
-import redis
 from discord import Interaction, app_commands
 
 import config
@@ -34,23 +33,5 @@ async def command_available(interaction: Interaction) -> bool:
     client = interaction.client
     if not isinstance(client, VCRolesClient):
         return True
-
-    try:
-        premium = await client.ar.hget("premium", str(interaction.user.id))
-        if premium and str(premium) == "1":
-            return True
-    except redis.RedisError:
-        pass
-
-    cmds_count = await client.ar.hget("commands", str(interaction.user.id))
-    try:
-        cmds_count = int(cmds_count) if cmds_count is not None else 0
-    except ValueError:
-        cmds_count = 0
-
-    if cmds_count >= 15:
-        return False
-
-    client.loop.create_task(client.ar.hincrby("commands", str(interaction.user.id), 1))
 
     return True

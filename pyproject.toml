@@ -1,8 +1,2 @@
-[tool.pyright]
-exclude = ["env/*"]
-
-typeCheckingMode = "strict"
-
-[tool.isort]
-skip_glob = ["env/*"]
-profile = "black"
+[tool.ruff]
+exclude = ["*.pyi"]
