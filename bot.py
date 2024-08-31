@@ -147,6 +147,8 @@ async def main():
         # Setting up topgg integration
 
         if using_topgg:
+            import topgg
+
             client.topgg_webhook = (
                 topgg.WebhookManager().set_data(client).endpoint(dbl_endpoint)
             )

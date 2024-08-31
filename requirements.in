@@ -1,0 +1,13 @@
+discord.py[voice,speed]
+gtts
+mutagen
+git+https://github.com/null8626/python-sdk.git@patch-1
+redis
+types-redis
+requests
+prisma
+cachetools
+types-cachetools
+asyncache
+jishaku@git+https://github.com/Gorialis/jishaku
+matplotlib

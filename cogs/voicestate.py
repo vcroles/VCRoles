@@ -1,7 +1,11 @@
-import discord
-from discord.ext import commands
-from prisma.enums import LinkType
+from typing import Collection
 
+import discord
+import discord.utils as disutils
+from discord.ext import commands
+from discord.object import Object
+
+from prisma.enums import LinkType
 from utils import VCRolesClient
 from utils.types import (
     LogLevel,
@@ -68,7 +72,6 @@ class VoiceState(commands.Cog):
             and after.channel is not None
             and before.channel != after.channel
         ):
-
             leave_roles_changed, join_roles_changed, failed_roles = await self.change(
                 member, before, after
             )
@@ -128,6 +131,42 @@ class VoiceState(commands.Cog):
                         pass
                     except discord.errors.HTTPException:
                         pass
+
+    @staticmethod
+    async def handle_user_edit(
+        member: discord.Member,
+        to_add: Collection[discord.abc.Snowflake],
+        to_remove: Collection[discord.abc.Snowflake],
+        new_user_nickname: str,
+    ):
+        new_roles = disutils.MISSING
+
+        if to_add or to_remove:
+            new_roles = disutils._unique(  # type: ignore[reportPrivateUsage]
+                Object(id=r.id)
+                for s in (member.roles[1:], to_add)  # remove @everyone
+                for r in s
+            )
+
+            for remove_role in to_remove:
+                try:
+                    new_roles.remove(Object(id=remove_role.id))
+                except ValueError:
+                    pass
+
+        new_nick = disutils.MISSING
+
+        if new_user_nickname != member.display_name:
+            new_nick = new_user_nickname
+
+        try:
+            await member.edit(
+                nick=new_nick,
+                roles=new_roles,
+                reason="Joined Voice Channel",
+            )
+        except discord.HTTPException:
+            pass
 
     async def join(
         self,
@@ -216,23 +255,7 @@ class VoiceState(commands.Cog):
         else:
             new_user_nickname = member.display_name
 
-        if to_add:
-            try:
-                await member.add_roles(*to_add, reason="Joined Voice Channel")
-            except discord.HTTPException:
-                pass
-
-        if to_remove:
-            try:
-                await member.remove_roles(*to_remove, reason="Joined Voice Channel")
-            except discord.HTTPException:
-                pass
-
-        if new_user_nickname != member.display_name:
-            try:
-                await member.edit(nick=new_user_nickname, reason="Joined Voice Channel")
-            except discord.HTTPException:
-                pass
+        await self.handle_user_edit(member, to_add, to_remove, new_user_nickname)
 
         self.client.incr_role_counter("added", len(addable_roles))
         self.client.incr_role_counter("removed", len(removeable_roles))
@@ -304,7 +327,7 @@ class VoiceState(commands.Cog):
 
         try:
             fetched_member = await before.channel.guild.fetch_member(member.id)
-        except:
+        except Exception:
             fetched_member = member
 
         to_add: list[discord.Role] = []
@@ -340,23 +363,9 @@ class VoiceState(commands.Cog):
 
         new_user_nickname = fetched_member.display_name.removesuffix(suffix_data.suffix)
 
-        if to_add:
-            try:
-                await member.add_roles(*to_add, reason="Left Voice Channel")
-            except discord.HTTPException:
-                pass
-
-        if to_remove:
-            try:
-                await member.remove_roles(*to_remove, reason="Left Voice Channel")
-            except discord.HTTPException:
-                pass
-
-        if new_user_nickname != member.display_name:
-            try:
-                await member.edit(nick=new_user_nickname, reason="Left Voice Channel")
-            except discord.HTTPException:
-                pass
+        await self.handle_user_edit(
+            fetched_member, to_add, to_remove, new_user_nickname
+        )
 
         self.client.incr_role_counter("added", len(addable_roles))
         self.client.incr_role_counter("removed", len(removeable_roles))
@@ -455,7 +464,7 @@ class VoiceState(commands.Cog):
 
         try:
             fetched_member = await before.channel.guild.fetch_member(member.id)
-        except:
+        except Exception:
             fetched_member = member
 
         to_add: list[discord.Role] = []
@@ -501,25 +510,9 @@ class VoiceState(commands.Cog):
             else:
                 new_user_nickname = removed_leave_suffix
 
-        if to_add:
-            try:
-                await member.add_roles(*to_add, reason="Changed Voice Channel")
-            except discord.HTTPException:
-                pass
-
-        if to_remove:
-            try:
-                await member.remove_roles(*to_remove, reason="Changed Voice Channel")
-            except discord.HTTPException:
-                pass
-
-        if new_user_nickname != member.display_name:
-            try:
-                await member.edit(
-                    nick=new_user_nickname, reason="Changed Voice Channel"
-                )
-            except discord.HTTPException:
-                pass
+        await self.handle_user_edit(
+            fetched_member, to_add, to_remove, new_user_nickname
+        )
 
         self.client.incr_role_counter("added", len(addable_roles))
         self.client.incr_role_counter("removed", len(removeable_roles))
