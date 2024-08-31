@@ -1,12 +1,11 @@
 import asyncio
-import os
+import io
 from typing import Literal, Optional
 
 import discord
 from discord import app_commands
 from discord.ext import commands
-from gtts import gTTS  # type: ignore
-from mutagen.mp3 import MP3
+from gtts import gTTSAsync
 
 from utils.checks import check_any, command_available, is_owner
 from utils.client import VCRolesClient
@@ -95,9 +94,14 @@ class TTS(commands.Cog):
 
         if role in interaction.user.roles or guild_data.ttsRole is None:
             if interaction.user.voice.channel:
-                tts_message = gTTS(text=message, lang=language_code)
-                tts_message.save(f"tts/{interaction.guild_id}.mp3")  # type: ignore
-                audio = MP3(f"tts/{interaction.guild_id}.mp3")
+                tts_message = gTTSAsync(text=message, lang=language_code)
+                audio_data = await tts_message.get_audio_data()
+
+                # Create a buffer
+                buffer = io.BytesIO(audio_data)
+
+                # Set the buffer to the beginning
+                buffer.seek(0)
 
                 vc: Optional[discord.VoiceClient] = None
 
@@ -133,15 +137,17 @@ class TTS(commands.Cog):
                 await interaction.response.send_message(embed=embed)
 
                 vc.play(
-                    discord.FFmpegPCMAudio(source=f"tts/{interaction.guild_id}.mp3"),
+                    discord.FFmpegOpusAudio(
+                        source=buffer, before_options="-f mp3", pipe=True
+                    )
                 )
 
-                await asyncio.sleep(audio.info.length + 1)
+                # Wait for the audio to finish playing
+                while vc.is_playing():
+                    await asyncio.sleep(1)
 
                 if leave and guild_data.ttsLeave:
                     await vc.disconnect()
-
-                os.remove(f"tts/{interaction.guild_id}.mp3")
 
             else:
                 await interaction.response.send_message(
