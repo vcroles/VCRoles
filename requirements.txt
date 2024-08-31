@@ -58,7 +58,7 @@ frozenlist==1.4.1
     # via
     #   aiohttp
     #   aiosignal
-gtts @ git+https://github.com/CDE90/gTTS@b3dcfea5290bb3e20cc3079ccee6703e23b7d1bd
+gtts @ git+https://github.com/CDE90/gTTS@385f208a24f92572bad5204451328f3d5c83a792
     # via -r requirements.in
 h11==0.14.0
     # via httpcore
