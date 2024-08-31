@@ -82,7 +82,7 @@ class Dev(commands.Cog):
             return await ctx.send("No entitlements found.")
 
         await ctx.send(
-            f"Entitlements:\n"
+            "Entitlements:\n"
             + "\n".join(
                 [
                     f"Guild: {ent.guild_id} | User: {ent.user_id} | ID: {ent.id} | Type: {ent.type} | Expired: {ent.is_expired()} | SKU: {ent.sku_id}"
@@ -175,11 +175,6 @@ class Dev(commands.Cog):
             colour=0x2F3136,
         )
         embed.add_field(
-            name="Premium",
-            value='To get premium, click "Upgrade" on the bot\'s profile.',
-            inline=False,
-        )
-        embed.add_field(
             name="Support",
             value=f"To join our support server, run {discord_command.mention}",
         )
@@ -209,7 +204,7 @@ class Dev(commands.Cog):
                                 else None
                             ),
                         )
-                    except:
+                    except Exception:
                         pass
         else:
             async with aiohttp.ClientSession() as session:
@@ -229,7 +224,7 @@ class Dev(commands.Cog):
                                 else None
                             ),
                         )
-                    except:
+                    except Exception:
                         pass
 
         await ctx.send("Sent update message!")

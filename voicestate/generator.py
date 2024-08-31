@@ -1,8 +1,8 @@
 from string import Template
 
 import discord
-from prisma.enums import VoiceGeneratorOption, VoiceGeneratorType
 
+from prisma.enums import VoiceGeneratorOption, VoiceGeneratorType
 from utils.client import VCRolesClient
 from utils.types import JoinableChannel, LogLevel
 
@@ -82,9 +82,9 @@ class Generator:
         else:
             default_role = member.guild.default_role
 
-        overwrites: dict[discord.Role | discord.Member, discord.PermissionOverwrite] = (
-            {}
-        )
+        overwrites: dict[
+            discord.Role | discord.Member, discord.PermissionOverwrite
+        ] = {}
 
         if VoiceGeneratorOption.LOCK in gen_data.defaultOptions:
             try:
@@ -149,13 +149,6 @@ class Generator:
                     **overwrites,
                 },
                 user_limit=gen_data.defaultUserLimit,
-            )
-
-        guild = await self.client.db.get_guild_data(member.guild.id)
-        valid_premium = await self.client.check_premium_guild(member.guild.id)
-        if channel and (guild.premium or valid_premium) and guild.analytics:
-            self.client.incr_analytics_counter(
-                member.guild.id, "generated_voice_channels", 1
             )
 
         if VoiceGeneratorOption.TEXT in gen_data.defaultOptions:

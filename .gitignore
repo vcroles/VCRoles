@@ -10,3 +10,4 @@ config.py
 .env
 migration.py
 data/
+typings/

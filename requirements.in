@@ -1,0 +1,10 @@
+discord.py[voice,speed]
+gtts[async] @ git+https://github.com/CDE90/gTTS
+topggpy @ git+https://github.com/null8626/python-sdk.git@47e96f51766b51c2504b7c440338b5f718c8675b
+redis
+types-redis
+prisma
+cachetools
+types-cachetools
+asyncache
+jishaku @ git+https://github.com/Gorialis/jishaku
