@@ -55,19 +55,6 @@ class VCRolesClient(commands.AutoShardedBot):
         """
         self.loop.create_task(self.ar.hincrby("counters", f"roles_{action}", count))
 
-    # def incr_analytics_counter(self, guild_id: int, item: str, count: int = 1):
-    #     """Increments the counter for an analytics item"""
-    #     self.loop.create_task(
-    #         self.ar.hincrby(f"guild:{guild_id}:analytics", item, count)
-    #     )
-    #     self.loop.create_task(
-    #         self.ar.hincrby(
-    #             f"guild:{guild_id}:analytics",
-    #             f"{item}-{datetime.datetime.now(datetime.UTC).strftime('%H')}",
-    #             count,
-    #         )
-    #     )
-
     async def on_ready(self):
         """
         Called when the bot is ready.
