@@ -51,8 +51,6 @@ class VoiceState(commands.Cog):
                 if not guild:
                     continue
 
-                tasks = []
-
                 # Group the current queue by member
                 member_changes = {}
                 for member, to_add, to_remove, new_nick in queue:
@@ -86,15 +84,11 @@ class VoiceState(commands.Cog):
                             role_idx += 1
 
                     # Create a task for handling user edit
-                    task = asyncio.create_task(
+                    self.client.loop.create_task(
                         self.handle_user_edit(
                             member, set(to_add), set(to_remove), new_nick
                         )
                     )
-                    tasks.append(task)
-
-                # Wait for all tasks to complete
-                await asyncio.gather(*tasks, return_exceptions=True)
         except Exception as e:
             self.client.log(LogLevel.ERROR, f"Error processing member queues: {e}")
 
