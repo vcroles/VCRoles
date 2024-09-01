@@ -128,8 +128,7 @@ class Logging:
 
         logging_embed.set_footer(text=f"User ID - {member.id}")
         logging_embed.set_author(
-            name=f"{member.name}#{member.discriminator}",
-            icon_url=member.avatar.url if member.avatar else None,
+            name=member.name, icon_url=member.avatar.url if member.avatar else None
         )
 
         added_content, removed_content = self.construct_embed(
@@ -173,8 +172,7 @@ class Logging:
         )
         logging_embed.set_footer(text=f"User ID - {member.id}")
         logging_embed.set_author(
-            name=f"{member.name}#{member.discriminator}",
-            icon_url=member.avatar.url if member.avatar else None,
+            name=member.name, icon_url=member.avatar.url if member.avatar else None
         )
 
         added_content, removed_content = self.construct_embed(
@@ -220,8 +218,7 @@ class Logging:
         )
         logging_embed.set_footer(text=f"User ID - {member.id}")
         logging_embed.set_author(
-            name=f"{member.name}#{member.discriminator}",
-            icon_url=member.avatar.url if member.avatar else None,
+            name=member.name, icon_url=member.avatar.url if member.avatar else None
         )
 
         for i in leave_roles_changed:
