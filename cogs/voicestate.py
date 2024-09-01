@@ -38,60 +38,67 @@ class VoiceState(commands.Cog):
 
     @tasks.loop(seconds=5)
     async def process_queues(self):
-        for guild_id, queue in self.member_queues.items():
-            if not queue:
-                continue
+        try:
+            member_queues = self.member_queues.copy()
 
-            # Make a copy of the queue and clear the original
-            current_queue = queue.copy()
-            self.member_queues[guild_id] = []
+            for guild_id, queue in member_queues.items():
+                if not queue:
+                    continue
 
-            guild = self.client.get_guild(guild_id)
-            if not guild:
-                continue
+                # Make a copy of the queue and clear the original
+                current_queue = queue.copy()
+                self.member_queues[guild_id] = []
 
-            tasks = []
+                guild = self.client.get_guild(guild_id)
+                if not guild:
+                    continue
 
-            # Group the current queue by member
-            member_changes = {}
-            for member, to_add, to_remove, new_nick in current_queue:
-                if member.id not in member_changes:
-                    member_changes[member.id] = {
-                        "member": member,
-                        "to_add": [],
-                        "to_remove": [],
-                        "new_nick": new_nick,
-                    }
-                member_changes[member.id]["member"] = member
-                member_changes[member.id]["to_add"].extend(to_add)
-                member_changes[member.id]["to_remove"].extend(to_remove)
-                member_changes[member.id]["new_nick"] = new_nick
+                tasks = []
 
-            for _member_id, change in member_changes.items():
-                member = change["member"]
-                to_add = change["to_add"]
-                to_remove = change["to_remove"]
-                new_nick = change["new_nick"]
+                # Group the current queue by member
+                member_changes = {}
+                for member, to_add, to_remove, new_nick in current_queue:
+                    if member.id not in member_changes:
+                        member_changes[member.id] = {
+                            "member": member,
+                            "to_add": [],
+                            "to_remove": [],
+                            "new_nick": new_nick,
+                        }
+                    member_changes[member.id]["member"] = member
+                    member_changes[member.id]["to_add"].extend(to_add)
+                    member_changes[member.id]["to_remove"].extend(to_remove)
+                    member_changes[member.id]["new_nick"] = new_nick
 
-                # Find the intersection of to_add and to_remove without using sets (since this removes duplicates)
-                # We need to do this to handle if a user is spam switching between channels
-                role_idx = 0
-                while role_idx < len(to_add):
-                    role = to_add[role_idx]
-                    if role in to_remove:
-                        to_add.pop(role_idx)
-                        to_remove.remove(role)
-                    else:
-                        role_idx += 1
+                for _member_id, change in member_changes.items():
+                    member = change["member"]
+                    to_add = change["to_add"]
+                    to_remove = change["to_remove"]
+                    new_nick = change["new_nick"]
 
-                # Create a task for handling user edit
-                task = asyncio.create_task(
-                    self.handle_user_edit(member, set(to_add), set(to_remove), new_nick)
-                )
-                tasks.append(task)
+                    # Find the intersection of to_add and to_remove without using sets (since this removes duplicates)
+                    # We need to do this to handle if a user is spam switching between channels
+                    role_idx = 0
+                    while role_idx < len(to_add):
+                        role = to_add[role_idx]
+                        if role in to_remove:
+                            to_add.pop(role_idx)
+                            to_remove.remove(role)
+                        else:
+                            role_idx += 1
 
-            # Wait for all tasks to complete
-            await asyncio.gather(*tasks, return_exceptions=True)
+                    # Create a task for handling user edit
+                    task = asyncio.create_task(
+                        self.handle_user_edit(
+                            member, set(to_add), set(to_remove), new_nick
+                        )
+                    )
+                    tasks.append(task)
+
+                # Wait for all tasks to complete
+                await asyncio.gather(*tasks, return_exceptions=True)
+        except Exception as e:
+            self.client.log(LogLevel.ERROR, f"Error processing member queues: {e}")
 
     @process_queues.before_loop
     async def before_process_queues(self):
@@ -225,8 +232,8 @@ class VoiceState(commands.Cog):
                     except discord.errors.HTTPException:
                         pass
 
-    @staticmethod
     async def handle_user_edit(
+        self,
         member: discord.Member,
         to_add: Collection[discord.abc.Snowflake],
         to_remove: Collection[discord.abc.Snowflake],
@@ -262,8 +269,11 @@ class VoiceState(commands.Cog):
                 roles=new_roles,
                 reason="Joined Voice Channel",
             )
-        except Exception:
-            pass
+        except Exception as e:
+            self.client.log(
+                LogLevel.ERROR,
+                f"Failed to edit member {member.id} ({member.display_name}): {e}",
+            )
 
     async def join(
         self,

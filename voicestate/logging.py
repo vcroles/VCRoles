@@ -5,7 +5,7 @@ import discord
 
 from prisma.enums import LinkType
 from utils.client import VCRolesClient
-from utils.types import LinkableChannel, VoiceStateReturnData
+from utils.types import LinkableChannel, LogLevel, VoiceStateReturnData
 
 
 class Logging:
@@ -17,33 +17,38 @@ class Logging:
 
     async def process_queues(self):
         while self.continue_processing:
-            for guild_id, queue in self.embed_queues.items():
-                if queue.empty():
-                    continue
+            try:
+                embed_queues = self.embed_queues.copy()
 
-                guild_data = await self.client.db.get_guild_data(guild_id)
-                if not guild_data.logging:
-                    continue
+                for guild_id, queue in embed_queues.items():
+                    if queue.empty():
+                        continue
 
-                channel = self.client.get_channel(int(guild_data.logging))
-                if not channel or not isinstance(channel, discord.TextChannel):
-                    continue
+                    guild_data = await self.client.db.get_guild_data(guild_id)
+                    if not guild_data.logging:
+                        continue
 
-                while not queue.empty():
-                    embeds = []
-                    while not queue.empty() and len(embeds) < 10:
-                        embeds.append(await queue.get())
+                    channel = self.client.get_channel(int(guild_data.logging))
+                    if not channel or not isinstance(channel, discord.TextChannel):
+                        continue
 
-                    if embeds:
-                        try:
-                            await channel.send(embeds=embeds)
-                        except discord.Forbidden:
-                            pass
-                        except discord.HTTPException:
-                            pass
+                    while not queue.empty():
+                        embeds = []
+                        while not queue.empty() and len(embeds) < 10:
+                            embeds.append(await queue.get())
 
-            # Wait for 5 seconds before the next processing cycle to reduce the number of messages sent
-            await asyncio.sleep(5)
+                        if embeds:
+                            try:
+                                await channel.send(embeds=embeds)
+                            except discord.Forbidden:
+                                pass
+                            except discord.HTTPException:
+                                pass
+
+                # Wait for 5 seconds before the next processing cycle to reduce the number of messages sent
+                await asyncio.sleep(5)
+            except Exception as e:
+                self.client.log(LogLevel.ERROR, f"Error processing embed queues: {e}")
 
     def stop(self):
         self.continue_processing = False
