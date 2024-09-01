@@ -35,37 +35,49 @@ class VoiceState(commands.Cog):
 
         # Joining
         if before.channel is None and after.channel is not None:
-            roles_changed, failed_roles = await self.join(member, after)
+            try:
+                roles_changed, failed_roles = await self.join(member, after)
 
-            if failed_roles:
-                self.client.log(
-                    LogLevel.INFO,
-                    f"Failed to change roles on join: m/{member.id} c/{after.channel.id} g/{member.guild.id} r/({','.join(map(lambda x: str(x.id), failed_roles))})",
+                if failed_roles:
+                    self.client.log(
+                        LogLevel.INFO,
+                        f"Failed to change roles on join: m/{member.id} c/{after.channel.id} g/{member.guild.id} r/({','.join(map(lambda x: str(x.id), failed_roles))})",
+                    )
+
+                await self.logging.log_join(
+                    after.channel,
+                    member,
+                    roles_changed,
+                    failed_roles,
                 )
-
-            await self.logging.log_join(
-                after.channel,
-                member,
-                roles_changed,
-                failed_roles,
-            )
+            except Exception:
+                self.client.log(
+                    LogLevel.ERROR,
+                    f"Failed to handle join voice channel: {member.display_name} in {after.channel.name} g/{member.guild.id} r/{member.id}",
+                )
 
         # Leaving
         elif before.channel is not None and after.channel is None:
-            roles_changed, failed_roles = await self.leave(member, before)
+            try:
+                roles_changed, failed_roles = await self.leave(member, before)
 
-            if failed_roles:
-                self.client.log(
-                    LogLevel.INFO,
-                    f"Failed to change roles on leave: m/{member.id} c/{before.channel.id} g/{member.guild.id} r/({','.join(map(lambda x: str(x.id), failed_roles))})",
+                if failed_roles:
+                    self.client.log(
+                        LogLevel.INFO,
+                        f"Failed to change roles on leave: m/{member.id} c/{before.channel.id} g/{member.guild.id} r/({','.join(map(lambda x: str(x.id), failed_roles))})",
+                    )
+
+                await self.logging.log_leave(
+                    before.channel,
+                    member,
+                    roles_changed,
+                    failed_roles,
                 )
-
-            await self.logging.log_leave(
-                before.channel,
-                member,
-                roles_changed,
-                failed_roles,
-            )
+            except Exception:
+                self.client.log(
+                    LogLevel.ERROR,
+                    f"Failed to handle leave voice channel: {member.display_name} in {before.channel.name} g/{member.guild.id} r/{member.id}",
+                )
 
         # Changing
         elif (
@@ -73,24 +85,32 @@ class VoiceState(commands.Cog):
             and after.channel is not None
             and before.channel != after.channel
         ):
-            leave_roles_changed, join_roles_changed, failed_roles = await self.change(
-                member, before, after
-            )
+            try:
+                (
+                    leave_roles_changed,
+                    join_roles_changed,
+                    failed_roles,
+                ) = await self.change(member, before, after)
 
-            if failed_roles:
-                self.client.log(
-                    LogLevel.INFO,
-                    f"Failed to change roles on change: m/{member.id} c/{before.channel.id} g/{member.guild.id} r/({','.join(map(lambda x: str(x.id), failed_roles))})",
+                if failed_roles:
+                    self.client.log(
+                        LogLevel.INFO,
+                        f"Failed to change roles on change: m/{member.id} c/{before.channel.id} g/{member.guild.id} r/({','.join(map(lambda x: str(x.id), failed_roles))})",
+                    )
+
+                await self.logging.log_change(
+                    before.channel,
+                    after.channel,
+                    member,
+                    leave_roles_changed,
+                    join_roles_changed,
+                    failed_roles,
                 )
-
-            await self.logging.log_change(
-                before.channel,
-                after.channel,
-                member,
-                leave_roles_changed,
-                join_roles_changed,
-                failed_roles,
-            )
+            except Exception:
+                self.client.log(
+                    LogLevel.ERROR,
+                    f"Failed to handle change voice channel: {member.display_name} in {before.channel.name} g/{member.guild.id} r/{member.id}",
+                )
 
         if (
             isinstance(before.channel, discord.StageChannel)
@@ -261,7 +281,13 @@ class VoiceState(commands.Cog):
         self.client.incr_role_counter("added", len(addable_roles))
         self.client.incr_role_counter("removed", len(removeable_roles))
 
-        await self.generator.join(member, after.channel)
+        try:
+            await self.generator.join(member, after.channel)
+        except Exception:
+            self.client.log(
+                LogLevel.ERROR,
+                f"Failed to generate channel on join voice channel: {member.display_name} in {after.channel.name} g/{member.guild.id} r/{member.id}",
+            )
 
         return return_data, list(set(failed_roles))
 
@@ -360,7 +386,13 @@ class VoiceState(commands.Cog):
         self.client.incr_role_counter("added", len(addable_roles))
         self.client.incr_role_counter("removed", len(removeable_roles))
 
-        await self.generator.leave(member, before.channel)
+        try:
+            await self.generator.leave(member, before.channel)
+        except Exception:
+            self.client.log(
+                LogLevel.ERROR,
+                f"Failed to generate channel on leave voice channel: {member.display_name} in {before.channel.name} g/{member.guild.id} r/{member.id}",
+            )
 
         return return_data, list(set(failed_roles))
 
@@ -496,8 +528,14 @@ class VoiceState(commands.Cog):
         self.client.incr_role_counter("added", len(addable_roles))
         self.client.incr_role_counter("removed", len(removeable_roles))
 
-        await self.generator.leave(member, before.channel)
-        await self.generator.join(member, after.channel)
+        try:
+            await self.generator.leave(member, before.channel)
+            await self.generator.join(member, after.channel)
+        except Exception:
+            self.client.log(
+                LogLevel.ERROR,
+                f"Failed to generate channel on change voice channel: {member.display_name} in {before.channel.name} g/{member.guild.id} r/{member.id}",
+            )
 
         return leave_return_data, join_return_data, list(set(failed_roles))
 

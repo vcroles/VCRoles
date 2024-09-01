@@ -16,7 +16,9 @@ from utils.types import LogLevel, using_topgg
 
 setup_logging()
 
-intents = discord.Intents(guilds=True, voice_states=True, dm_messages=True)
+intents = discord.Intents(
+    guilds=True, voice_states=True, dm_messages=True, members=True
+)
 
 ar: aioredis.Redis[Any] = aioredis.Redis(
     host=config.REDIS.HOST,
