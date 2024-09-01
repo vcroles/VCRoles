@@ -31,6 +31,7 @@ cachetools==5.3.3
     #   asyncache
 certifi==2024.8.30
     # via
+    #   clickhouse-connect
     #   httpcore
     #   httpx
     #   requests
@@ -46,6 +47,8 @@ click==8.1.7
     #   gtts
     #   jishaku
     #   prisma
+clickhouse-connect==0.7.19
+    # via -r requirements.in
 cryptography==43.0.0
     # via
     #   types-pyopenssl
@@ -78,6 +81,8 @@ jinja2==3.1.4
     # via prisma
 jishaku @ git+https://github.com/Gorialis/jishaku@0c16ddca174726966704a8f12f6e8f0e26528202
     # via -r requirements.in
+lz4==4.3.3
+    # via clickhouse-connect
 markupsafe==2.1.5
     # via jinja2
 multidict==6.0.5
@@ -102,6 +107,8 @@ pynacl==1.5.0
     # via discord-py
 python-dotenv==1.0.1
     # via prisma
+pytz==2024.1
+    # via clickhouse-connect
 redis==5.0.7
     # via -r requirements.in
 requests==2.32.3
@@ -134,6 +141,10 @@ typing-extensions==4.12.2
     #   pydantic
     #   pydantic-core
 urllib3==2.2.2
-    # via requests
+    # via
+    #   clickhouse-connect
+    #   requests
 yarl==1.9.6
     # via aiohttp
+zstandard==0.23.0
+    # via clickhouse-connect

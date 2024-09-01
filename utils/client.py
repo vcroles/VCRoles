@@ -4,9 +4,10 @@ import datetime
 from typing import Any, Optional
 
 import aiohttp
+import clickhouse_connect
 import discord
 import redis.asyncio as aioredis
-from cachetools import TTLCache
+from clickhouse_connect.driver.asyncclient import AsyncClient as CHAsyncClient
 from discord.ext import commands
 
 import config
@@ -16,7 +17,7 @@ from views.interface import Interface
 
 
 class VCRolesClient(commands.AutoShardedBot):
-    entitlements_cache: TTLCache[Any, Any] = TTLCache(2**8, 60 * 60)
+    ch_client: Optional[CHAsyncClient] = None
 
     def __init__(
         self,
@@ -29,6 +30,7 @@ class VCRolesClient(commands.AutoShardedBot):
         self.db = db
         self.log_queue: list[str] = []
         self.console_log_level = console_log_level
+
         super().__init__(
             intents=intents,
             command_prefix=commands.when_mentioned_or("#"),
@@ -109,7 +111,19 @@ class VCRolesClient(commands.AutoShardedBot):
     async def setup_hook(self) -> None:
         await self.db.connect()
 
+        if self.ch_client is None:
+            await self.setup_ch()
+
         return await super().setup_hook()
+
+    async def setup_ch(self) -> None:
+        self.ch_client = await clickhouse_connect.get_async_client(
+            host=config.CLICKHOUSE.HOST,
+            port=config.CLICKHOUSE.PORT,
+            username=config.CLICKHOUSE.USER,
+            password=config.CLICKHOUSE.PASSWORD,
+            database=config.CLICKHOUSE.DATABASE,
+        )
 
     def log(self, level: LogLevel, message: str) -> None:
         """Logs a message to the console"""
