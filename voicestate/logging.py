@@ -18,41 +18,48 @@ class Logging:
     async def process_queues(self):
         while self.continue_processing:
             try:
-                embed_queues = self.embed_queues.copy()
-                self.embed_queues.clear()
-
-                for guild_id, queue in embed_queues.items():
-                    if queue.empty():
-                        continue
-
-                    guild_data = await self.client.db.get_guild_data(guild_id)
-                    if not guild_data.logging:
-                        continue
-
-                    channel = self.client.get_channel(int(guild_data.logging))
-                    if not channel or not isinstance(channel, discord.TextChannel):
-                        continue
-
-                    while not queue.empty():
-                        embeds = []
-                        while not queue.empty() and len(embeds) < 10:
-                            embeds.append(await queue.get())
-
-                        if embeds:
-                            try:
-                                await channel.send(embeds=embeds)
-                            except discord.Forbidden:
-                                pass
-                            except discord.HTTPException:
-                                pass
+                await self._process_queues()
 
                 # Wait for 5 seconds before the next processing cycle to reduce the number of messages sent
+                # Technically this is 5 seconds + the time it takes to process the queues, but the extra is unimportant
                 await asyncio.sleep(5)
             except Exception as e:
                 self.client.log(LogLevel.ERROR, f"Error processing embed queues: {e}")
 
-    def stop(self):
+    async def _process_queues(self):
+        embed_queues = self.embed_queues.copy()
+        self.embed_queues.clear()
+
+        for guild_id, queue in embed_queues.items():
+            if queue.empty():
+                continue
+
+            guild_data = await self.client.db.get_guild_data(guild_id)
+            if not guild_data.logging:
+                continue
+
+            channel = self.client.get_channel(int(guild_data.logging))
+            if not channel or not isinstance(channel, discord.TextChannel):
+                continue
+
+            while not queue.empty():
+                embeds = []
+                while not queue.empty() and len(embeds) < 10:
+                    embeds.append(await queue.get())
+
+                if embeds:
+                    try:
+                        await channel.send(embeds=embeds)
+                    except discord.Forbidden:
+                        pass
+                    except discord.HTTPException:
+                        pass
+
+    async def stop(self):
         self.continue_processing = False
+
+        # Process any remaining embeds in the queue
+        await self._process_queues()
 
     async def add_to_queue(self, guild_id: int, embed: discord.Embed):
         if guild_id not in self.embed_queues:

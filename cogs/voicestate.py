@@ -1,4 +1,3 @@
-import asyncio
 import copy
 from typing import Collection, Tuple
 
@@ -32,7 +31,10 @@ class VoiceState(commands.Cog):
 
     async def cog_unload(self):
         self.process_queues.cancel()
-        self.logging.stop()
+        await self.logging.stop()
+
+        # Finish processing any remaining member queues
+        await self.process_queues()
 
         await super().cog_unload()
 
@@ -90,7 +92,7 @@ class VoiceState(commands.Cog):
                         )
                     )
         except Exception as e:
-            self.client.log(LogLevel.ERROR, f"Error processing member queues: {e}")
+            self.client.log(LogLevel.INFO, f"Error processing member queues: {e}")
 
     @process_queues.before_loop
     async def before_process_queues(self):
