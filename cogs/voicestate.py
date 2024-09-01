@@ -39,15 +39,13 @@ class VoiceState(commands.Cog):
     @tasks.loop(seconds=5)
     async def process_queues(self):
         try:
+            # Create a copy of the member_queues and clear the original
             member_queues = self.member_queues.copy()
+            self.member_queues.clear()
 
             for guild_id, queue in member_queues.items():
                 if not queue:
                     continue
-
-                # Make a copy of the queue and clear the original
-                current_queue = queue.copy()
-                self.member_queues[guild_id] = []
 
                 guild = self.client.get_guild(guild_id)
                 if not guild:
@@ -57,7 +55,7 @@ class VoiceState(commands.Cog):
 
                 # Group the current queue by member
                 member_changes = {}
-                for member, to_add, to_remove, new_nick in current_queue:
+                for member, to_add, to_remove, new_nick in queue:
                     if member.id not in member_changes:
                         member_changes[member.id] = {
                             "member": member,

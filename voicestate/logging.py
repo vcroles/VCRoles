@@ -19,6 +19,7 @@ class Logging:
         while self.continue_processing:
             try:
                 embed_queues = self.embed_queues.copy()
+                self.embed_queues.clear()
 
                 for guild_id, queue in embed_queues.items():
                     if queue.empty():
