@@ -92,7 +92,7 @@ class VoiceState(commands.Cog):
                         )
                     )
         except Exception as e:
-            self.client.log(LogLevel.INFO, f"Error processing member queues: {e}")
+            self.client.log(LogLevel.ERROR, f"Error processing member queues: {e}")
 
     @process_queues.before_loop
     async def before_process_queues(self):
@@ -265,7 +265,7 @@ class VoiceState(commands.Cog):
             )
         except Exception as e:
             self.client.log(
-                LogLevel.ERROR,
+                LogLevel.INFO,
                 f"Failed to edit member {member.id} ({member.display_name}): {e}",
             )
 
