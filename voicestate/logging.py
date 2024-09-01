@@ -1,8 +1,9 @@
+import asyncio
 import datetime
 
 import discord
-from prisma.enums import LinkType
 
+from prisma.enums import LinkType
 from utils.client import VCRolesClient
 from utils.types import LinkableChannel, VoiceStateReturnData
 
@@ -10,13 +11,53 @@ from utils.types import LinkableChannel, VoiceStateReturnData
 class Logging:
     def __init__(self, client: VCRolesClient):
         self.client = client
+        self.embed_queues: dict[int, asyncio.Queue] = {}
+        self.client.loop.create_task(self.process_queues())
+        self.continue_processing = True
+
+    async def process_queues(self):
+        while self.continue_processing:
+            for guild_id, queue in self.embed_queues.items():
+                if queue.empty():
+                    continue
+
+                guild_data = await self.client.db.get_guild_data(guild_id)
+                if not guild_data.logging:
+                    continue
+
+                channel = self.client.get_channel(int(guild_data.logging))
+                if not channel or not isinstance(channel, discord.TextChannel):
+                    continue
+
+                while not queue.empty():
+                    embeds = []
+                    while not queue.empty() and len(embeds) < 10:
+                        embeds.append(await queue.get())
+
+                    if embeds:
+                        try:
+                            await channel.send(embeds=embeds)
+                        except discord.Forbidden:
+                            pass
+                        except discord.HTTPException:
+                            pass
+
+            # Wait for 5 seconds before the next processing cycle to reduce the number of messages sent
+            await asyncio.sleep(5)
+
+    def stop(self):
+        self.continue_processing = False
+
+    async def add_to_queue(self, guild_id: int, embed: discord.Embed):
+        if guild_id not in self.embed_queues:
+            self.embed_queues[guild_id] = asyncio.Queue()
+        await self.embed_queues[guild_id].put(embed)
 
     @staticmethod
     def construct_embed(
         data: list[VoiceStateReturnData],
         failed_roles: list[discord.Role],
     ):
-
         added_chunks: list[str] = []
         removed_chunks: list[str] = []
 
@@ -72,11 +113,6 @@ class Logging:
         if not guild_data.logging:
             return
 
-        channel = member.guild.get_channel(int(guild_data.logging))
-
-        if not channel or not isinstance(channel, discord.TextChannel):
-            return
-
         logging_embed = discord.Embed(
             title=f"Member joined {'voice' if isinstance(user_channel, discord.VoiceChannel) else 'stage' if isinstance(user_channel, discord.StageChannel) else ''} channel",
             description=f"{member} joined {user_channel.mention}",
@@ -109,12 +145,7 @@ class Logging:
                 inline=False,
             )
 
-        try:
-            await channel.send(embed=logging_embed)
-        except discord.Forbidden:
-            pass
-        except discord.HTTPException:
-            pass
+        await self.add_to_queue(member.guild.id, logging_embed)
 
     async def log_leave(
         self,
@@ -126,11 +157,6 @@ class Logging:
         guild_data = await self.client.db.get_guild_data(member.guild.id)
 
         if not guild_data.logging:
-            return
-
-        channel = self.client.get_channel(int(guild_data.logging))
-
-        if not channel or not isinstance(channel, discord.TextChannel):
             return
 
         logging_embed = discord.Embed(
@@ -164,12 +190,7 @@ class Logging:
                 inline=False,
             )
 
-        try:
-            await channel.send(embed=logging_embed)
-        except discord.Forbidden:
-            pass
-        except discord.HTTPException:
-            pass
+        await self.add_to_queue(member.guild.id, logging_embed)
 
     async def log_change(
         self,
@@ -183,11 +204,6 @@ class Logging:
         guild_data = await self.client.db.get_guild_data(member.guild.id)
 
         if not guild_data.logging:
-            return
-
-        channel = member.guild.get_channel(int(guild_data.logging))
-
-        if not channel or not isinstance(channel, discord.TextChannel):
             return
 
         logging_embed = discord.Embed(
@@ -255,9 +271,4 @@ class Logging:
                 inline=False,
             )
 
-        try:
-            await channel.send(embed=logging_embed)
-        except discord.Forbidden:
-            pass
-        except discord.HTTPException:
-            pass
+        await self.add_to_queue(member.guild.id, logging_embed)

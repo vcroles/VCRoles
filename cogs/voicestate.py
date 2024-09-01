@@ -1,8 +1,10 @@
-from typing import Collection
+import asyncio
+import copy
+from typing import Collection, Tuple
 
 import discord
 import discord.utils as disutils
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord.object import Object
 
 from prisma.enums import LinkType
@@ -22,6 +24,91 @@ class VoiceState(commands.Cog):
         self.client = client
         self.generator = Generator(client)
         self.logging = Logging(client)
+        self.member_queues: dict[
+            int,
+            list[Tuple[discord.Member, list[discord.Role], list[discord.Role], str]],
+        ] = {}
+        self.process_queues.start()
+
+    async def cog_unload(self):
+        self.process_queues.cancel()
+        self.logging.stop()
+
+        await super().cog_unload()
+
+    @tasks.loop(seconds=5)
+    async def process_queues(self):
+        for guild_id, queue in self.member_queues.items():
+            if not queue:
+                continue
+
+            # Make a copy of the queue and clear the original
+            current_queue = queue.copy()
+            self.member_queues[guild_id] = []
+
+            guild = self.client.get_guild(guild_id)
+            if not guild:
+                continue
+
+            tasks = []
+
+            # Group the current queue by member
+            member_changes = {}
+            for member, to_add, to_remove, new_nick in current_queue:
+                if member.id not in member_changes:
+                    member_changes[member.id] = {
+                        "member": member,
+                        "to_add": [],
+                        "to_remove": [],
+                        "new_nick": new_nick,
+                    }
+                member_changes[member.id]["member"] = member
+                member_changes[member.id]["to_add"].extend(to_add)
+                member_changes[member.id]["to_remove"].extend(to_remove)
+                member_changes[member.id]["new_nick"] = new_nick
+
+            for _member_id, change in member_changes.items():
+                member = change["member"]
+                to_add = change["to_add"]
+                to_remove = change["to_remove"]
+                new_nick = change["new_nick"]
+
+                # Find the intersection of to_add and to_remove without using sets (since this removes duplicates)
+                # We need to do this to handle if a user is spam switching between channels
+                role_idx = 0
+                while role_idx < len(to_add):
+                    role = to_add[role_idx]
+                    if role in to_remove:
+                        to_add.pop(role_idx)
+                        to_remove.remove(role)
+                    else:
+                        role_idx += 1
+
+                # Create a task for handling user edit
+                task = asyncio.create_task(
+                    self.handle_user_edit(member, set(to_add), set(to_remove), new_nick)
+                )
+                tasks.append(task)
+
+            # Wait for all tasks to complete
+            await asyncio.gather(*tasks, return_exceptions=True)
+
+    @process_queues.before_loop
+    async def before_process_queues(self):
+        await self.client.wait_until_ready()
+
+    async def queue_member_update(
+        self,
+        member: discord.Member,
+        to_add: list[discord.Role],
+        to_remove: list[discord.Role],
+        new_nick: str,
+    ):
+        if member.guild.id not in self.member_queues:
+            self.member_queues[member.guild.id] = []
+        self.member_queues[member.guild.id].append(
+            (member, to_add, to_remove, new_nick)
+        )
 
     @commands.Cog.listener()
     async def on_voice_state_update(
@@ -32,6 +119,11 @@ class VoiceState(commands.Cog):
     ):
         if member.bot:
             return
+
+        # Make copies of member, before and after to prevent race conditions
+        member = copy.copy(member)
+        before = copy.copy(before)
+        after = copy.copy(after)
 
         # Joining
         if before.channel is None and after.channel is not None:
@@ -160,13 +252,17 @@ class VoiceState(commands.Cog):
         if new_user_nickname != member.display_name:
             new_nick = new_user_nickname
 
+        if member.guild.owner_id == member.id:
+            # The owner can't have their nickname changed
+            new_nick = disutils.MISSING
+
         try:
             await member.edit(
                 nick=new_nick,
                 roles=new_roles,
                 reason="Joined Voice Channel",
             )
-        except discord.HTTPException:
+        except Exception:
             pass
 
     async def join(
@@ -229,9 +325,6 @@ class VoiceState(commands.Cog):
                 failed_roles.append(role)
                 continue
 
-            if role in member.roles:
-                continue
-
             to_add.append(role)
 
         for role_id in removeable_roles:
@@ -241,9 +334,6 @@ class VoiceState(commands.Cog):
 
             if not role.is_assignable():
                 failed_roles.append(role)
-                continue
-
-            if role not in member.roles:
                 continue
 
             to_remove.append(role)
@@ -256,7 +346,7 @@ class VoiceState(commands.Cog):
         else:
             new_user_nickname = member.display_name
 
-        await self.handle_user_edit(member, to_add, to_remove, new_user_nickname)
+        await self.queue_member_update(member, to_add, to_remove, new_user_nickname)
 
         self.client.incr_role_counter("added", len(addable_roles))
         self.client.incr_role_counter("removed", len(removeable_roles))
@@ -332,9 +422,6 @@ class VoiceState(commands.Cog):
                 failed_roles.append(role)
                 continue
 
-            if role in fetched_member.roles:
-                continue
-
             to_add.append(role)
 
         for role_id in removeable_roles:
@@ -346,14 +433,11 @@ class VoiceState(commands.Cog):
                 failed_roles.append(role)
                 continue
 
-            if role not in fetched_member.roles:
-                continue
-
             to_remove.append(role)
 
         new_user_nickname = fetched_member.display_name.removesuffix(suffix_data.suffix)
 
-        await self.handle_user_edit(
+        await self.queue_member_update(
             fetched_member, to_add, to_remove, new_user_nickname
         )
 
@@ -458,9 +542,6 @@ class VoiceState(commands.Cog):
                 failed_roles.append(role)
                 continue
 
-            if role in fetched_member.roles:
-                continue
-
             to_add.append(role)
 
         for role_id in removeable_roles:
@@ -470,9 +551,6 @@ class VoiceState(commands.Cog):
 
             if not role.is_assignable():
                 failed_roles.append(role)
-                continue
-
-            if role not in fetched_member.roles:
                 continue
 
             to_remove.append(role)
@@ -489,7 +567,7 @@ class VoiceState(commands.Cog):
             else:
                 new_user_nickname = removed_leave_suffix
 
-        await self.handle_user_edit(
+        await self.queue_member_update(
             fetched_member, to_add, to_remove, new_user_nickname
         )
 
