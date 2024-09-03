@@ -137,5 +137,7 @@ typing-extensions==4.12.2
     #   pydantic-core
 urllib3==2.2.2
     # via requests
+uvloop==0.20.0
+    # via -r requirements.in
 yarl==1.9.7
     # via aiohttp

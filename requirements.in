@@ -8,3 +8,4 @@ cachetools
 types-cachetools
 asyncache
 jishaku @ git+https://github.com/CDE90/jishaku
+uvloop

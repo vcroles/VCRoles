@@ -6,6 +6,7 @@ from typing import Any
 
 import discord
 import redis.asyncio as aioredis
+import uvloop
 from discord import app_commands
 
 import config
@@ -13,6 +14,8 @@ from utils.client import VCRolesClient
 from utils.database import DatabaseUtils
 from utils.logging import setup_logging
 from utils.types import LogLevel
+
+asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 setup_logging()
 
@@ -88,4 +91,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    uvloop.run(main())
