@@ -66,6 +66,12 @@ class _ColourFormatter(logging.Formatter):
 
 
 def setup_logging():
+    # First copy the discord.log file to discord.old.log
+    try:
+        os.rename("discord.log", "discord.old.log")
+    except FileNotFoundError:
+        pass
+
     level = logging.INFO
     dt_fmt = "%Y-%m-%d %H:%M:%S"
     handler = logging.StreamHandler()

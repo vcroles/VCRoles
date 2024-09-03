@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import Any, Optional
+from typing import Any
 
 import aiohttp
 import discord
@@ -9,9 +9,8 @@ import redis.asyncio as aioredis
 from cachetools import TTLCache
 from discord.ext import commands
 
-import config
 from utils.database import DatabaseUtils
-from utils.types import LogLevel, using_topgg
+from utils.types import LogLevel
 from views.interface import Interface
 
 
@@ -39,10 +38,6 @@ class VCRolesClient(commands.AutoShardedBot):
             status=discord.Status.online,
         )
         self.persistent_views_added = False
-        if using_topgg:
-            import topgg
-
-            self.topgg_webhook: Optional[topgg.WebhookManager]
 
     def incr_counter(self, cmd_name: str):
         """Increments the counter for a command"""
@@ -62,12 +57,6 @@ class VCRolesClient(commands.AutoShardedBot):
         if not self.persistent_views_added:
             self.add_view(Interface(self.db))
             self.persistent_views_added = True
-
-        if hasattr(self, "topgg_webhook") and self.topgg_webhook and using_topgg:
-            if self.topgg_webhook.is_running:
-                print("TopGG webhook is running")
-            else:
-                await self.topgg_webhook.start(config.DBL.WEBHOOK_PORT)
 
         print(f"Logged in as {self.user}")
         print(f"Bot is in {len(self.guilds)} guilds.")
