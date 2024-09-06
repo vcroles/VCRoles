@@ -1,10 +1,10 @@
 aiohttp[speedups]
-discord.py[voice,speed] @ git+https://github.com/CDE90/discord.py
-gtts[async] @ git+https://github.com/CDE90/gTTS
+discord.py[voice,speed] @ git+https://github.com/vcroles/discord.py
+gtts[async] @ git+https://github.com/vcroles/gTTS
 redis
 types-redis
 prisma
 cachetools
 types-cachetools
 asyncache
-jishaku @ git+https://github.com/CDE90/jishaku
+jishaku @ git+https://github.com/vcroles/jishaku

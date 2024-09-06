@@ -19,6 +19,8 @@ annotated-types==0.7.0
     # via pydantic
 anyio==4.4.0
     # via httpx
+async-timeout==4.0.3
+    # via redis
 asyncache==0.3.1
     # via -r requirements.in
 attrs==24.2.0
@@ -54,7 +56,7 @@ cryptography==43.0.0
     # via
     #   types-pyopenssl
     #   types-redis
-discord-py @ git+https://github.com/CDE90/discord.py@59f877fcf013c4ddeeb2b39fc21f03e76f995461
+discord-py @ git+https://github.com/vcroles/discord.py@59f877fcf013c4ddeeb2b39fc21f03e76f995461
     # via
     #   -r requirements.in
     #   jishaku
@@ -62,7 +64,7 @@ frozenlist==1.4.1
     # via
     #   aiohttp
     #   aiosignal
-gtts @ git+https://github.com/CDE90/gTTS@385f208a24f92572bad5204451328f3d5c83a792
+gtts @ git+https://github.com/vcroles/gTTS@385f208a24f92572bad5204451328f3d5c83a792
     # via -r requirements.in
 h11==0.14.0
     # via httpcore
@@ -80,7 +82,7 @@ import-expression==2.1.0.post1
     # via jishaku
 jinja2==3.1.4
     # via prisma
-jishaku @ git+https://github.com/CDE90/jishaku@0c16ddca174726966704a8f12f6e8f0e26528202
+jishaku @ git+https://github.com/vcroles/jishaku@0c16ddca174726966704a8f12f6e8f0e26528202
     # via -r requirements.in
 markupsafe==2.1.5
     # via jinja2
