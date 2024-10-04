@@ -95,7 +95,7 @@ class Utils(commands.Cog):
         )
         embed.add_field(
             name="Authors",
-            value="cde#4572 [CDE90](https://github.com/CDE90) and SamHartland#9376 [DrWackyBob](https://github.com/DrWackyBob)",
+            value="Currently @ethancoward [CDE90](https://github.com/CDE90).\nPreviously @ethancoward and @samhartland [DrWackyBob](https://github.com/DrWackyBob)",
             inline=False,
         )
         embed.set_author(
