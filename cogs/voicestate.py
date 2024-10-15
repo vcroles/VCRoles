@@ -1,3 +1,4 @@
+import asyncio
 import copy
 import time
 from typing import Collection, Tuple
@@ -103,8 +104,8 @@ class VoiceState(commands.Cog):
 
         end_time = time.perf_counter()
         self.client.log(
-            LogLevel.NONE,
-            f"Processed {processed_members} member queues in {end_time - start_time:.2f} seconds",
+            LogLevel.INFO,
+            f"Processed {processed_members} member queues in {end_time - start_time:.2f} seconds. {len(asyncio.all_tasks(self.client.loop))} tasks in global event loop",
         )
 
     @process_queues.before_loop
