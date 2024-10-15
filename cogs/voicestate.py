@@ -87,7 +87,7 @@ class VoiceState(commands.Cog):
 
                     # Create a task for handling user edit
                     self.client.loop.create_task(
-                        self.handle_user_edit(
+                        self.handle_member_edit(
                             member, set(to_add), set(to_remove), new_nick
                         )
                     )
@@ -226,13 +226,23 @@ class VoiceState(commands.Cog):
                     except discord.errors.HTTPException:
                         pass
 
-    async def handle_user_edit(
+    async def handle_member_edit(
         self,
         member: discord.Member,
         to_add: Collection[discord.abc.Snowflake],
         to_remove: Collection[discord.abc.Snowflake],
         new_user_nickname: str,
     ):
+        changing_username = (
+            new_user_nickname != member.display_name
+            # The owner can't have their nickname changed
+            and member.guild.owner_id != member.id
+            # Check we have permission to change the nickname
+            and member.guild.me.guild_permissions.manage_nicknames
+            # Check that our role is above the member's role
+            and member.top_role.position < member.guild.me.top_role.position
+        )
+
         new_roles = disutils.MISSING
 
         if to_add or to_remove:
@@ -250,23 +260,70 @@ class VoiceState(commands.Cog):
 
         new_nick = disutils.MISSING
 
-        if new_user_nickname != member.display_name:
+        if changing_username:
             new_nick = new_user_nickname
 
-        if member.guild.owner_id == member.id:
-            # The owner can't have their nickname changed
-            new_nick = disutils.MISSING
-
-        try:
-            await member.edit(
-                nick=new_nick,
-                roles=new_roles,
-                reason="Joined Voice Channel",
-            )
-        except Exception as e:
+        if changing_username and (to_add or to_remove):
+            # Use the member edit endpoint to update the user
+            try:
+                await member.edit(
+                    nick=new_nick,
+                    roles=new_roles,
+                    reason="Joined Voice Channel",
+                )
+            except Exception as e:
+                self.client.log(
+                    LogLevel.INFO,
+                    f"Failed to edit [username+-roles] member {member.id} ({member.display_name}): {e}",
+                )
+        elif changing_username:
+            # Use the member edit endpoint to update the nickname
+            try:
+                await member.edit(
+                    nick=new_nick,
+                    reason="Joined Voice Channel",
+                )
+            except Exception as e:
+                self.client.log(
+                    LogLevel.INFO,
+                    f"Failed to edit [username] member {member.id} ({member.display_name}): {e}",
+                )
+        elif to_add or to_remove:
+            if len(to_add) + len(to_remove) > 1:
+                # Use the member edit endpoint to update the roles (multiple changes)
+                try:
+                    await member.edit(
+                        roles=new_roles,
+                        reason="Joined Voice Channel",
+                    )
+                except Exception as e:
+                    self.client.log(
+                        LogLevel.INFO,
+                        f"Failed to edit [+-roles] member {member.id} ({member.display_name}): {e}",
+                    )
+            elif len(to_add) == 1:
+                # Use the add member role endpoint to add roles
+                try:
+                    await member.add_roles(*to_add, reason="Joined Voice Channel")
+                except Exception as e:
+                    self.client.log(
+                        LogLevel.INFO,
+                        f"Failed to edit [+roles] member {member.id} ({member.display_name}): {e}",
+                    )
+            elif len(to_remove) == 1:
+                # Use the remove member role endpoint to remove roles
+                try:
+                    await member.remove_roles(*to_remove, reason="Joined Voice Channel")
+                except Exception as e:
+                    self.client.log(
+                        LogLevel.INFO,
+                        f"Failed to edit [-roles] member {member.id} ({member.display_name}): {e}",
+                    )
+        else:
+            # No changes needed
             self.client.log(
-                LogLevel.INFO,
-                f"Failed to edit member {member.id} ({member.display_name}): {e}",
+                LogLevel.DEBUG,
+                f"No changes required for member {member.id} ({member.display_name})",
             )
 
     async def join(
