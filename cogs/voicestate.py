@@ -146,7 +146,7 @@ class VoiceState(commands.Cog):
 
             if failed_roles:
                 self.client.log(
-                    LogLevel.INFO,
+                    LogLevel.DEBUG,
                     f"Failed to change roles on join: m/{member.id} c/{after.channel.id} g/{member.guild.id} r/({','.join(map(lambda x: str(x.id), failed_roles))})",
                 )
 
@@ -163,7 +163,7 @@ class VoiceState(commands.Cog):
 
             if failed_roles:
                 self.client.log(
-                    LogLevel.INFO,
+                    LogLevel.DEBUG,
                     f"Failed to change roles on leave: m/{member.id} c/{before.channel.id} g/{member.guild.id} r/({','.join(map(lambda x: str(x.id), failed_roles))})",
                 )
 
@@ -186,7 +186,7 @@ class VoiceState(commands.Cog):
 
             if failed_roles:
                 self.client.log(
-                    LogLevel.INFO,
+                    LogLevel.DEBUG,
                     f"Failed to change roles on change: m/{member.id} c/{before.channel.id} g/{member.guild.id} r/({','.join(map(lambda x: str(x.id), failed_roles))})",
                 )
 
@@ -287,7 +287,7 @@ class VoiceState(commands.Cog):
                 )
             except Exception as e:
                 self.client.log(
-                    LogLevel.INFO,
+                    LogLevel.DEBUG,
                     f"Failed to edit [username+-roles] member {member.id} ({member.display_name}): {e}",
                 )
         elif changing_username:
@@ -299,7 +299,7 @@ class VoiceState(commands.Cog):
                 )
             except Exception as e:
                 self.client.log(
-                    LogLevel.INFO,
+                    LogLevel.DEBUG,
                     f"Failed to edit [username] member {member.id} ({member.display_name}): {e}",
                 )
         elif to_add or to_remove:
@@ -312,7 +312,7 @@ class VoiceState(commands.Cog):
                     )
                 except Exception as e:
                     self.client.log(
-                        LogLevel.INFO,
+                        LogLevel.DEBUG,
                         f"Failed to edit [+-roles] member {member.id} ({member.display_name}): {e}",
                     )
             elif len(to_add) == 1:
@@ -321,7 +321,7 @@ class VoiceState(commands.Cog):
                     await member.add_roles(*to_add, reason="Joined Voice Channel")
                 except Exception as e:
                     self.client.log(
-                        LogLevel.INFO,
+                        LogLevel.DEBUG,
                         f"Failed to edit [+roles] member {member.id} ({member.display_name}): {e}",
                     )
             elif len(to_remove) == 1:
@@ -330,7 +330,7 @@ class VoiceState(commands.Cog):
                     await member.remove_roles(*to_remove, reason="Joined Voice Channel")
                 except Exception as e:
                     self.client.log(
-                        LogLevel.INFO,
+                        LogLevel.DEBUG,
                         f"Failed to edit [-roles] member {member.id} ({member.display_name}): {e}",
                     )
         else:
