@@ -1,4 +1,5 @@
 import copy
+import time
 from typing import Collection, Tuple
 
 import discord
@@ -40,6 +41,9 @@ class VoiceState(commands.Cog):
 
     @tasks.loop(seconds=5)
     async def process_queues(self):
+        start_time = time.perf_counter()
+        processed_members = 0
+
         try:
             # Create a copy of the member_queues and clear the original
             member_queues = self.member_queues.copy()
@@ -91,8 +95,17 @@ class VoiceState(commands.Cog):
                             member, set(to_add), set(to_remove), new_nick
                         )
                     )
+
+                    processed_members += 1
+
         except Exception as e:
             self.client.log(LogLevel.ERROR, f"Error processing member queues: {e}")
+
+        end_time = time.perf_counter()
+        self.client.log(
+            LogLevel.DEBUG,
+            f"Processed {processed_members} member queues in {end_time - start_time:.2f} seconds",
+        )
 
     @process_queues.before_loop
     async def before_process_queues(self):
