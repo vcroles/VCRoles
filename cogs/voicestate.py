@@ -103,7 +103,7 @@ class VoiceState(commands.Cog):
 
         end_time = time.perf_counter()
         self.client.log(
-            LogLevel.DEBUG,
+            LogLevel.NONE,
             f"Processed {processed_members} member queues in {end_time - start_time:.2f} seconds",
         )
 
@@ -334,10 +334,11 @@ class VoiceState(commands.Cog):
                     )
         else:
             # No changes needed
-            self.client.log(
-                LogLevel.DEBUG,
-                f"No changes required for member {member.id} ({member.display_name})",
-            )
+            # self.client.log(
+            #     LogLevel.DEBUG,
+            #     f"No changes required for member {member.id} ({member.display_name})",
+            # )
+            pass
 
     async def join(
         self,
