@@ -16,9 +16,9 @@ This is a bot that will make your server and voice channels much more interactiv
 
 VC Roles is open source here, and we welcome any pull requests!
 
-Please note however that this code is intended for educational purposes only, and we will not provide support for self-hosting the bot.
+Please note however that this code is intended for educational purposes only. For self-hosting instructions, see [SELF_HOSTING.md](SELF_HOSTING.md). Support for self-hosting is limited to what is documented in that guide.
 
-## Development Envrionment
+## Development Environment
 
 Make sure you have python installed as well as the [uv](https://github.com/astral-sh/uv) package manager.
 
