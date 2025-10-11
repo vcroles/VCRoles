@@ -12,3 +12,4 @@ config.py
 migration.py
 data/
 typings/
+.DS_Store
