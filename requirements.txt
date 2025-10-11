@@ -23,6 +23,8 @@ asyncache==0.1.1
     # via -r requirements.in
 attrs==25.4.0
     # via aiohttp
+audioop-lts==0.2.2
+    # via discord-py
 braceexpand==0.1.7
     # via jishaku
 brotli==1.1.0
@@ -132,8 +134,6 @@ types-setuptools==80.9.0.20250822
     # via types-cffi
 typing-extensions==4.15.0
     # via
-    #   aiosignal
-    #   anyio
     #   jishaku
     #   prisma
     #   pydantic
