@@ -23,7 +23,7 @@ class VCControl(commands.Cog):
         guild: discord.Guild, user: discord.Member
     ) -> list[discord.Member]:
         mem: list[discord.Member] = []
-        for user_id, state in guild._voice_states.items():  # type: ignore
+        for user_id, state in guild._voice_states.items():
             if (
                 state.channel
                 and user.voice

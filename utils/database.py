@@ -1,9 +1,8 @@
 from typing import Any, List, Optional
 
-from asyncache import cached  # type: ignore
+from asyncache import cached
 from cachetools import TTLCache
 from cachetools.keys import hashkey
-from prisma import Prisma
 from prisma.enums import LinkType, VoiceGeneratorOption, VoiceGeneratorType
 from prisma.models import GeneratedChannel, Guild, Link, VoiceGenerator
 from prisma.types import (
@@ -13,6 +12,7 @@ from prisma.types import (
     VoiceGeneratorUpdateInput,
 )
 
+from prisma import Prisma
 from utils.types import DiscordID
 
 

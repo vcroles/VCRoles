@@ -7,8 +7,8 @@ import discord
 import discord.utils as disutils
 from discord.ext import commands, tasks
 from discord.object import Object
-
 from prisma.enums import LinkType
+
 from utils.client import VCRolesClient
 from utils.types import (
     LogLevel,
@@ -147,7 +147,11 @@ class VoiceState(commands.Cog):
             if failed_roles:
                 self.client.log(
                     LogLevel.DEBUG,
-                    f"Failed to change roles on join: m/{member.id} c/{after.channel.id} g/{member.guild.id} r/({','.join(map(lambda x: str(x.id), failed_roles))})",
+                    f"Failed to change roles on join: m/{member.id} c/{
+                        after.channel.id
+                    } g/{member.guild.id} r/({
+                        ','.join(map(lambda x: str(x.id), failed_roles))
+                    })",
                 )
 
             await self.logging.log_join(
@@ -164,7 +168,11 @@ class VoiceState(commands.Cog):
             if failed_roles:
                 self.client.log(
                     LogLevel.DEBUG,
-                    f"Failed to change roles on leave: m/{member.id} c/{before.channel.id} g/{member.guild.id} r/({','.join(map(lambda x: str(x.id), failed_roles))})",
+                    f"Failed to change roles on leave: m/{member.id} c/{
+                        before.channel.id
+                    } g/{member.guild.id} r/({
+                        ','.join(map(lambda x: str(x.id), failed_roles))
+                    })",
                 )
 
             await self.logging.log_leave(
@@ -187,7 +195,11 @@ class VoiceState(commands.Cog):
             if failed_roles:
                 self.client.log(
                     LogLevel.DEBUG,
-                    f"Failed to change roles on change: m/{member.id} c/{before.channel.id} g/{member.guild.id} r/({','.join(map(lambda x: str(x.id), failed_roles))})",
+                    f"Failed to change roles on change: m/{member.id} c/{
+                        before.channel.id
+                    } g/{member.guild.id} r/({
+                        ','.join(map(lambda x: str(x.id), failed_roles))
+                    })",
                 )
 
             await self.logging.log_change(
@@ -260,7 +272,7 @@ class VoiceState(commands.Cog):
         new_roles = disutils.MISSING
 
         if to_add or to_remove:
-            new_roles = disutils._unique(  # type: ignore[reportPrivateUsage]
+            new_roles = disutils._unique(
                 Object(id=r.id)
                 for s in (member.roles[1:], to_add)  # remove @everyone
                 for r in s

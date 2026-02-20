@@ -1,7 +1,6 @@
 from typing import Any, Literal, Optional
 
 import discord
-from typing_extensions import Self
 
 from utils.database import DatabaseUtils
 from utils.generator import GeneratorUtils
@@ -160,7 +159,7 @@ class Interface(discord.ui.View):
         )
 
 
-class MentionableDropdown(discord.ui.MentionableSelect[Self]):
+class MentionableDropdown(discord.ui.MentionableSelect):
     def __init__(
         self,
         placeholder: str,

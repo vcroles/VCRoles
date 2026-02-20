@@ -106,12 +106,12 @@ class Generator:
 
         if gen_data.type == VoiceGeneratorType.CLONED:
             channel = await user_channel.clone(
-                name=f"[{user_channel.name}] #{count+1}",
+                name=f"[{user_channel.name}] #{count + 1}",
                 reason="Voice Channel Generator",
             )
         elif gen_data.type == VoiceGeneratorType.NUMBERED:
             channel = await member.guild.create_voice_channel(
-                name=f"{gen_data.channelName} #{count+1}",
+                name=f"{gen_data.channelName} #{count + 1}",
                 category=user_channel.category,
                 reason="Voice Channel Generator",
                 overwrites={

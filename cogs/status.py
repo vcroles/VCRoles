@@ -13,7 +13,7 @@ class Status(commands.Cog):
         self.client = client
 
         @routes.get("/status")
-        async def status(request):  # type: ignore
+        async def status(request):
             if self.client.is_ready() is False:
                 return web.Response(status=503)
             return web.Response(status=200, text="OK")

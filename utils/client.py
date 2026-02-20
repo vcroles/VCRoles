@@ -107,7 +107,7 @@ class VCRolesClient(commands.AutoShardedBot):
         )
         if level <= self.console_log_level:
             print(
-                f"\x1b[30;1m{timestamp}\x1b[0m {level}{(8-len(level.name))*' '} \x1b[35minternal.bot\x1b[0m {message}"
+                f"\x1b[30;1m{timestamp}\x1b[0m {level}{(8 - len(level.name)) * ' '} \x1b[35minternal.bot\x1b[0m {message}"
             )
 
         self.log_queue.append(
