@@ -33,11 +33,11 @@ brotli==1.2.0
     # via
     #   aiohttp
     #   discord-py
-cachetools==7.0.1
+cachetools==7.0.2
     # via
     #   -r requirements.in
     #   asyncache
-certifi==2026.1.4
+certifi==2026.2.25
     # via
     #   httpcore
     #   httpx
@@ -58,9 +58,9 @@ cryptography==46.0.5
     # via
     #   types-pyopenssl
     #   types-redis
-davey==0.1.0
+davey==0.1.4
     # via discord-py
-discord-py[speed, voice] @ git+https://github.com/vcroles/discord.py@2f1c3fde7bfb02cdf10f7604d0ab5e7afbbcc5e1
+discord-py[speed, voice] @ git+https://github.com/vcroles/discord.py@41e6639bbc5e3357c1b6e8fded69d4f00b547314
     # via
     #   -r requirements.in
     #   jishaku
@@ -114,9 +114,9 @@ pydantic-core==2.41.5
     # via pydantic
 pynacl==1.5.0
     # via discord-py
-python-dotenv==1.2.1
+python-dotenv==1.2.2
     # via prisma
-redis==7.2.0
+redis==7.2.1
     # via -r requirements.in
 requests==2.32.5
     # via gtts
@@ -145,7 +145,7 @@ typing-inspection==0.4.2
     # via pydantic
 urllib3==2.6.3
     # via requests
-yarl==1.22.0
+yarl==1.23.0
     # via aiohttp
 zstandard==0.25.0
     # via discord-py
