@@ -56,6 +56,13 @@ class VCControl(commands.Cog):
         else:
             vc = None
 
+        if vc is None:
+            return await interaction.response.send_message(
+                "Please ensure you are in a voice channel."
+            )
+
+        # Member fetches and edits can wait on Discord's REST rate limits.
+        await interaction.response.defer(thinking=True)
         mem = await self.get_members(interaction.guild, interaction.user)
 
         if who == "everyone" and vc:
@@ -69,17 +76,17 @@ class VCControl(commands.Cog):
                 if member.id != interaction.user.id
             ]
         else:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 "Please ensure you are in a voice channel."
             )
+
+        await asyncio.gather(*tasks)
 
         embed = discord.Embed(
             colour=discord.Colour.dark_grey(),
             description=f"Successfully muted in {vc.mention}",
         )
-        await interaction.response.send_message(embed=embed)
-
-        await asyncio.gather(*tasks)
+        await interaction.followup.send(embed=embed)
 
         self.client.log(
             LogLevel.DEBUG,
@@ -107,6 +114,13 @@ class VCControl(commands.Cog):
         else:
             vc = None
 
+        if vc is None:
+            return await interaction.response.send_message(
+                "Please ensure you are in a voice channel."
+            )
+
+        # Member fetches and edits can wait on Discord's REST rate limits.
+        await interaction.response.defer(thinking=True)
         mem = await self.get_members(interaction.guild, interaction.user)
 
         if who == "everyone" and vc:
@@ -120,17 +134,17 @@ class VCControl(commands.Cog):
                 if member.id != interaction.user.id
             ]
         else:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 "Please ensure you are in a voice channel."
             )
+
+        await asyncio.gather(*tasks)
 
         embed = discord.Embed(
             colour=discord.Colour.dark_grey(),
             description=f"Successfully deafened in {vc.mention}",
         )
-        await interaction.response.send_message(embed=embed)
-
-        await asyncio.gather(*tasks)
+        await interaction.followup.send(embed=embed)
 
         self.client.log(
             LogLevel.DEBUG,
@@ -153,6 +167,13 @@ class VCControl(commands.Cog):
         else:
             vc = None
 
+        if vc is None:
+            return await interaction.response.send_message(
+                "Please ensure you are in a voice channel."
+            )
+
+        # Member fetches and edits can wait on Discord's REST rate limits.
+        await interaction.response.defer(thinking=True)
         mem = await self.get_members(interaction.guild, interaction.user)
 
         if vc:
@@ -160,17 +181,17 @@ class VCControl(commands.Cog):
                 self.client.loop.create_task(member.edit(mute=False)) for member in mem
             ]
         else:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 "Please ensure you are in a voice channel."
             )
+
+        await asyncio.gather(*tasks)
 
         embed = discord.Embed(
             colour=discord.Colour.dark_grey(),
             description=f"Successfully unmuted in {vc.mention}",
         )
-        await interaction.response.send_message(embed=embed)
-
-        await asyncio.gather(*tasks)
+        await interaction.followup.send(embed=embed)
 
         self.client.log(
             LogLevel.DEBUG,
@@ -193,6 +214,13 @@ class VCControl(commands.Cog):
         else:
             vc = None
 
+        if vc is None:
+            return await interaction.response.send_message(
+                "Please ensure you are in a voice channel."
+            )
+
+        # Member fetches and edits can wait on Discord's REST rate limits.
+        await interaction.response.defer(thinking=True)
         mem = await self.get_members(interaction.guild, interaction.user)
 
         if vc:
@@ -201,17 +229,17 @@ class VCControl(commands.Cog):
                 for member in mem
             ]
         else:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 "Please ensure you are in a voice channel."
             )
+
+        await asyncio.gather(*tasks)
 
         embed = discord.Embed(
             colour=discord.Colour.dark_grey(),
             description=f"Successfully undeafened in {vc.mention}",
         )
-        await interaction.response.send_message(embed=embed)
-
-        await asyncio.gather(*tasks)
+        await interaction.followup.send(embed=embed)
 
         self.client.log(
             LogLevel.DEBUG,

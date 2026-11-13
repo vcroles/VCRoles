@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import datetime
+import logging
 from typing import Any
 
 import aiohttp
@@ -10,8 +12,11 @@ from cachetools import TTLCache
 from discord.ext import commands
 
 from utils.database import DatabaseUtils
+from utils.gateway import configure_gateway_compression
 from utils.types import LogLevel
 from views.interface import Interface
+
+logger = logging.getLogger(__name__)
 
 
 class VCRolesClient(commands.AutoShardedBot):
@@ -28,6 +33,8 @@ class VCRolesClient(commands.AutoShardedBot):
         self.db = db
         self.log_queue: list[str] = []
         self.console_log_level = console_log_level
+        self.counter_tasks: set[asyncio.Task] = set()
+        self.cleanup_task: asyncio.Task | None = None
         super().__init__(
             intents=intents,
             command_prefix=commands.when_mentioned_or("#"),
@@ -41,14 +48,25 @@ class VCRolesClient(commands.AutoShardedBot):
 
     def incr_counter(self, cmd_name: str):
         """Increments the counter for a command"""
-        self.loop.create_task(self.ar.hincrby("counters", cmd_name, 1))
+        self._schedule_counter(cmd_name, 1)
 
     def incr_role_counter(self, action: str, count: int = 1):
         """
         action: `add` or `remove`.
         Increments the counter for roles added or removed
         """
-        self.loop.create_task(self.ar.hincrby("counters", f"roles_{action}", count))
+        self._schedule_counter(f"roles_{action}", count)
+
+    def _schedule_counter(self, name: str, count: int):
+        async def increment():
+            try:
+                await self.ar.hincrby("counters", name, count)
+            except Exception as error:
+                self.log(LogLevel.ERROR, f"Counter update failed: {error}")
+
+        task = self.loop.create_task(increment())
+        self.counter_tasks.add(task)
+        task.add_done_callback(self.counter_tasks.discard)
 
     async def on_ready(self):
         """
@@ -69,6 +87,17 @@ class VCRolesClient(commands.AutoShardedBot):
 
         print("------")
 
+    async def on_shard_disconnect(self, shard_id: int) -> None:
+        logger.warning(
+            "Shard %s disconnected (closing=%s, database_connected=%s)",
+            shard_id,
+            self.cleanup_task is not None,
+            self.db.db.is_connected(),
+        )
+
+    async def on_shard_resumed(self, shard_id: int) -> None:
+        logger.info("Shard %s resumed its existing session", shard_id)
+
     async def on_guild_join(self, guild: discord.Guild):
         self.incr_counter("guilds_join")
 
@@ -86,17 +115,40 @@ class VCRolesClient(commands.AutoShardedBot):
         await self.db.db.link.delete_many(
             where={"id": str(channel.id), "guildId": str(channel.guild.id)}
         )
-        await self.db.db.voicegenerator.delete_many(
-            where={"generatorId": str(channel.id), "guildId": str(channel.guild.id)}
-        )
+        await self.db.delete_generator(channel.guild.id, channel.id)
 
     async def close(self) -> None:
-        await self.db.disconnect()
+        if self.cleanup_task is None:
+            # Record the caller before starting a task so fatal gateway errors,
+            # explicit closes, and context-manager cleanup can be distinguished.
+            logger.warning("Bot shutdown requested", stack_info=True)
+            self.cleanup_task = asyncio.create_task(self._close_resources())
+        await asyncio.shield(self.cleanup_task)
 
-        return await super().close()
+    async def _close_resources(self) -> None:
+        try:
+            # Cog unload hooks flush work while Discord and the database are usable.
+            await super().close()
+        finally:
+            try:
+                await asyncio.gather(*list(self.counter_tasks), return_exceptions=True)
+                logger.info("Discord cleanup finished; disconnecting the database")
+                await self.db.disconnect()
+            finally:
+                try:
+                    await self.ar.aclose()
+                finally:
+                    if self.log_queue:
+                        with open("bot.log", "a") as log_file:
+                            log_file.write("\n" + "\n".join(self.log_queue))
+                        self.log_queue.clear()
+        logger.info("Bot resource cleanup finished")
 
     async def setup_hook(self) -> None:
+        configure_gateway_compression()
+        logger.info("Connecting to the Prisma query engine")
         await self.db.connect()
+        logger.info("Prisma connected; starting Discord gateway connections")
 
         return await super().setup_hook()
 

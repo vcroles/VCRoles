@@ -34,7 +34,25 @@ class DatabaseUtils:
         await self.db.connect()
 
     async def disconnect(self) -> None:
-        await self.db.disconnect()
+        if self.db.is_connected():
+            await self.db.disconnect()
+
+    def invalidate_generator(
+        self, guild_id: DiscordID, generator_id: DiscordID
+    ) -> None:
+        # IDs arrive as both strings (database) and integers (Discord).
+        for cache, ids in (
+            (self.get_generators_cache, (guild_id,)),
+            (self.generator_cache, (guild_id, generator_id)),
+        ):
+            for key in list(cache):
+                if key[0] is self and tuple(map(str, key[1:])) == tuple(map(str, ids)):
+                    cache.pop(key, None)
+
+    def invalidate_generated_channel(self, channel_id: DiscordID) -> None:
+        for key in list(self.generated_channel_cache):
+            if key[0] is self and str(key[1]) == str(channel_id):
+                self.generated_channel_cache.pop(key, None)
 
     async def guild_remove(self, guild_id: DiscordID) -> None:
         await self.db.guild.delete(where={"id": str(guild_id)})
@@ -303,17 +321,9 @@ class DatabaseUtils:
                 }
             )
 
-        try:
-            k = hashkey(self, guild_id)
-            del self.get_generators_cache[k]
-        except KeyError:
-            pass
-
-        try:
-            k = hashkey(self, guild_id, generator_id)
-            del self.generator_cache[k]
-        except KeyError:
-            pass
+        self.invalidate_generator(guild_id, generator_id)
+        # Child records embed the generator settings, including ownership rules.
+        self.generated_channel_cache.clear()
 
     @cached(generated_channel_cache)
     async def get_generated_channel(
@@ -325,13 +335,15 @@ class DatabaseUtils:
         return data
 
     async def delete_generated_channel(self, channel_id: DiscordID) -> None:
-        await self.db.generatedchannel.delete(where={"channelId": str(channel_id)})
-
-        try:
-            k = hashkey(self, channel_id)
-            del self.generated_channel_cache[k]
-        except KeyError:
-            pass
+        data = await self.db.generatedchannel.find_unique(
+            where={"channelId": str(channel_id)}, include={"VoiceGenerator": True}
+        )
+        await self.db.generatedchannel.delete_many(where={"channelId": str(channel_id)})
+        self.invalidate_generated_channel(channel_id)
+        if data and data.VoiceGenerator:
+            self.invalidate_generator(
+                data.VoiceGenerator.guildId, data.VoiceGenerator.generatorId
+            )
 
     async def update_generated_channel(
         self,
@@ -358,11 +370,7 @@ class DatabaseUtils:
             where={"channelId": str(channel_id)}, data=data
         )
 
-        try:
-            k = hashkey(self, channel_id)
-            del self.generated_channel_cache[k]
-        except KeyError:
-            pass
+        self.invalidate_generated_channel(channel_id)
 
     async def create_generated_channel(
         self,
@@ -390,49 +398,20 @@ class DatabaseUtils:
             }
         )
 
-        try:
-            k = hashkey(self, guild_id)
-            del self.get_generators_cache[k]
-        except KeyError:
-            pass
-
-        try:
-            k = hashkey(self, guild_id, generator_id)
-            del self.generator_cache[k]
-        except KeyError:
-            pass
-
-        try:
-            k = hashkey(self, channel_id)
-            del self.generated_channel_cache[k]
-        except KeyError:
-            pass
+        self.invalidate_generator(guild_id, generator_id)
+        self.invalidate_generated_channel(channel_id)
 
         return data
 
     async def delete_generator(
         self, guild_id: DiscordID, generator_id: DiscordID
     ) -> None:
-        await self.db.voicegenerator.delete(
-            where={
-                "guildId_generatorId": {
-                    "guildId": str(guild_id),
-                    "generatorId": str(generator_id),
-                }
-            }
+        deleted = await self.db.voicegenerator.delete_many(
+            where={"guildId": str(guild_id), "generatorId": str(generator_id)}
         )
-
-        try:
-            k = hashkey(self, guild_id)
-            del self.get_generators_cache[k]
-        except KeyError:
-            pass
-
-        try:
-            k = hashkey(self, guild_id, generator_id)
-            del self.generator_cache[k]
-        except KeyError:
-            pass
+        self.invalidate_generator(guild_id, generator_id)
+        if deleted:
+            self.generated_channel_cache.clear()
 
     async def get_all_linked_channel(
         self,
@@ -440,7 +419,6 @@ class DatabaseUtils:
         channel_id: DiscordID,
         category_id: Optional[DiscordID] = None,
     ) -> List[Link]:
-
         if category_id:
             s = [str(channel_id), str(category_id), str(guild_id)]
         else:

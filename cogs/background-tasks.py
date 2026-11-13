@@ -1,3 +1,4 @@
+import asyncio
 import datetime as dt
 
 import aiohttp
@@ -24,6 +25,19 @@ class BackgroundTasks(commands.Cog):
         self.log_queue.cancel()
         self.rotate_log_file.cancel()
         self.update_topgg.cancel()
+        running = [
+            loop.get_task()
+            for loop in (
+                self.save_guild_count,
+                self.reset_limits,
+                self.log_queue,
+                self.rotate_log_file,
+                self.update_topgg,
+            )
+        ]
+        await asyncio.gather(
+            *(task for task in running if task is not None), return_exceptions=True
+        )
 
         return await super().cog_unload()
 

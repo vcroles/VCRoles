@@ -2,8 +2,8 @@ import asyncio
 import datetime
 
 import discord
-
 from prisma.enums import LinkType
+
 from utils.client import VCRolesClient
 from utils.types import LinkableChannel, LogLevel, VoiceStateReturnData
 
@@ -12,8 +12,8 @@ class Logging:
     def __init__(self, client: VCRolesClient):
         self.client = client
         self.embed_queues: dict[int, asyncio.Queue] = {}
-        self.client.loop.create_task(self.process_queues())
         self.continue_processing = True
+        self.processing_task = self.client.loop.create_task(self.process_queues())
 
     async def process_queues(self):
         while self.continue_processing:
@@ -57,6 +57,7 @@ class Logging:
 
     async def stop(self):
         self.continue_processing = False
+        await self.processing_task
 
         # Process any remaining embeds in the queue
         await self._process_queues()

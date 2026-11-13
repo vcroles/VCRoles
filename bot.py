@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
+import sys
 from typing import Any
 
 import discord
@@ -39,23 +41,32 @@ async def on_command_error(
     error: app_commands.AppCommandError,
 ):
     if isinstance(error, app_commands.MissingPermissions):
-        return await interaction.response.send_message(
-            "You do not have the required permissions to use this command.",
-            ephemeral=True,
-        )
-    if isinstance(error, app_commands.BotMissingPermissions):
-        return await interaction.response.send_message(
-            error,
-            ephemeral=True,
-        )
+        message = "You do not have the required permissions to use this command."
+    elif isinstance(error, app_commands.BotMissingPermissions):
+        message = str(error)
     else:
         client.log(
             LogLevel.ERROR,
             f"Command Error: g/{interaction.guild_id} {error}",
         )
+        message = "Something went wrong while running this command. Please try again."
+
+    try:
+        if interaction.response.is_done():
+            await interaction.followup.send(message, ephemeral=True)
+        else:
+            await interaction.response.send_message(message, ephemeral=True)
+    except discord.HTTPException as response_error:
+        client.log(LogLevel.ERROR, f"Could not send command error: {response_error}")
 
 
 async def main():
+    logging.getLogger(__name__).info(
+        "Starting bot process pid=%s, Python=%s, discord.py=%s",
+        os.getpid(),
+        sys.version.split()[0],
+        discord.__version__,
+    )
     # Removing TTS Files
 
     for filename in os.listdir("tts"):
@@ -84,7 +95,16 @@ async def main():
 
         await client.load_extension("jishaku")
 
-        await client.start(config.BOT_TOKEN)
+        try:
+            await client.start(config.BOT_TOKEN)
+        except asyncio.CancelledError:
+            logging.getLogger(__name__).warning("Bot main task was cancelled")
+            raise
+        except Exception:
+            logging.getLogger(__name__).exception("Bot stopped with an unhandled error")
+            raise
+        else:
+            logging.getLogger(__name__).warning("Discord client.start() returned")
 
 
 if __name__ == "__main__":

@@ -3,9 +3,9 @@ from typing import Optional, Tuple
 import discord
 from discord import app_commands
 from discord.ext import commands
-
 from prisma.enums import VoiceGeneratorOption, VoiceGeneratorType
 from prisma.models import VoiceGenerator
+
 from utils.checks import check_any, command_available, is_owner
 from utils.client import VCRolesClient
 from utils.types import LogLevel
@@ -141,19 +141,22 @@ class VoiceGen(commands.Cog):
                 interface_channel = None
                 interface_message = None
         except discord.Forbidden:
-            return await interaction.response.send_message(
+            await interaction.followup.send(
                 "I don't have permission to create channels in this server.",
                 ephemeral=True,
             )
+            return None
         except discord.HTTPException:
-            return await interaction.response.send_message(
+            await interaction.followup.send(
                 "Something went wrong while creating your channels.",
                 ephemeral=True,
             )
+            return None
         except Exception:
-            return await interaction.followup.send(
+            await interaction.followup.send(
                 "Failed to create generator channels. Please check permissions and try again."
             )
+            return None
         return (category, voice_channel, interface_channel, interface_message)
 
     generator_commands = app_commands.Group(
@@ -761,6 +764,9 @@ class VoiceGen(commands.Cog):
         deleted = await self.client.db.db.voicegenerator.delete_many(
             where={"guildId": str(interaction.guild.id)}
         )
+        self.client.db.generator_cache.clear()
+        self.client.db.get_generators_cache.clear()
+        self.client.db.generated_channel_cache.clear()
 
         await interaction.response.send_message(
             f"Deleted {deleted} generator channels from the database"
