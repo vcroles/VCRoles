@@ -41,6 +41,8 @@ def main():
         parser.error("Grafana must bind to loopback or a Tailscale IPv4 address")
     env_path = ROOT / ".env"
     if args.upgrade_otlp_auth:
+        # Repair permissions even when credentials already exist or are partial.
+        os.chmod(env_path, 0o600)
         existing = dict(
             line.split("=", 1)
             for line in env_path.read_text().splitlines()
@@ -55,7 +57,6 @@ def main():
             raise SystemExit(
                 "Incomplete collector credentials; resolve the private .env manually"
             )
-        os.chmod(env_path, 0o600)
         with env_path.open("a") as stream:
             stream.write(
                 "\n" + "".join(f"{key}={value}\n" for key, value in credentials.items())

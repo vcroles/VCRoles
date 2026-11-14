@@ -102,7 +102,7 @@ def main():
     bucket = "vcroles-quota-" + secrets.token_hex(4)
     s3("PUT", bucket)
     try:
-        command = 'rc alias set local http://s3:9000 "$S3_ROOT_ACCESS_KEY" "$S3_ROOT_SECRET_KEY" >/dev/null && rc bucket quota set "local/$PROBE_BUCKET" 1M'
+        command = 'export RC_HOST_local="http://$S3_ROOT_ACCESS_KEY:$S3_ROOT_SECRET_KEY@s3:9000"; rc bucket quota set "local/$PROBE_BUCKET" 1M'
         result = subprocess.run(
             [
                 "sudo",

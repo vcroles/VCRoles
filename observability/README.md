@@ -88,6 +88,12 @@ services, and verifies synthetic OTLP data. Rerunning the helper preserves the
 generated credentials and data. Configuration changes can recreate only this
 project's services; never use it as a way to manage the Pelican bot.
 
+Storage bootstrap passes backend credentials to `rc` as an in-memory IAM archive
+over stdin and uses a process-only environment alias for root authentication.
+Credentials never enter CLI arguments or a temporary archive file. To rerun just
+this step, use `sudo -n python3 scripts/bootstrap.py`; invoking the Compose
+bootstrap service directly requires the private archive on stdin.
+
 For a deployment initialized before OTLP authentication was added, first run:
 
 ```sh

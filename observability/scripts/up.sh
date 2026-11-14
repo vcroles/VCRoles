@@ -13,7 +13,7 @@ def ready():
     return True
 eventually("S3 ready", ready, timeout=120)
 PY
-docker compose run --rm bootstrap
+python3 scripts/bootstrap.py
 python3 scripts/verify_storage.py
 docker compose up -d
 python3 scripts/verify.py

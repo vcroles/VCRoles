@@ -22,9 +22,6 @@ services:
       HOME: /tmp
       S3_ROOT_ACCESS_KEY: ${S3_ROOT_ACCESS_KEY:?Run scripts/init.py first}
       S3_ROOT_SECRET_KEY: ${S3_ROOT_SECRET_KEY:?Run scripts/init.py first}
-      LOKI_S3_SECRET_KEY: ${LOKI_S3_SECRET_KEY:?Run scripts/init.py first}
-      TEMPO_S3_SECRET_KEY: ${TEMPO_S3_SECRET_KEY:?Run scripts/init.py first}
-      MIMIR_S3_SECRET_KEY: ${MIMIR_S3_SECRET_KEY:?Run scripts/init.py first}
     volumes:
       - ./scripts/bootstrap.sh:/bootstrap.sh:ro
       - ./policies:/policies:ro

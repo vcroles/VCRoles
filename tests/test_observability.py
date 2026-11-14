@@ -2,10 +2,12 @@ import importlib.util
 import io
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import types
 import unittest
+import zipfile
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
@@ -48,8 +50,10 @@ class CollectorCredentialTests(unittest.TestCase):
         self.assertNotIn(values["OTLP_PASSWORD"], output)
         self.assertNotIn(values["OTLP_HTPASSWD"], output)
         self.assertEqual(env.stat().st_mode & 0o777, 0o600)
+        os.chmod(env, 0o644)
         self.upgrade()
         self.assertEqual(env.read_text(), result)
+        self.assertEqual(env.stat().st_mode & 0o777, 0o600)
 
     def test_partial_credentials_are_not_silently_replaced(self):
         env = self.root / ".env"
@@ -58,6 +62,117 @@ class CollectorCredentialTests(unittest.TestCase):
         with self.assertRaises(SystemExit):
             self.upgrade()
         self.assertEqual(env.read_text(), original)
+        self.assertEqual(env.stat().st_mode & 0o777, 0o600)
+
+
+class StorageBootstrapTests(unittest.TestCase):
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.root = Path(self.directory.name)
+        self.scripts = Path(__file__).resolve().parents[1] / "observability/scripts"
+        self.config = {
+            f"{service.upper()}_S3_SECRET_KEY": f"test-only-{service}-" * 3
+            for service in ("loki", "tempo", "mimir")
+        }
+        helper = types.ModuleType("verify")
+        helper.ROOT = self.root
+        helper.settings = lambda: self.config
+        spec = importlib.util.spec_from_file_location(
+            "storage_bootstrap", self.scripts / "bootstrap.py"
+        )
+        self.module = importlib.util.module_from_spec(spec)
+        with patch.dict(sys.modules, {"verify": helper}):
+            spec.loader.exec_module(self.module)
+
+    def test_credentials_travel_only_in_stdin_archive(self):
+        with (
+            patch.object(self.module.subprocess, "run") as run,
+            redirect_stdout(io.StringIO()) as output,
+        ):
+            run.return_value.returncode = 0
+            self.module.main()
+        argv = run.call_args.args[0]
+        self.assertEqual(argv, ["docker", "compose", "run", "--rm", "-T", "bootstrap"])
+        with zipfile.ZipFile(io.BytesIO(run.call_args.kwargs["input"])) as archive:
+            self.assertEqual(archive.namelist(), ["iam-assets/users.json"])
+            users = json.loads(archive.read("iam-assets/users.json"))
+        self.assertEqual(set(users), {"vcroles-loki", "vcroles-tempo", "vcroles-mimir"})
+        for service in ("loki", "tempo", "mimir"):
+            secret = self.config[f"{service.upper()}_S3_SECRET_KEY"]
+            self.assertEqual(users[f"vcroles-{service}"]["secretKey"], secret)
+            self.assertEqual(users[f"vcroles-{service}"]["status"], "enabled")
+            self.assertNotIn(secret, str(argv) + output.getvalue())
+        self.assertFalse(list(self.root.iterdir()))
+
+    def test_bootstrap_failure_does_not_echo_cli_output(self):
+        secret = self.config["LOKI_S3_SECRET_KEY"]
+        with (
+            patch.object(self.module.subprocess, "run") as run,
+            redirect_stdout(io.StringIO()) as output,
+        ):
+            run.return_value.returncode = 1
+            run.return_value.stdout = secret.encode()
+            with self.assertRaises(SystemExit) as failure:
+                self.module.main()
+        self.assertNotIn(secret, str(failure.exception) + output.getvalue())
+
+    def test_shell_never_expands_credentials_into_rc_arguments(self):
+        # Exercise shell expansion and stdin forwarding, rather than examining
+        # the script text. The CLI shim records only arguments and archive keys.
+        shim = self.root / "rc"
+        shim.write_text(
+            f"#!{sys.executable}\n"
+            "import io, json, os, sys, zipfile\n"
+            "record = {'args': sys.argv[1:]}\n"
+            "assert os.environ['RC_HOST_local'] == "
+            "'http://test-root-access:test-root-secret@s3:9000'\n"
+            "if sys.argv[1:4] == ['admin', 'iam', 'import']:\n"
+            "    with zipfile.ZipFile(io.BytesIO(sys.stdin.buffer.read())) as archive:\n"
+            "        record['users'] = sorted(json.loads(archive.read('iam-assets/users.json')))\n"
+            "with open(os.environ['CAPTURE'], 'a') as stream:\n"
+            "    stream.write(json.dumps(record) + '\\n')\n"
+        )
+        shim.chmod(0o700)
+        capture = self.root / "capture.jsonl"
+        result = subprocess.run(
+            ["/bin/sh", str(self.scripts / "bootstrap.sh")],
+            input=self.module.user_archive(self.config),
+            env={
+                **os.environ,
+                "PATH": f"{self.root}{os.pathsep}{os.environ['PATH']}",
+                "CAPTURE": str(capture),
+                "S3_ROOT_ACCESS_KEY": "test-root-access",
+                "S3_ROOT_SECRET_KEY": "test-root-secret",
+            },
+            capture_output=True,
+            check=True,
+            timeout=10,
+        )
+        records = [json.loads(line) for line in capture.read_text().splitlines()]
+        self.assertEqual(
+            records[0]["args"],
+            [
+                "admin",
+                "iam",
+                "import",
+                "local",
+                "--file",
+                "-",
+                "--conflict",
+                "overwrite",
+                "--yes",
+            ],
+        )
+        self.assertEqual(
+            records[0]["users"], ["vcroles-loki", "vcroles-mimir", "vcroles-tempo"]
+        )
+        self.assertEqual(
+            sum(record["args"][:2] == ["bucket", "quota"] for record in records), 3
+        )
+        visible = capture.read_text() + result.stdout.decode() + result.stderr.decode()
+        for secret in ["test-root-access", "test-root-secret", *self.config.values()]:
+            self.assertNotIn(secret, visible)
 
 
 class MonitoringConfigurationTests(unittest.TestCase):
