@@ -1,0 +1,5 @@
+.env
+data/
+validation-results.json
+recovery-results.json
+__pycache__/
