@@ -73,3 +73,43 @@ Running the bot is straightforward. You simply run the `bot.py` file:
 ```bash
 python bot.py
 ```
+
+## Persistent logs
+
+Logs are appended immediately to `logs/vcroles.jsonl`. Generator creation and
+cleanup operations also write to `logs/generator-audit.jsonl`. These files contain
+one JSON record per line, with UTC timestamps, a process run ID, the Git revision,
+operation context, and exception tracebacks. TTS message text and nickname values
+are not added to the new diagnostic events.
+
+Diagnostics include shard ready/disconnect/resume events, readiness changes
+observed by `/status` polls, shutdown requests and cleanup, member-edit and
+database failures, and TTS lifecycle/FFmpeg failures. Generator audit events
+include operation IDs, channel IDs, cleanup reasons, and deletion outcomes.
+Revisions include `+dirty` when tracked local changes are present at startup.
+
+The main log rotates at 20 MiB and the audit log at 5 MiB; each retains ten
+backups (`.1` through `.10`). Restarts append to the current files instead of
+truncating them. Old `bot.log` and `discord.log` files are left untouched, but are
+no longer written. The owner-only logs command uses the new main log.
+
+Every record is flushed before the logging call returns. Error records and all
+audit records additionally use `fsync`. A generator delete intent must be
+successfully persisted before a delete request is sent to Discord. The outcome
+is recorded separately; an intent without an outcome means the result needs
+investigation. Creation operation IDs are also included in Discord's audit-log
+reason, allowing correlation if a creation response is lost.
+
+Set `VCROLES_LOG_DIR` to choose another directory. Keep that directory on the
+container's persistent volume if containers may be replaced. Logging setup fails
+if the files cannot be opened. Later main-log write failures are reported to
+stderr; audit write failures stop the affected generator operation. Rotation
+bounds storage use, so copy files elsewhere if longer retention is needed.
+
+These are local file guarantees: they do not provide remote backups or make a
+Discord API request and a local audit record a single transaction. A hard kill
+can leave a partial final record; the next startup separates it from subsequent
+records without discarding the existing history.
+Host-triggered restarts, out-of-memory kills, and `SIGKILL` still require the
+hosting panel's exit code and restart metadata; the process cannot log after it
+has been killed.

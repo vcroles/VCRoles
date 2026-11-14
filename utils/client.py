@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-import datetime
 import logging
+import sys
 from typing import Any
 
 import aiohttp
@@ -31,7 +31,6 @@ class VCRolesClient(commands.AutoShardedBot):
     ):
         self.ar = ar
         self.db = db
-        self.log_queue: list[str] = []
         self.console_log_level = console_log_level
         self.counter_tasks: set[asyncio.Task] = set()
         self.cleanup_task: asyncio.Task | None = None
@@ -62,7 +61,14 @@ class VCRolesClient(commands.AutoShardedBot):
             try:
                 await self.ar.hincrby("counters", name, count)
             except Exception as error:
-                self.log(LogLevel.ERROR, f"Counter update failed: {error}")
+                self.log(
+                    LogLevel.ERROR,
+                    "Counter update failed",
+                    error=error,
+                    event="counter_update_failed",
+                    counter=name,
+                    count=count,
+                )
 
         task = self.loop.create_task(increment())
         self.counter_tasks.add(task)
@@ -76,6 +82,16 @@ class VCRolesClient(commands.AutoShardedBot):
             self.add_view(Interface(self.db))
             self.persistent_views_added = True
 
+        logger.info(
+            "Bot ready",
+            extra={
+                "event": "bot_ready",
+                "context": {
+                    "guild_count": len(self.guilds),
+                    "shard_count": self.shard_count,
+                },
+            },
+        )
         print(f"Logged in as {self.user}")
         print(f"Bot is in {len(self.guilds)} guilds.")
 
@@ -93,10 +109,46 @@ class VCRolesClient(commands.AutoShardedBot):
             shard_id,
             self.cleanup_task is not None,
             self.db.db.is_connected(),
+            extra={
+                "event": "shard_disconnected",
+                "context": {
+                    "shard_id": shard_id,
+                    "closing": self.cleanup_task is not None,
+                    "database_connected": self.db.db.is_connected(),
+                },
+            },
+        )
+
+    async def on_shard_ready(self, shard_id: int) -> None:
+        logger.info(
+            "Shard %s ready with a new session",
+            shard_id,
+            extra={"event": "shard_ready", "context": {"shard_id": shard_id}},
         )
 
     async def on_shard_resumed(self, shard_id: int) -> None:
-        logger.info("Shard %s resumed its existing session", shard_id)
+        logger.info(
+            "Shard %s resumed its existing session",
+            shard_id,
+            extra={"event": "shard_resumed", "context": {"shard_id": shard_id}},
+        )
+
+    async def on_error(self, event_method: str, *args, **kwargs):
+        context = {"discord_event": event_method}
+        if args and isinstance(args[0], discord.Member):
+            member = args[0]
+            context.update(
+                guild_id=member.guild.id,
+                member_id=member.id,
+                shard_id=member.guild.shard_id,
+            )
+        self.log(
+            LogLevel.ERROR,
+            "Unhandled Discord event error",
+            error=sys.exception(),
+            event="discord_event_failed",
+            **context,
+        )
 
     async def on_guild_join(self, guild: discord.Guild):
         self.incr_counter("guilds_join")
@@ -135,13 +187,7 @@ class VCRolesClient(commands.AutoShardedBot):
                 logger.info("Discord cleanup finished; disconnecting the database")
                 await self.db.disconnect()
             finally:
-                try:
-                    await self.ar.aclose()
-                finally:
-                    if self.log_queue:
-                        with open("bot.log", "a") as log_file:
-                            log_file.write("\n" + "\n".join(self.log_queue))
-                        self.log_queue.clear()
+                await self.ar.aclose()
         logger.info("Bot resource cleanup finished")
 
     async def setup_hook(self) -> None:
@@ -152,23 +198,37 @@ class VCRolesClient(commands.AutoShardedBot):
 
         return await super().setup_hook()
 
-    def log(self, level: LogLevel, message: str) -> None:
-        """Logs a message to the console"""
-        timestamp = datetime.datetime.now(datetime.timezone.utc).strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
-        if level <= self.console_log_level:
-            print(
-                f"\x1b[30;1m{timestamp}\x1b[0m {level}{(8 - len(level.name)) * ' '} \x1b[35minternal.bot\x1b[0m {message}"
-            )
-
-        self.log_queue.append(
-            timestamp
-            + " "
-            + level.name
-            + (8 - len(level.name)) * " "
-            + " internal.bot "
-            + message
+    def log(
+        self,
+        level: LogLevel,
+        message: str,
+        *,
+        error: BaseException | None = None,
+        event: str = "application_log",
+        **context,
+    ) -> None:
+        """Write through the persistent logging handlers immediately."""
+        levels = {
+            LogLevel.NONE: logging.INFO,
+            LogLevel.ERROR: logging.ERROR,
+            LogLevel.INFO: logging.INFO,
+            LogLevel.DEBUG: logging.DEBUG,
+        }
+        if error is None and level == LogLevel.ERROR:
+            error = sys.exception()
+        logging.getLogger("internal.bot").log(
+            levels[level],
+            message,
+            extra={
+                "event": event,
+                "context": context,
+                "console_min_level": logging.CRITICAL + 1
+                if self.console_log_level == LogLevel.NONE
+                else levels[self.console_log_level],
+            },
+            exc_info=(type(error), error, error.__traceback__)
+            if error is not None
+            else None,
         )
 
     async def on_app_command_completion(

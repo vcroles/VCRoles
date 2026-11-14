@@ -1,3 +1,5 @@
+import logging
+
 from aiohttp import web
 from discord.ext import commands
 
@@ -10,10 +12,26 @@ class Status(commands.Cog):
         self.client = client
         self.app = web.Application()
         self.runner = web.AppRunner(self.app)
+        self.last_status: int | None = None
 
         async def status(request):
-            if self.client.is_ready() is False:
-                return web.Response(status=503)
+            code = 200 if self.client.is_ready() else 503
+            if code != self.last_status:
+                logging.getLogger(__name__).log(
+                    logging.INFO if code == 200 else logging.WARNING,
+                    "Health endpoint status changed to %s",
+                    code,
+                    extra={
+                        "event": "health_status_changed",
+                        "context": {
+                            "status": code,
+                            "previous_status": self.last_status,
+                        },
+                    },
+                )
+                self.last_status = code
+            if code == 503:
+                return web.Response(status=code)
             return web.Response(status=200, text="OK")
 
         self.webserver_port = WEBSERVER_PORT

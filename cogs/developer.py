@@ -6,6 +6,7 @@ from discord.enums import EntitlementOwnerType
 from discord.ext import commands
 
 from utils.client import VCRolesClient
+from utils.logging import log_paths
 from utils.types import LogLevel
 
 
@@ -95,7 +96,7 @@ class Dev(commands.Cog):
     @commands.is_owner()
     async def logs(self, ctx: commands.Context[Any]):
         await ctx.send("Fetching Logs...")
-        await ctx.channel.send(file=discord.File("discord.log"))
+        await ctx.channel.send(file=discord.File(log_paths()[0]))
 
     @commands.command(aliases=["sync"])
     @commands.is_owner()

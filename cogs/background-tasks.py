@@ -15,23 +15,17 @@ class BackgroundTasks(commands.Cog):
         self.client = client
         self.save_guild_count.start()
         self.reset_limits.start()
-        self.log_queue.start()
-        self.rotate_log_file.start()
         self.update_topgg.start()
 
     async def cog_unload(self) -> None:
         self.save_guild_count.cancel()
         self.reset_limits.cancel()
-        self.log_queue.cancel()
-        self.rotate_log_file.cancel()
         self.update_topgg.cancel()
         running = [
             loop.get_task()
             for loop in (
                 self.save_guild_count,
                 self.reset_limits,
-                self.log_queue,
-                self.rotate_log_file,
                 self.update_topgg,
             )
         ]
@@ -75,32 +69,6 @@ class BackgroundTasks(commands.Cog):
 
     @reset_limits.before_loop
     async def before_reset_limits(self):
-        await self.client.wait_until_ready()
-
-    @tasks.loop(seconds=30)
-    async def log_queue(self):
-        if self.client.log_queue:
-            with open("bot.log", "a") as f:
-                f.write("\n" + "\n".join(self.client.log_queue))
-                self.client.log_queue.clear()
-
-    @log_queue.before_loop
-    async def before_log_queue(self):
-        await self.client.wait_until_ready()
-
-    @tasks.loop(time=dt.time(hour=0, minute=0))
-    async def rotate_log_file(self):
-        with open("bot.log", "r") as f:
-            data = f.read()
-
-        with open("bot.old.log", "w") as f:
-            f.write(data)
-
-        with open("bot.log", "w") as f:
-            f.write("")
-
-    @rotate_log_file.before_loop
-    async def before_rotate_log_file(self):
         await self.client.wait_until_ready()
 
     @tasks.loop(seconds=900)

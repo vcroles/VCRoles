@@ -13,3 +13,4 @@ migration.py
 data/
 typings/
 .DS_Store
+/logs/*.jsonl*

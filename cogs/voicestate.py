@@ -1,10 +1,13 @@
 import asyncio
 import copy
 import time
+from dataclasses import dataclass
 from typing import Collection, Tuple
+from weakref import WeakValueDictionary
 
 import discord
 import discord.utils as disutils
+from cachetools import TTLCache
 from discord.ext import commands, tasks
 from discord.object import Object
 from prisma.enums import LinkType
@@ -20,25 +23,142 @@ from voicestate.generator import Generator
 from voicestate.logging import Logging
 
 
+@dataclass(frozen=True)
+class NicknameUpdate:
+    expected_name: str
+    remove_suffix: str = ""
+    add_suffix: str = ""
+    permanent_suffix: str = ""
+
+    def apply(self, name: str) -> str:
+        # Apply suffix changes to the name fetched under the member lock.
+        for suffix in (self.remove_suffix, self.add_suffix):
+            if suffix:
+                name = name.removesuffix(f" {suffix.strip()}")
+        base = name
+        if self.permanent_suffix and not name.endswith(
+            f" {self.permanent_suffix.strip()}"
+        ):
+            name += f" {self.permanent_suffix.strip()}"
+        if self.add_suffix:
+            name += f" {self.add_suffix.strip()}"
+        return name if len(name) <= 32 else base
+
+
 class VoiceState(commands.Cog):
+    SHUTDOWN_TIMEOUT = 30
+    CANCELLATION_GRACE = 5
+
     def __init__(self, client: VCRolesClient):
         self.client = client
+        self.edit_tasks: set[asyncio.Task] = set()
+        self.event_tasks: set[asyncio.Task] = set()
+        self.unloading = False
+        self.member_locks: WeakValueDictionary[tuple[int, int], asyncio.Lock] = (
+            WeakValueDictionary()
+        )
+        self.bot_nicknames: TTLCache[tuple[int, int], str] = TTLCache(2**15, 3600)
         self.generator = Generator(client)
         self.logging = Logging(client)
         self.member_queues: dict[
             int,
-            list[Tuple[discord.Member, list[discord.Role], list[discord.Role], str]],
+            list[
+                Tuple[
+                    discord.Member,
+                    list[discord.Role],
+                    list[discord.Role],
+                    NicknameUpdate,
+                ]
+            ],
         ] = {}
         self.process_queues.start()
+        self.reconcile_generators.start()
 
     async def cog_unload(self):
+        self.unloading = True
         self.process_queues.cancel()
-        await self.logging.stop()
+        self.reconcile_generators.cancel()
+        loop_tasks = [
+            task
+            for task in (
+                self.process_queues.get_task(),
+                self.reconcile_generators.get_task(),
+            )
+            if task is not None
+        ]
+        await asyncio.gather(*loop_tasks, return_exceptions=True)
 
-        # Finish processing any remaining member queues
-        await self.process_queues()
+        async def drain():
+            try:
+                await asyncio.gather(*list(self.event_tasks), return_exceptions=True)
+                await self.process_queues()
+                await asyncio.gather(*list(self.edit_tasks), return_exceptions=True)
+            finally:
+                async with asyncio.timeout(self.CANCELLATION_GRACE):
+                    await self.logging.stop()
+
+        draining = asyncio.create_task(drain())
+        _, pending = await asyncio.wait({draining}, timeout=self.SHUTDOWN_TIMEOUT)
+        if pending:
+            self.client.log(
+                LogLevel.ERROR,
+                "Voice-state shutdown timed out; cancelling pending work",
+                event="voice_state_shutdown_timeout",
+                event_tasks=len(self.event_tasks),
+                edit_tasks=len(self.edit_tasks),
+            )
+            # The normal drain may still be waiting on events and never reach
+            # its edit phase. Cancel both sets independently of that phase.
+            workers = set(self.event_tasks) | set(self.edit_tasks)
+            draining.cancel()
+            for task in workers:
+                if not task.done() and not task.cancelling():
+                    task.cancel()
+            _, pending = await asyncio.wait(
+                {draining, *workers}, timeout=self.CANCELLATION_GRACE
+            )
+            for task in pending:
+                task.cancel()
+        else:
+            workers = set()
+        result = await asyncio.gather(draining, *workers, return_exceptions=True)
+        if isinstance(result[0], Exception):
+            self.client.log(
+                LogLevel.ERROR,
+                "Voice-state shutdown failed",
+                error=result[0],
+                event="voice_state_shutdown_failed",
+            )
 
         await super().cog_unload()
+
+    @tasks.loop(minutes=5)
+    async def reconcile_generators(self):
+        try:
+            await self.generator.reconcile()
+        except Exception as error:
+            self.client.log(
+                LogLevel.ERROR,
+                "Generator reconciliation failed",
+                error=error,
+                event="generator_reconcile_loop_failed",
+            )
+
+    @reconcile_generators.before_loop
+    async def before_reconcile_generators(self):
+        await self.client.wait_until_ready()
+
+    @commands.Cog.listener()
+    async def on_shard_disconnect(self, shard_id: int):
+        self.generator.shard_disconnected(shard_id)
+
+    @commands.Cog.listener()
+    async def on_shard_ready(self, shard_id: int):
+        self.generator.shard_available(shard_id)
+
+    @commands.Cog.listener()
+    async def on_shard_resumed(self, shard_id: int):
+        self.generator.shard_available(shard_id)
 
     @tasks.loop(seconds=5)
     async def process_queues(self):
@@ -66,18 +186,18 @@ class VoiceState(commands.Cog):
                             "member": member,
                             "to_add": [],
                             "to_remove": [],
-                            "new_nick": new_nick,
+                            "nickname_updates": [],
                         }
                     member_changes[member.id]["member"] = member
                     member_changes[member.id]["to_add"].extend(to_add)
                     member_changes[member.id]["to_remove"].extend(to_remove)
-                    member_changes[member.id]["new_nick"] = new_nick
+                    member_changes[member.id]["nickname_updates"].append(new_nick)
 
                 for _member_id, change in member_changes.items():
                     member = change["member"]
                     to_add = change["to_add"]
                     to_remove = change["to_remove"]
-                    new_nick = change["new_nick"]
+                    nickname_updates = change["nickname_updates"]
 
                     # Find the intersection of to_add and to_remove without using sets (since this removes duplicates)
                     # We need to do this to handle if a user is spam switching between channels
@@ -91,16 +211,24 @@ class VoiceState(commands.Cog):
                             role_idx += 1
 
                     # Create a task for handling user edit
-                    self.client.loop.create_task(
+                    task = self.client.loop.create_task(
                         self.handle_member_edit(
-                            member, set(to_add), set(to_remove), new_nick
+                            member, set(to_add), set(to_remove), nickname_updates
                         )
                     )
+                    self.edit_tasks.add(task)
+                    task.add_done_callback(self.edit_tasks.discard)
 
                     processed_members += 1
 
         except Exception as e:
-            self.client.log(LogLevel.ERROR, f"Error processing member queues: {e}")
+            self.client.log(
+                LogLevel.ERROR,
+                "Error processing member queues",
+                error=e,
+                event="member_queue_failed",
+                processed_members=processed_members,
+            )
 
         end_time = time.perf_counter()
         self.client.log(
@@ -117,7 +245,7 @@ class VoiceState(commands.Cog):
         member: discord.Member,
         to_add: list[discord.Role],
         to_remove: list[discord.Role],
-        new_nick: str,
+        new_nick: NicknameUpdate,
     ):
         if member.guild.id not in self.member_queues:
             self.member_queues[member.guild.id] = []
@@ -127,6 +255,35 @@ class VoiceState(commands.Cog):
 
     @commands.Cog.listener()
     async def on_voice_state_update(
+        self,
+        member: discord.Member,
+        before: discord.VoiceState,
+        after: discord.VoiceState,
+    ):
+        if self.unloading:
+            return
+        task = asyncio.current_task()
+        if task is not None:
+            self.event_tasks.add(task)
+        try:
+            await self.handle_voice_state_update(member, before, after)
+        except Exception as error:
+            self.client.log(
+                LogLevel.ERROR,
+                "Voice state update failed",
+                error=error,
+                event="voice_state_update_failed",
+                guild_id=member.guild.id,
+                shard_id=member.guild.shard_id,
+                member_id=member.id,
+                before_channel_id=before.channel.id if before.channel else None,
+                after_channel_id=after.channel.id if after.channel else None,
+            )
+        finally:
+            if task is not None:
+                self.event_tasks.discard(task)
+
+    async def handle_voice_state_update(
         self,
         member: discord.Member,
         before: discord.VoiceState,
@@ -257,10 +414,59 @@ class VoiceState(commands.Cog):
         member: discord.Member,
         to_add: Collection[discord.abc.Snowflake],
         to_remove: Collection[discord.abc.Snowflake],
-        new_user_nickname: str,
+        nickname_updates: Collection[NicknameUpdate],
     ):
+        key = (member.guild.id, member.id)
+        lock = self.member_locks.get(key)
+        if lock is None:
+            lock = asyncio.Lock()
+            self.member_locks[key] = lock
+        async with lock:
+            try:
+                await self._handle_member_edit(
+                    member, to_add, to_remove, nickname_updates
+                )
+            except Exception as error:
+                self.client.log(
+                    LogLevel.ERROR,
+                    "Member update failed",
+                    error=error,
+                    event="member_update_failed",
+                    guild_id=member.guild.id,
+                    shard_id=member.guild.shard_id,
+                    member_id=member.id,
+                    phase="fetch_or_dispatch",
+                )
+
+    async def _handle_member_edit(
+        self,
+        member: discord.Member,
+        to_add: Collection[discord.abc.Snowflake],
+        to_remove: Collection[discord.abc.Snowflake],
+        nickname_updates: Collection[NicknameUpdate],
+    ):
+        key = (member.guild.id, member.id)
+        nickname_requested = any(
+            update.remove_suffix or update.add_suffix or update.permanent_suffix
+            for update in nickname_updates
+        )
+        if len(to_add) + len(to_remove) > 1 or nickname_requested:
+            member = await member.guild.fetch_member(member.id)
+
+        expected_names = {update.expected_name for update in nickname_updates}
+        bot_name = self.bot_nicknames.get(key)
+        name_is_current = (
+            member.display_name in expected_names or member.display_name == bot_name
+        )
+        new_user_nickname = member.display_name
+        if nickname_requested and name_is_current:
+            for update in nickname_updates:
+                new_user_nickname = update.apply(new_user_nickname)
+
         changing_username = (
-            new_user_nickname != member.display_name
+            nickname_requested
+            and name_is_current
+            and new_user_nickname != member.display_name
             # The owner can't have their nickname changed
             and member.guild.owner_id != member.id
             # Check we have permission to change the nickname
@@ -297,10 +503,19 @@ class VoiceState(commands.Cog):
                     roles=new_roles,
                     reason="Joined Voice Channel",
                 )
+                self.bot_nicknames[key] = new_nick
             except Exception as e:
                 self.client.log(
-                    LogLevel.DEBUG,
-                    f"Failed to edit [username+-roles] member {member.id} ({member.display_name}): {e}",
+                    LogLevel.ERROR,
+                    "Member update failed",
+                    error=e,
+                    event="member_update_failed",
+                    guild_id=member.guild.id,
+                    shard_id=member.guild.shard_id,
+                    member_id=member.id,
+                    action="username+-roles",
+                    add_role_ids=[role.id for role in to_add],
+                    remove_role_ids=[role.id for role in to_remove],
                 )
         elif changing_username:
             # Use the member edit endpoint to update the nickname
@@ -309,10 +524,19 @@ class VoiceState(commands.Cog):
                     nick=new_nick,
                     reason="Joined Voice Channel",
                 )
+                self.bot_nicknames[key] = new_nick
             except Exception as e:
                 self.client.log(
-                    LogLevel.DEBUG,
-                    f"Failed to edit [username] member {member.id} ({member.display_name}): {e}",
+                    LogLevel.ERROR,
+                    "Member update failed",
+                    error=e,
+                    event="member_update_failed",
+                    guild_id=member.guild.id,
+                    shard_id=member.guild.shard_id,
+                    member_id=member.id,
+                    action="username",
+                    add_role_ids=[role.id for role in to_add],
+                    remove_role_ids=[role.id for role in to_remove],
                 )
         elif to_add or to_remove:
             if len(to_add) + len(to_remove) > 1:
@@ -324,8 +548,16 @@ class VoiceState(commands.Cog):
                     )
                 except Exception as e:
                     self.client.log(
-                        LogLevel.DEBUG,
-                        f"Failed to edit [+-roles] member {member.id} ({member.display_name}): {e}",
+                        LogLevel.ERROR,
+                        "Member update failed",
+                        error=e,
+                        event="member_update_failed",
+                        guild_id=member.guild.id,
+                        shard_id=member.guild.shard_id,
+                        member_id=member.id,
+                        action="+-roles",
+                        add_role_ids=[role.id for role in to_add],
+                        remove_role_ids=[role.id for role in to_remove],
                     )
             elif len(to_add) == 1:
                 # Use the add member role endpoint to add roles
@@ -333,8 +565,16 @@ class VoiceState(commands.Cog):
                     await member.add_roles(*to_add, reason="Joined Voice Channel")
                 except Exception as e:
                     self.client.log(
-                        LogLevel.DEBUG,
-                        f"Failed to edit [+roles] member {member.id} ({member.display_name}): {e}",
+                        LogLevel.ERROR,
+                        "Member update failed",
+                        error=e,
+                        event="member_update_failed",
+                        guild_id=member.guild.id,
+                        shard_id=member.guild.shard_id,
+                        member_id=member.id,
+                        action="+roles",
+                        add_role_ids=[role.id for role in to_add],
+                        remove_role_ids=[role.id for role in to_remove],
                     )
             elif len(to_remove) == 1:
                 # Use the remove member role endpoint to remove roles
@@ -342,8 +582,16 @@ class VoiceState(commands.Cog):
                     await member.remove_roles(*to_remove, reason="Joined Voice Channel")
                 except Exception as e:
                     self.client.log(
-                        LogLevel.DEBUG,
-                        f"Failed to edit [-roles] member {member.id} ({member.display_name}): {e}",
+                        LogLevel.ERROR,
+                        "Member update failed",
+                        error=e,
+                        event="member_update_failed",
+                        guild_id=member.guild.id,
+                        shard_id=member.guild.shard_id,
+                        member_id=member.id,
+                        action="-roles",
+                        add_role_ids=[role.id for role in to_add],
+                        remove_role_ids=[role.id for role in to_remove],
                     )
         else:
             # No changes needed
@@ -426,15 +674,16 @@ class VoiceState(commands.Cog):
 
             to_remove.append(role)
 
-        addable_suffix = f"{suffix_data.permanent_suffix + ' ' if suffix_data.permanent_suffix else ''}{suffix_data.suffix}"
-        if not member.display_name.endswith(addable_suffix):
-            new_user_nickname = f"{member.display_name} {addable_suffix}"
-            if len(new_user_nickname) > 32:
-                new_user_nickname = member.display_name
-        else:
-            new_user_nickname = member.display_name
-
-        await self.queue_member_update(member, to_add, to_remove, new_user_nickname)
+        await self.queue_member_update(
+            member,
+            to_add,
+            to_remove,
+            NicknameUpdate(
+                member.display_name,
+                add_suffix=suffix_data.suffix,
+                permanent_suffix=suffix_data.permanent_suffix,
+            ),
+        )
 
         self.client.incr_role_counter("added", len(addable_roles))
         self.client.incr_role_counter("removed", len(removeable_roles))
@@ -523,10 +772,13 @@ class VoiceState(commands.Cog):
 
             to_remove.append(role)
 
-        new_user_nickname = fetched_member.display_name.removesuffix(suffix_data.suffix)
-
         await self.queue_member_update(
-            fetched_member, to_add, to_remove, new_user_nickname
+            fetched_member,
+            to_add,
+            to_remove,
+            NicknameUpdate(
+                fetched_member.display_name, remove_suffix=suffix_data.suffix
+            ),
         )
 
         self.client.incr_role_counter("added", len(addable_roles))
@@ -643,20 +895,16 @@ class VoiceState(commands.Cog):
 
             to_remove.append(role)
 
-        removed_leave_suffix = fetched_member.display_name.removesuffix(
-            leave_suffix_data.suffix
-        )
-        addable_suffix = f" {join_suffix_data.permanent_suffix + ' ' if join_suffix_data.permanent_suffix else ''}{join_suffix_data.suffix}"
-        if len(removed_leave_suffix + addable_suffix) > 32:
-            new_user_nickname = removed_leave_suffix
-        else:
-            if not removed_leave_suffix.endswith(addable_suffix):
-                new_user_nickname = removed_leave_suffix + addable_suffix
-            else:
-                new_user_nickname = removed_leave_suffix
-
         await self.queue_member_update(
-            fetched_member, to_add, to_remove, new_user_nickname
+            fetched_member,
+            to_add,
+            to_remove,
+            NicknameUpdate(
+                fetched_member.display_name,
+                remove_suffix=leave_suffix_data.suffix,
+                add_suffix=join_suffix_data.suffix,
+                permanent_suffix=join_suffix_data.permanent_suffix,
+            ),
         )
 
         self.client.incr_role_counter("added", len(addable_roles))

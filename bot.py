@@ -47,7 +47,14 @@ async def on_command_error(
     else:
         client.log(
             LogLevel.ERROR,
-            f"Command Error: g/{interaction.guild_id} {error}",
+            "Application command failed",
+            error=getattr(error, "original", error),
+            event="command_failed",
+            guild_id=interaction.guild_id,
+            member_id=interaction.user.id,
+            channel_id=interaction.channel_id,
+            interaction_id=interaction.id,
+            command=getattr(interaction.command, "qualified_name", None),
         )
         message = "Something went wrong while running this command. Please try again."
 
@@ -57,7 +64,14 @@ async def on_command_error(
         else:
             await interaction.response.send_message(message, ephemeral=True)
     except discord.HTTPException as response_error:
-        client.log(LogLevel.ERROR, f"Could not send command error: {response_error}")
+        client.log(
+            LogLevel.ERROR,
+            "Could not send command error",
+            error=response_error,
+            event="command_error_response_failed",
+            interaction_id=interaction.id,
+            guild_id=interaction.guild_id,
+        )
 
 
 async def main():
@@ -82,9 +96,6 @@ async def main():
         with open("guilds.csv", "w") as f:
             f.write("datetime,guilds,shards\n")
 
-    with open("bot.log", "w") as f:
-        f.write("")
-
     async with client:
         # Adding Extensions
 
@@ -108,4 +119,15 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logging.getLogger(__name__).info("Bot process interrupted")
+    except Exception:
+        logging.getLogger(__name__).exception(
+            "Bot process failed during startup, operation, or cleanup",
+            extra={"event": "process_failed"},
+        )
+        raise
+    finally:
+        logging.shutdown()
