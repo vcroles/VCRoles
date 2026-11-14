@@ -3,6 +3,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from utils.client import VCRolesClient
+from utils.telemetry import observed
 
 
 class Ping(commands.Cog):
@@ -10,6 +11,7 @@ class Ping(commands.Cog):
         self.client = client
 
     @app_commands.command()
+    @observed("command")
     async def ping(self, interaction: discord.Interaction):
         """Used to view the ping of the bot"""
 

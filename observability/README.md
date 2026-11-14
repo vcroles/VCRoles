@@ -213,13 +213,36 @@ exclude `.env`, `data/`, and generated validation evidence.
 
 ## Bot instrumentation
 
-The first instrumentation stage covers shard ready/disconnect/resume traces and
+Instrumentation covers shard ready/disconnect/resume traces and
 counters, readiness and health-request outcomes, per-shard gateway latency,
 event-loop lag, task/guild counts, peak process RSS, database connection state,
 and logical `DatabaseUtils` operation durations/outcomes. Database timing
 includes cache hits; it is not SQL execution timing and does not cover direct
 Prisma calls outside that utility. Span names and metric dimensions are static
 operation names, outcomes, and bounded shard/status values.
+
+Command callback traces use static cog/method names and preserve command schemas.
+They measure callback execution, excluding permission checks before invocation;
+they do not measure the exact acknowledgement time. Member-edit batches have
+independent root traces with up to eight links to the originating voice events,
+plus queue-wait, lock-wait, completion, and backlog measurements. Additional
+source links are counted and omitted. Update counts include every coalesced
+queue entry, while batch spans represent one dispatched edit.
+
+Generator operations have nested lifecycle spans and audit-event counters. TTS
+separates synthesis, voice connection, playback, and cleanup, including a link
+from audio-thread cleanup to its source context. Caught, logged failures mark
+active operations as containing an error; cancellation is recorded separately.
+Generator operation UUIDs are allowed in exported log metadata, never metric
+labels. No user-supplied command arguments, nicknames, or TTS text are exported.
+
+Five Grafana rules cover missing bot telemetry, readiness, database disconnection,
+event-loop delay, and SDK drops. They are provisioned **paused**: no notifications
+are sent and no contact points or routing policies are created. Configure private
+notification routing and review thresholds after production telemetry is enabled,
+then change `isPaused` in the provisioning file and reload it. Do not treat the
+prepared rules as active monitoring until that rollout is complete.
+[Grafana alert provisioning](https://grafana.com/docs/grafana/latest/alerting/set-up/provision-alerting-resources/file-provisioning/).
 
 Copy the collector's `OTLP_USERNAME` and `OTLP_PASSWORD` into the bot's private
 environment as `VCROLES_OTEL_USERNAME` and `VCROLES_OTEL_PASSWORD`. Set
@@ -253,12 +276,15 @@ SDK internal metrics can be disabled with
 `OTEL_PYTHON_SDK_INTERNAL_METRICS_ENABLED=false`.
 Collector requests use dedicated sessions that ignore environment proxies and
 `.netrc`, keeping private credentials on the configured direct connection.
+The SDK permits configurable HTTPS destinations; keeping ingestion private is
+also a deployment requirement, not an outbound firewall enforced by the SDK.
 
-Only structured event names and allowlisted numeric/boolean context fields are
-exported as logs. Raw log messages, SQL/arguments/results, exception messages and
+Only structured event names, allowlisted numeric/boolean context fields, and
+validated generated operation UUIDs are exported as logs. Raw log messages,
+SQL/arguments/results, exception messages and
 tracebacks, tokens, user content, Discord IDs, host names, and command lines are
-excluded. Existing detailed local logs and generator audit persistence remain
+excluded. Existing
+detailed local logs and generator audit persistence remain
 independent; local JSON records gain trace/span IDs when a span is active.
-Custom command, member-edit queue, generator, Redis/HTTP, and TTS instrumentation
-can build on this lifecycle without automatically exporting those libraries'
-request payloads.
+Direct Redis/HTTP attempt instrumentation and server-side database metrics can
+be added without automatically exporting request payloads or SQL text.

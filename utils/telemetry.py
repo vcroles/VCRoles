@@ -15,9 +15,12 @@ import sys
 import threading
 import time
 from contextlib import contextmanager
+from contextvars import ContextVar
+from dataclasses import dataclass
 from urllib.parse import urlsplit
 
 logger = logging.getLogger(__name__)
+_current_operation = ContextVar("vcroles_operation", default=None)
 _IDENTIFIER = re.compile(r"[a-zA-Z0-9_.-]{1,128}\Z")
 _LOG_FIELDS = {
     "shard_id",
@@ -30,6 +33,7 @@ _LOG_FIELDS = {
     "event_tasks",
     "edit_tasks",
     "count",
+    "return_code",
 }
 _METRIC_FIELDS = {
     "component",
@@ -95,13 +99,24 @@ class EventLogHandler(logging.Handler):
             "cogs.status",
             "internal.bot",
             "vcroles.audit",
+            "cogs.tts",
         }:
             return
         try:
             from opentelemetry._logs import LogRecord, SeverityNumber
 
             attributes = {"event.name": event, "logger.name": record.name}
+            telemetry = get_telemetry()
+            if record.levelno >= logging.ERROR:
+                telemetry.failure(record.exc_info[1] if record.exc_info else None)
+            if record.name == "vcroles.audit":
+                telemetry.audit(event)
             context = getattr(record, "context", {})
+            operation_id = context.get("operation_id")
+            if isinstance(operation_id, str) and re.fullmatch(
+                r"[a-f0-9]{32}", operation_id
+            ):
+                attributes["operation_id"] = operation_id
             for key in _LOG_FIELDS:
                 value = context.get(key)
                 if isinstance(value, (bool, int)):
@@ -140,6 +155,13 @@ class QueueWarningFilter(logging.Filter):
             return False
         self.last_warning[key] = now
         return True
+
+
+@dataclass
+class OperationState:
+    outcome: str = "success"
+    error_type: str | None = None
+    active: bool = True
 
 
 class Telemetry:
@@ -321,6 +343,22 @@ class Telemetry:
         self.health_requests = meter.create_counter(
             "vcroles.health.requests", unit="{request}"
         )
+        self.audit_events = meter.create_counter(
+            "vcroles.generator.events", unit="{event}"
+        )
+        self.queue_wait = meter.create_histogram(
+            "vcroles.member_edit.queue_wait",
+            unit="s",
+            explicit_bucket_boundaries_advisory=[0.01, 0.1, 0.5, 1, 5, 10, 30, 60],
+        )
+        self.queue_completion = meter.create_histogram(
+            "vcroles.member_edit.queue_completion",
+            unit="s",
+            explicit_bucket_boundaries_advisory=[0.1, 0.5, 1, 5, 10, 30, 60, 120],
+        )
+        self.queue_events = meter.create_counter(
+            "vcroles.member_edit.queue_events", unit="{update}"
+        )
         self.gauges = {
             name: meter.create_gauge(f"vcroles.{name}", unit=unit)
             for name, unit in {
@@ -331,6 +369,9 @@ class Telemetry:
                 "runtime.guilds": "{guild}",
                 "process.peak_rss": "By",
                 "gateway.latency": "s",
+                "member_edit.queued": "{update}",
+                "member_edit.inflight": "{batch}",
+                "voice_state.inflight": "{event}",
             }.items()
         }
         self.handler = EventLogHandler(self.logs.get_logger("vcroles.events"))
@@ -350,13 +391,33 @@ class Telemetry:
             return None
 
     @contextmanager
-    def operation(self, component, operation):
+    def operation(self, component, operation, *, links=(), root=False):
         if not self.enabled:
             yield
             return
-        from opentelemetry.trace import StatusCode
+        from opentelemetry.context import Context
+        from opentelemetry.trace import Link, StatusCode
 
         attributes = {"component": component, "operation": operation}
+        contexts = (
+            self._attempt(
+                lambda: list(
+                    {
+                        (context.trace_id, context.span_id): context
+                        for context in links
+                        if context is not None and context.is_valid
+                    }.values()
+                )
+            )
+            or []
+        )
+        if contexts:
+            attributes.update(
+                {
+                    "queue.source_traces": len(contexts),
+                    "queue.links_dropped": max(0, len(contexts) - 8),
+                }
+            )
         start = time.monotonic()
         manager = self._attempt(
             self.tracer.start_as_current_span,
@@ -364,28 +425,82 @@ class Telemetry:
             attributes=attributes,
             record_exception=False,
             set_status_on_exception=False,
+            context=Context() if root else None,
+            links=[Link(context) for context in contexts[:8]],
         )
         span = self._attempt(manager.__enter__) if manager is not None else None
-        outcome = "success"
+        state = OperationState()
+        token = _current_operation.set(state)
         try:
-            yield
+            yield state
         except BaseException as error:
-            outcome = (
+            state.outcome = (
                 "cancelled" if isinstance(error, asyncio.CancelledError) else "error"
             )
-            if span is not None:
-                self._attempt(
-                    span.set_attribute, "error.type", type(error).__name__[:128]
-                )
-                if outcome == "error":
-                    self._attempt(span.set_status, StatusCode.ERROR)
+            state.error_type = type(error).__name__[:128]
             raise
         finally:
-            labels = {**attributes, "outcome": outcome}
+            if span is not None and state.error_type:
+                self._attempt(span.set_attribute, "error.type", state.error_type)
+            if span is not None and state.outcome == "error":
+                self._attempt(span.set_status, StatusCode.ERROR)
+            labels = {
+                "component": component,
+                "operation": operation,
+                "outcome": state.outcome,
+            }
             self._attempt(self.operations.add, 1, labels)
             self._attempt(self.duration.record, time.monotonic() - start, labels)
             if span is not None:
                 self._attempt(manager.__exit__, None, None, None)
+            state.active = False
+            _current_operation.reset(token)
+            parent = _current_operation.get()
+            if (
+                not root
+                and state.outcome == "error"
+                and parent is not None
+                and parent.active
+            ):
+                parent.outcome = "error"
+                parent.error_type = state.error_type
+
+    def failure(self, error=None):
+        state = _current_operation.get()
+        if self.enabled and state is not None and state.active:
+            state.outcome = "error"
+            state.error_type = (
+                type(error).__name__[:128] if error is not None else "operation_failed"
+            )
+
+    def capture_context(self):
+        if not self.enabled:
+            return None
+        from opentelemetry.trace import get_current_span
+
+        context = self._attempt(lambda: get_current_span().get_span_context())
+        return context if context is not None and context.is_valid else None
+
+    def audit(self, event):
+        if self.enabled:
+            self._attempt(self.audit_events.add, 1, {"event": event})
+
+    def queue_started(self, times):
+        if self.enabled:
+            now = time.monotonic()
+            for queued in times:
+                self._attempt(self.queue_wait.record, max(0, now - queued))
+
+    def queue_finished(self, times, outcome):
+        if self.enabled:
+            now = time.monotonic()
+            for queued in times:
+                self._attempt(
+                    self.queue_completion.record,
+                    max(0, now - queued),
+                    {"outcome": outcome},
+                )
+            self._attempt(self.queue_events.add, len(times), {"outcome": outcome})
 
     def gateway(self, event, shard_id):
         if self.enabled:
@@ -431,6 +546,14 @@ class Telemetry:
                 self.gauges["gateway.latency"].set(
                     shard.latency, {"shard_id": shard_id}
                 )
+        cog = getattr(client, "get_cog", lambda _: None)("VoiceState")
+        queues = getattr(cog, "member_queues", None)
+        if isinstance(queues, dict):
+            self.gauges["member_edit.queued"].set(
+                sum(len(queue) for queue in queues.values())
+            )
+            self.gauges["member_edit.inflight"].set(len(cog.edit_tasks))
+            self.gauges["voice_state.inflight"].set(len(cog.event_tasks))
 
     def _start_provider_shutdown(self):
         if self.shutdown_thread is not None:
@@ -516,7 +639,11 @@ def observed(component):
     """Measure a logical operation without recording its arguments or result."""
 
     def decorate(function):
-        name = _identifier(function.__name__)
+        name = _identifier(
+            function.__qualname__.split(".<locals>.")[-1]
+            if component == "command"
+            else function.__name__
+        )
 
         @functools.wraps(function)
         async def wrapper(*args, **kwargs):

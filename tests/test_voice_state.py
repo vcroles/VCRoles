@@ -10,6 +10,7 @@ import discord
 voice_module = importlib.import_module("cogs.voicestate")
 VoiceState = voice_module.VoiceState
 NicknameUpdate = voice_module.NicknameUpdate
+QueuedMemberUpdate = voice_module.QueuedMemberUpdate
 
 
 class MemberUpdateTests(unittest.IsolatedAsyncioTestCase):
@@ -142,13 +143,13 @@ class MemberUpdateTests(unittest.IsolatedAsyncioTestCase):
         self.cog.edit_tasks = set()
         self.cog.member_queues = {
             1: [
-                (
+                QueuedMemberUpdate(
                     self.queued,
                     [],
                     [],
                     NicknameUpdate("Original", add_suffix="A", permanent_suffix="VIP"),
                 ),
-                (
+                QueuedMemberUpdate(
                     self.queued,
                     [],
                     [],
@@ -159,7 +160,9 @@ class MemberUpdateTests(unittest.IsolatedAsyncioTestCase):
                         permanent_suffix="VIP",
                     ),
                 ),
-                (self.queued, [], [], NicknameUpdate("Original", remove_suffix="B")),
+                QueuedMemberUpdate(
+                    self.queued, [], [], NicknameUpdate("Original", remove_suffix="B")
+                ),
             ]
         }
         await self.cog.process_queues()

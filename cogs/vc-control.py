@@ -7,6 +7,7 @@ from discord.ext import commands
 
 from utils.checks import check_any, command_available, is_owner
 from utils.client import VCRolesClient
+from utils.telemetry import observed
 from utils.types import LogLevel
 
 
@@ -39,6 +40,7 @@ class VCControl(commands.Cog):
     @app_commands.describe(who="Who to mute:")
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def mute(
         self,
         interaction: discord.Interaction,
@@ -97,6 +99,7 @@ class VCControl(commands.Cog):
     @app_commands.describe(who="Who to deafen:")
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def deafen(
         self,
         interaction: discord.Interaction,
@@ -154,6 +157,7 @@ class VCControl(commands.Cog):
     @control_commands.command()
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def unmute(self, interaction: discord.Interaction):
         """Unmutes everyone in a voice channel"""
 
@@ -201,6 +205,7 @@ class VCControl(commands.Cog):
     @control_commands.command()
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def undeafen(self, interaction: discord.Interaction):
         """Undeafens everyone in a voice channel"""
 

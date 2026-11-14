@@ -5,6 +5,7 @@ from prisma.enums import LinkType
 
 from utils.checks import check_any, command_available, is_owner
 from utils.client import VCRolesClient
+from utils.telemetry import observed
 from utils.types import LogLevel
 
 
@@ -16,6 +17,7 @@ class UnLink(commands.Cog):
     @app_commands.describe(channel_id="Enter the channel ID")
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def forceunlink(
         self,
         interaction: discord.Interaction,

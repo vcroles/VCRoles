@@ -8,6 +8,7 @@ from prisma.models import VoiceGenerator
 
 from utils.checks import check_any, command_available, is_owner
 from utils.client import VCRolesClient
+from utils.telemetry import observed
 from utils.types import LogLevel
 from views.interface import Interface
 
@@ -182,6 +183,7 @@ class VoiceGen(commands.Cog):
     @check_any(command_available, is_owner)
     @app_commands.checks.bot_has_permissions(manage_channels=True)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def default(
         self,
         interaction: discord.Interaction,
@@ -259,6 +261,7 @@ class VoiceGen(commands.Cog):
     @check_any(command_available, is_owner)
     @app_commands.checks.bot_has_permissions(manage_channels=True)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def numbered(
         self,
         interaction: discord.Interaction,
@@ -336,6 +339,7 @@ class VoiceGen(commands.Cog):
     @check_any(command_available, is_owner)
     @app_commands.checks.bot_has_permissions(manage_channels=True)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def clone(
         self,
         interaction: discord.Interaction,
@@ -411,6 +415,7 @@ class VoiceGen(commands.Cog):
     @check_any(command_available, is_owner)
     @app_commands.checks.bot_has_permissions(manage_channels=True)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def custom_name(
         self,
         interaction: discord.Interaction,
@@ -481,6 +486,7 @@ class VoiceGen(commands.Cog):
     @commands.bot_has_permissions(manage_channels=True)
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def remove(
         self, interaction: discord.Interaction, generator: discord.VoiceChannel
     ):
@@ -526,6 +532,7 @@ class VoiceGen(commands.Cog):
     )
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def toggle(
         self,
         interaction: discord.Interaction,
@@ -579,6 +586,7 @@ class VoiceGen(commands.Cog):
     )
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def options(
         self,
         interaction: discord.Interaction,
@@ -621,6 +629,7 @@ class VoiceGen(commands.Cog):
     )
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def set_role(
         self,
         interaction: discord.Interaction,
@@ -666,6 +675,7 @@ class VoiceGen(commands.Cog):
     )
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def set_restrict_role(
         self,
         interaction: discord.Interaction,
@@ -711,6 +721,7 @@ class VoiceGen(commands.Cog):
     )
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def hide_at_limit(
         self,
         interaction: discord.Interaction,
@@ -750,6 +761,7 @@ class VoiceGen(commands.Cog):
     @generator_commands.command(name="force_remove")
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def force_remove(
         self,
         interaction: discord.Interaction,

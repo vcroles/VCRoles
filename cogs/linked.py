@@ -8,6 +8,7 @@ from prisma.models import Link
 
 from utils.checks import check_any, command_available, is_owner
 from utils.client import VCRolesClient
+from utils.telemetry import observed
 from utils.types import LinkableChannel, LogLevel
 
 
@@ -108,6 +109,7 @@ class Linked(commands.Cog):
     @app_commands.command()
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def linked(self, interaction: discord.Interaction):
         """Displays the linked roles, channels & categories"""
         if not interaction.guild_id or not interaction.guild:

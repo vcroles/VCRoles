@@ -6,6 +6,7 @@ from prisma.enums import LinkType
 from utils.checks import check_any, command_available, is_owner
 from utils.client import VCRolesClient
 from utils.linking import LinkingUtils
+from utils.telemetry import observed
 from utils.types import LogLevel, RoleCategory
 
 
@@ -27,6 +28,7 @@ class StageSpeaker(commands.Cog):
     )
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def link(
         self,
         interaction: discord.Interaction,
@@ -52,6 +54,7 @@ class StageSpeaker(commands.Cog):
     )
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def unlink(
         self,
         interaction: discord.Interaction,

@@ -6,6 +6,7 @@ from discord.ext import commands
 
 from utils.client import VCRolesClient
 from utils.generator import GeneratorUtils
+from utils.telemetry import observed
 from views.interface import MentionableDropdown
 
 
@@ -19,6 +20,7 @@ class GenInterface(commands.Cog):
     )
 
     @interface_commands.command(name="lock")
+    @observed("command")
     async def lock_interface(self, interaction: discord.Interaction):
         """Lock your generated voice channel"""
         if not isinstance(interaction.user, discord.Member):
@@ -32,6 +34,7 @@ class GenInterface(commands.Cog):
     @interface_commands.command(
         name="unlock",
     )
+    @observed("command")
     async def unlock_interface(self, interaction: discord.Interaction):
         """Unlock your generated voice channel"""
         if not isinstance(interaction.user, discord.Member):
@@ -45,6 +48,7 @@ class GenInterface(commands.Cog):
     @interface_commands.command(
         name="hide",
     )
+    @observed("command")
     async def hide_interface(self, interaction: discord.Interaction):
         """Hide your generated voice channel"""
         if not isinstance(interaction.user, discord.Member):
@@ -56,6 +60,7 @@ class GenInterface(commands.Cog):
         await interaction.response.send_message(message, ephemeral=True)
 
     @interface_commands.command(name="show")
+    @observed("command")
     async def unhide_interface(self, interaction: discord.Interaction):
         """Show your generated voice channel"""
         if not isinstance(interaction.user, discord.Member):
@@ -69,6 +74,7 @@ class GenInterface(commands.Cog):
     @interface_commands.command(
         name="increase",
     )
+    @observed("command")
     async def increase_limit_interface(self, interaction: discord.Interaction):
         """Increase your generated voice channel user limit"""
         if not isinstance(interaction.user, discord.Member):
@@ -80,6 +86,7 @@ class GenInterface(commands.Cog):
         await interaction.response.send_message(message, ephemeral=True)
 
     @interface_commands.command(name="decrease")
+    @observed("command")
     async def decrease_limit_interface(self, interaction: discord.Interaction):
         """Decrease your generated voice channel user limit"""
         if not isinstance(interaction.user, discord.Member):
@@ -92,6 +99,7 @@ class GenInterface(commands.Cog):
 
     @interface_commands.command(name="limit")
     @app_commands.describe(limit="The value to set the member limit to.")
+    @observed("command")
     async def set_limit(
         self, interaction: discord.Interaction, limit: app_commands.Range[int, 0, 100]
     ):
@@ -106,6 +114,7 @@ class GenInterface(commands.Cog):
 
     @interface_commands.command(name="rename")
     @app_commands.describe(name="The new name.")
+    @observed("command")
     async def rename_channel(self, interaction: discord.Interaction, name: str):
         """Rename your generated voice channel"""
         if not isinstance(interaction.user, discord.Member):
@@ -117,6 +126,7 @@ class GenInterface(commands.Cog):
         await interaction.response.send_message(message, ephemeral=True)
 
     @interface_commands.command(name="claim")
+    @observed("command")
     async def claim_channel(self, interaction: discord.Interaction):
         """Claim a generated channel (if owner has left)"""
         if not isinstance(interaction.user, discord.Member):
@@ -129,6 +139,7 @@ class GenInterface(commands.Cog):
 
     @interface_commands.command(name="invite")
     @app_commands.describe(user="The user to invite.", message="The message to send.")
+    @observed("command")
     async def invite_user(
         self,
         interaction: discord.Interaction,
@@ -164,6 +175,7 @@ class GenInterface(commands.Cog):
         await interaction.response.send_message(return_message, ephemeral=True)
 
     @interface_commands.command(name="permit")
+    @observed("command")
     async def permit_mentionable(self, interaction: discord.Interaction):
         """Permits roles/users to join you."""
         if not isinstance(interaction.user, discord.Member):
@@ -185,6 +197,7 @@ class GenInterface(commands.Cog):
         )
 
     @interface_commands.command(name="restrict")
+    @observed("command")
     async def restrict_mentionable(self, interaction: discord.Interaction):
         """Restricts roles/users to join you."""
         if not isinstance(interaction.user, discord.Member):

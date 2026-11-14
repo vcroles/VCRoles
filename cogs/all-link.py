@@ -7,6 +7,7 @@ from prisma.enums import LinkType
 
 from utils.checks import check_any, command_available, is_owner
 from utils.client import VCRolesClient
+from utils.telemetry import observed
 from utils.types import LogLevel
 
 
@@ -35,6 +36,7 @@ class AllLink(commands.Cog):
     @app_commands.describe(role="Select a role to link")
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def link(
         self,
         interaction: discord.Interaction,
@@ -90,6 +92,7 @@ class AllLink(commands.Cog):
     @app_commands.describe(role="Select a role to unlink")
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def unlink(
         self,
         interaction: discord.Interaction,
@@ -132,6 +135,7 @@ class AllLink(commands.Cog):
     @app_commands.describe(channel="Select a channel to exclude")
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def add_exclude(
         self,
         interaction: discord.Interaction,
@@ -183,6 +187,7 @@ class AllLink(commands.Cog):
     @app_commands.describe(channel="Select a channel to un-exclude")
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def remove_exclude(
         self,
         interaction: discord.Interaction,
@@ -228,6 +233,7 @@ class AllLink(commands.Cog):
     )
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def add_suffix(
         self,
         interaction: discord.Interaction,
@@ -255,6 +261,7 @@ class AllLink(commands.Cog):
     @suffix_commands.command(name="remove")
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def remove_suffix(self, interaction: discord.Interaction):
         """Use to remove a username suffix rule"""
 
@@ -275,6 +282,7 @@ class AllLink(commands.Cog):
     @app_commands.describe(role="Select a role to reverse link")
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def reverse_link(
         self,
         interaction: discord.Interaction,
@@ -317,6 +325,7 @@ class AllLink(commands.Cog):
     @app_commands.describe(role="Select a role to un-reverse link")
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def reverse_unlink(
         self,
         interaction: discord.Interaction,

@@ -6,6 +6,7 @@ from prisma.enums import LinkType
 from utils.checks import check_any, command_available, is_owner
 from utils.client import VCRolesClient
 from utils.linking import LinkingUtils
+from utils.telemetry import observed
 from utils.types import LinkableChannel, LogLevel, RoleCategory
 
 
@@ -34,6 +35,7 @@ class Linking(commands.Cog):
     )
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def link(
         self,
         interaction: discord.Interaction,
@@ -59,6 +61,7 @@ class Linking(commands.Cog):
     )
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def unlink(
         self,
         interaction: discord.Interaction,
@@ -85,6 +88,7 @@ class Linking(commands.Cog):
     )
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def add(
         self,
         interaction: discord.Interaction,
@@ -108,6 +112,7 @@ class Linking(commands.Cog):
     @app_commands.describe(channel="Select a channel to link")
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def remove(
         self,
         interaction: discord.Interaction,
@@ -132,6 +137,7 @@ class Linking(commands.Cog):
     )
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def reverse_link(
         self,
         interaction: discord.Interaction,
@@ -157,6 +163,7 @@ class Linking(commands.Cog):
     )
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def reverse_unlink(
         self,
         interaction: discord.Interaction,

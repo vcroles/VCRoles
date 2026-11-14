@@ -353,6 +353,25 @@ def verify(evidence, *, expect_exemplar=True):
                 .get("panels")
             ),
         )
+    expected_rules = json.loads(
+        (ROOT / "config/grafana/provisioning/alerting/bot.json").read_text()
+    )["groups"][0]["rules"]
+    rules = {
+        rule["uid"]: rule
+        for rule in request(
+            f"{grafana}/api/v1/provisioning/alert-rules", headers=headers
+        )
+    }
+    for expected in expected_rules:
+        rule = rules.get(expected["uid"])
+        if rule is None or rule["isPaused"] != expected["isPaused"]:
+            raise RuntimeError(
+                "Alert rules do not match the provisioned activation state"
+            )
+    print(
+        "PASS provisioned alert rules match their configured activation state",
+        flush=True,
+    )
     print(
         "PASS authenticated Grafana data sources and dashboard; anonymous access rejected",
         flush=True,

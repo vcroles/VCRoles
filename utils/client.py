@@ -224,6 +224,8 @@ class VCRolesClient(commands.AutoShardedBot):
         }
         if error is None and level == LogLevel.ERROR:
             error = sys.exception()
+        if level == LogLevel.ERROR:
+            get_telemetry().failure(error)
         logging.getLogger("internal.bot").log(
             levels[level],
             message,

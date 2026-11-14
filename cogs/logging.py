@@ -6,6 +6,7 @@ from discord.ext import commands
 
 from utils.checks import check_any, command_available, is_owner
 from utils.client import VCRolesClient
+from utils.telemetry import observed
 from utils.types import LogLevel
 
 
@@ -20,6 +21,7 @@ class Logging(commands.Cog):
     )
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def logging(
         self,
         interaction: discord.Interaction,

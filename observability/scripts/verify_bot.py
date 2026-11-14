@@ -7,6 +7,7 @@ Redis client is constructed, and no production container is used.
 
 import argparse
 import asyncio
+import base64
 import json
 import logging
 import os
@@ -63,6 +64,13 @@ async def emit(args):
                         "context": {"status": 503, "sql": PRIVATE_SENTINEL},
                     },
                 )
+            from utils.logging import audit_event
+
+            audit_event(
+                "generator_validation",
+                error=ValueError(PRIVATE_SENTINEL),
+                operation_id="a" * 32,
+            )
             telemetry.gateway("ready", 0)
             telemetry.health(200)
             telemetry._sample_runtime(
@@ -74,12 +82,20 @@ async def emit(args):
                 ),
                 0.01,
             )
+            source = telemetry.capture_context()
+        with telemetry.operation("member_edit", "sdk_batch", links=[source], root=True):
+            batch_trace = f"{get_current_span().get_span_context().trace_id:032x}"
+            times = [time.monotonic() - 1, time.monotonic() - 0.5]
+            telemetry.queue_started(times)
+            await asyncio.sleep(0.01)
+            telemetry.queue_finished(times, "success")
     finally:
         await telemetry.close()
     if telemetry.shutdown_thread.is_alive():
         raise RuntimeError("SDK validation did not shut down within its budget")
     return {
         "trace_id": trace,
+        "batch_trace_id": batch_trace,
         "instance": telemetry.resource.attributes["service.instance.id"],
         "emitted_at_ns": started,
     }
@@ -92,6 +108,15 @@ def verify(evidence):
     )
     if PRIVATE_SENTINEL in json.dumps(data):
         raise RuntimeError("Private exception text leaked into SDK trace")
+    batch = eventually(
+        "bot SDK detached batch trace",
+        lambda: request(
+            f"http://127.0.0.1:13200/api/traces/{evidence['batch_trace_id']}"
+        ),
+    )
+    encoded = base64.b64encode(bytes.fromhex(trace)).decode()
+    if trace not in json.dumps(batch) and encoded not in json.dumps(batch):
+        raise RuntimeError("Batch trace is missing its source link")
     query = urllib.parse.urlencode(
         {
             "query": f'{{service_name="{SERVICE}"}} |= "sdk_validation"',
@@ -124,6 +149,10 @@ def verify(evidence):
         ("vcroles_bot_ready", ""),
         ("vcroles_gateway_events", 'event="ready",shard_id="0"'),
         ("otel_sdk_processor_span_processed", ""),
+        ("vcroles_member_edit_queue_events", 'outcome="success"'),
+        ("vcroles_member_edit_queue_wait_bucket", ""),
+        ("vcroles_member_edit_queue_completion_bucket", 'outcome="success"'),
+        ("vcroles_generator_events", 'event="generator_validation"'),
     ):
         expression = f"{name}{{{identity}{',' + labels if labels else ''}}}"
         query = urllib.parse.urlencode(

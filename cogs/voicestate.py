@@ -1,8 +1,8 @@
 import asyncio
 import copy
 import time
-from dataclasses import dataclass
-from typing import Collection, Tuple
+from collections.abc import Collection
+from dataclasses import dataclass, field
 from weakref import WeakValueDictionary
 
 import discord
@@ -13,6 +13,7 @@ from discord.object import Object
 from prisma.enums import LinkType
 
 from utils.client import VCRolesClient
+from utils.telemetry import get_telemetry, observed
 from utils.types import (
     LogLevel,
     MentionableRole,
@@ -45,6 +46,16 @@ class NicknameUpdate:
         return name if len(name) <= 32 else base
 
 
+@dataclass(frozen=True)
+class QueuedMemberUpdate:
+    member: discord.Member
+    to_add: list[discord.Role]
+    to_remove: list[discord.Role]
+    nickname: NicknameUpdate
+    enqueued_at: float = field(default_factory=time.monotonic)
+    span_context: object | None = None
+
+
 class VoiceState(commands.Cog):
     SHUTDOWN_TIMEOUT = 30
     CANCELLATION_GRACE = 5
@@ -60,17 +71,7 @@ class VoiceState(commands.Cog):
         self.bot_nicknames: TTLCache[tuple[int, int], str] = TTLCache(2**15, 3600)
         self.generator = Generator(client)
         self.logging = Logging(client)
-        self.member_queues: dict[
-            int,
-            list[
-                Tuple[
-                    discord.Member,
-                    list[discord.Role],
-                    list[discord.Role],
-                    NicknameUpdate,
-                ]
-            ],
-        ] = {}
+        self.member_queues: dict[int, list[QueuedMemberUpdate]] = {}
         self.process_queues.start()
         self.reconcile_generators.start()
 
@@ -176,22 +177,33 @@ class VoiceState(commands.Cog):
 
                 guild = self.client.get_guild(guild_id)
                 if not guild:
+                    get_telemetry().queue_finished(
+                        [update.enqueued_at for update in queue], "discarded"
+                    )
                     continue
 
                 # Group the current queue by member
                 member_changes = {}
-                for member, to_add, to_remove, new_nick in queue:
+                for update in queue:
+                    member, to_add, to_remove, new_nick = (
+                        update.member,
+                        update.to_add,
+                        update.to_remove,
+                        update.nickname,
+                    )
                     if member.id not in member_changes:
                         member_changes[member.id] = {
                             "member": member,
                             "to_add": [],
                             "to_remove": [],
                             "nickname_updates": [],
+                            "updates": [],
                         }
                     member_changes[member.id]["member"] = member
                     member_changes[member.id]["to_add"].extend(to_add)
                     member_changes[member.id]["to_remove"].extend(to_remove)
                     member_changes[member.id]["nickname_updates"].append(new_nick)
+                    member_changes[member.id]["updates"].append(update)
 
                 for _member_id, change in member_changes.items():
                     member = change["member"]
@@ -212,8 +224,12 @@ class VoiceState(commands.Cog):
 
                     # Create a task for handling user edit
                     task = self.client.loop.create_task(
-                        self.handle_member_edit(
-                            member, set(to_add), set(to_remove), nickname_updates
+                        self._run_member_edit(
+                            member,
+                            set(to_add),
+                            set(to_remove),
+                            nickname_updates,
+                            change["updates"],
                         )
                     )
                     self.edit_tasks.add(task)
@@ -250,10 +266,45 @@ class VoiceState(commands.Cog):
         if member.guild.id not in self.member_queues:
             self.member_queues[member.guild.id] = []
         self.member_queues[member.guild.id].append(
-            (member, to_add, to_remove, new_nick)
+            QueuedMemberUpdate(
+                member,
+                to_add,
+                to_remove,
+                new_nick,
+                span_context=get_telemetry().capture_context(),
+            )
         )
 
+    async def _run_member_edit(
+        self, member, to_add, to_remove, nickname_updates, updates
+    ):
+        telemetry = get_telemetry()
+        times = [update.enqueued_at for update in updates]
+        with telemetry.operation(
+            "member_edit",
+            "apply_batch",
+            links=[update.span_context for update in updates],
+            root=True,
+        ) as state:
+            telemetry.queue_started(times)
+            try:
+                await self.handle_member_edit(
+                    member, to_add, to_remove, nickname_updates
+                )
+            except asyncio.CancelledError:
+                if state is not None:
+                    state.outcome = "cancelled"
+                raise
+            except Exception as error:
+                telemetry.failure(error)
+                raise
+            finally:
+                telemetry.queue_finished(
+                    times, state.outcome if state is not None else "success"
+                )
+
     @commands.Cog.listener()
+    @observed("voice_state")
     async def on_voice_state_update(
         self,
         member: discord.Member,
@@ -283,6 +334,7 @@ class VoiceState(commands.Cog):
             if task is not None:
                 self.event_tasks.discard(task)
 
+    @observed("voice_state")
     async def handle_voice_state_update(
         self,
         member: discord.Member,
@@ -421,12 +473,15 @@ class VoiceState(commands.Cog):
         if lock is None:
             lock = asyncio.Lock()
             self.member_locks[key] = lock
-        async with lock:
+        with get_telemetry().operation("member_edit", "wait_for_lock"):
+            await lock.acquire()
+        try:
             try:
                 await self._handle_member_edit(
                     member, to_add, to_remove, nickname_updates
                 )
             except Exception as error:
+                get_telemetry().failure(error)
                 self.client.log(
                     LogLevel.ERROR,
                     "Member update failed",
@@ -437,7 +492,10 @@ class VoiceState(commands.Cog):
                     member_id=member.id,
                     phase="fetch_or_dispatch",
                 )
+        finally:
+            lock.release()
 
+    @observed("member_edit")
     async def _handle_member_edit(
         self,
         member: discord.Member,
@@ -505,6 +563,7 @@ class VoiceState(commands.Cog):
                 )
                 self.bot_nicknames[key] = new_nick
             except Exception as e:
+                get_telemetry().failure(e)
                 self.client.log(
                     LogLevel.ERROR,
                     "Member update failed",
@@ -526,6 +585,7 @@ class VoiceState(commands.Cog):
                 )
                 self.bot_nicknames[key] = new_nick
             except Exception as e:
+                get_telemetry().failure(e)
                 self.client.log(
                     LogLevel.ERROR,
                     "Member update failed",
@@ -547,6 +607,7 @@ class VoiceState(commands.Cog):
                         reason="Joined Voice Channel",
                     )
                 except Exception as e:
+                    get_telemetry().failure(e)
                     self.client.log(
                         LogLevel.ERROR,
                         "Member update failed",
@@ -564,6 +625,7 @@ class VoiceState(commands.Cog):
                 try:
                     await member.add_roles(*to_add, reason="Joined Voice Channel")
                 except Exception as e:
+                    get_telemetry().failure(e)
                     self.client.log(
                         LogLevel.ERROR,
                         "Member update failed",
@@ -581,6 +643,7 @@ class VoiceState(commands.Cog):
                 try:
                     await member.remove_roles(*to_remove, reason="Joined Voice Channel")
                 except Exception as e:
+                    get_telemetry().failure(e)
                     self.client.log(
                         LogLevel.ERROR,
                         "Member update failed",
