@@ -1,0 +1,10 @@
+.env
+data/
+validation-results.json
+recovery-results.json
+bot-validation-results.json
+__pycache__/
+.metrics.env
+monitoring-targets.json
+.metrics-*
+.bot-telemetry.env

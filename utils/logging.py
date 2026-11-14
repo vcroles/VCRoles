@@ -1,5 +1,6 @@
 """Immediate, rotating file logs; no external collector is required."""
 
+import copy
 import datetime as dt
 import json
 import logging
@@ -12,6 +13,8 @@ import traceback
 import uuid
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+
+from utils.telemetry import trace_context
 
 RUN_ID = uuid.uuid4().hex
 AUDIT_LOGGER = logging.getLogger("vcroles.audit")
@@ -89,6 +92,53 @@ class UTCFormatter(logging.Formatter):
     converter = time.gmtime
 
 
+def stream_supports_colour(stream) -> bool:
+    if "NO_COLOR" in os.environ:
+        return False
+    if "FORCE_COLOR" in os.environ:
+        return os.environ["FORCE_COLOR"] != "0"
+    return os.environ.get("TERM") != "dumb" and bool(
+        getattr(stream, "isatty", lambda: False)()
+    )
+
+
+class ConsoleFormatter(UTCFormatter):
+    COLOURS = {
+        logging.DEBUG: "\x1b[40;1m",
+        logging.INFO: "\x1b[34;1m",
+        logging.WARNING: "\x1b[33;1m",
+        logging.ERROR: "\x1b[31m",
+        logging.CRITICAL: "\x1b[41m",
+    }
+
+    def __init__(self, *, colour: bool):
+        self.colour = colour
+        prefix = (
+            "\x1b[90m%(asctime)sZ\x1b[0m %(levelname)s %(name)s"
+            if colour
+            else "%(asctime)sZ %(levelname)-8s %(name)s"
+        )
+        super().__init__(
+            prefix + " run=%(run_id).8s %(message)s %(context)s",
+            "%Y-%m-%dT%H:%M:%S",
+        )
+
+    def format(self, record: logging.LogRecord) -> str:
+        if self.colour:
+            # Handlers share the record. Keep ANSI codes and the exception cache
+            # private to the console, including when handler order changes.
+            record = copy.copy(record)
+            colour = self.COLOURS.get(record.levelno, "\x1b[0m")
+            record.levelname = f"{colour}{record.levelname:<8}\x1b[0m"
+            record.name = f"\x1b[35m{record.name}\x1b[0m"
+            record.exc_text = None
+        return super().format(record)
+
+    def formatException(self, exc_info) -> str:
+        text = super().formatException(exc_info)
+        return f"\x1b[31m{text}\x1b[0m" if self.colour else text
+
+
 class JSONFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         data = {
@@ -103,6 +153,7 @@ class JSONFormatter(logging.Formatter):
             "run_id": record.run_id,
             "revision": record.revision,
             "context": record.context,
+            **trace_context(),
         }
         if record.exc_info and record.exc_info[1] is not None:
             error = record.exc_info[1]
@@ -190,10 +241,7 @@ def setup_logging(
         console = logging.StreamHandler()
         new_handlers.append(console)
         console.setFormatter(
-            UTCFormatter(
-                "%(asctime)sZ %(levelname)-8s %(name)s run=%(run_id).8s %(message)s %(context)s",
-                "%Y-%m-%dT%H:%M:%S",
-            )
+            ConsoleFormatter(colour=stream_supports_colour(console.stream))
         )
         console.addFilter(context)
         console.addFilter(ConsoleFilter())

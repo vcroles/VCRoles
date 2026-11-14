@@ -82,6 +82,11 @@ one JSON record per line, with UTC timestamps, a process run ID, the Git revisio
 operation context, and exception tracebacks. TTS message text and nickname values
 are not added to the new diagnostic events.
 
+The console uses coloured levels, logger names, and tracebacks when attached to
+a terminal. Set `FORCE_COLOR=1` to enable colours in a panel that does not expose
+a TTY. Set `NO_COLOR` or `FORCE_COLOR=0` to disable them. Persisted JSON logs stay
+plain, regardless of the console setting.
+
 Diagnostics include shard ready/disconnect/resume events, readiness changes
 observed by `/status` polls, shutdown requests and cleanup, member-edit and
 database failures, and TTS lifecycle/FFmpeg failures. Generator audit events
@@ -113,3 +118,12 @@ records without discarding the existing history.
 Host-triggered restarts, out-of-memory kills, and `SIGKILL` still require the
 hosting panel's exit code and restart metadata; the process cannot log after it
 has been killed.
+
+## Optional OpenTelemetry
+
+The bot supports optional traces, metrics, and structured event export over
+authenticated OTLP/HTTP. It is disabled by default. See
+[the observability guide](observability/README.md#bot-instrumentation) for the
+private collector connection, environment variables, exported fields, resource
+limits, and shutdown behavior. Detailed local logs and generator audit records
+continue to work without a collector.

@@ -7,6 +7,7 @@ from discord.ext import commands
 
 from utils.client import VCRolesClient
 from utils.logging import log_paths
+from utils.telemetry import observed
 from utils.types import LogLevel
 
 
@@ -16,6 +17,7 @@ class Dev(commands.Cog):
 
     @commands.command(description="DEVELOPER COMMAND")
     @commands.is_owner()
+    @observed("command")
     async def create_entitlement(
         self, ctx: commands.Context[Any], sku_id: int, guild: discord.Guild
     ):
@@ -47,6 +49,7 @@ class Dev(commands.Cog):
 
     @commands.command(description="DEVELOPER COMMAND")
     @commands.is_owner()
+    @observed("command")
     async def remove_entitlement(self, ctx: commands.Context[Any], entitlement_id: int):
         entitlements = self.client.entitlements(guild=ctx.guild)
         entitlement = None
@@ -72,6 +75,7 @@ class Dev(commands.Cog):
 
     @commands.command(description="DEVELOPER COMMAND")
     @commands.is_owner()
+    @observed("command")
     async def list_entitlements(self, ctx: commands.Context[Any]):
         async_entitlements = self.client.entitlements()
 
@@ -94,12 +98,14 @@ class Dev(commands.Cog):
 
     @commands.command(description="DEVELOPER COMMAND")
     @commands.is_owner()
+    @observed("command")
     async def logs(self, ctx: commands.Context[Any]):
         await ctx.send("Fetching Logs...")
         await ctx.channel.send(file=discord.File(log_paths()[0]))
 
     @commands.command(aliases=["sync"])
     @commands.is_owner()
+    @observed("command")
     async def sync_commands(
         self, ctx: commands.Context[Any], guild_id: Optional[int] = None
     ):
@@ -114,6 +120,7 @@ class Dev(commands.Cog):
 
     @commands.command(aliases=["reset"])
     @commands.is_owner()
+    @observed("command")
     async def reset_limit(
         self, ctx: commands.Context[Any], user_id: Optional[int] = None
     ):
@@ -125,6 +132,7 @@ class Dev(commands.Cog):
 
     @commands.command()
     @commands.is_owner()
+    @observed("command")
     async def status(
         self,
         ctx: commands.Context[Any],
@@ -151,6 +159,7 @@ class Dev(commands.Cog):
 
     @commands.command(aliases=["ll"])
     @commands.is_owner()
+    @observed("command")
     async def loglevel(
         self,
         ctx: commands.Context[Any],
@@ -161,6 +170,7 @@ class Dev(commands.Cog):
 
     @commands.command(aliases=["su"])
     @commands.is_owner()
+    @observed("command")
     async def send_update_message(
         self, ctx: commands.Context[Any], guilds: str, *, message: str
     ):

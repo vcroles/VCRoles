@@ -10,6 +10,7 @@ import discord
 voice_module = importlib.import_module("cogs.voicestate")
 VoiceState = voice_module.VoiceState
 NicknameUpdate = voice_module.NicknameUpdate
+QueuedMemberUpdate = voice_module.QueuedMemberUpdate
 
 
 class MemberUpdateTests(unittest.IsolatedAsyncioTestCase):
@@ -106,6 +107,32 @@ class MemberUpdateTests(unittest.IsolatedAsyncioTestCase):
         self.fresh.edit.assert_not_awaited()
         self.cog.client.log.assert_called_once()
 
+    async def test_cancelled_lock_waiter_preserves_owner_lock_and_cancellation(self):
+        lock = asyncio.Lock()
+        await lock.acquire()
+        self.cog.member_locks[(self.guild.id, self.queued.id)] = lock
+        waiter = asyncio.create_task(
+            self.cog.handle_member_edit(
+                self.queued, [discord.Object(id=10), discord.Object(id=11)], [], []
+            )
+        )
+        await asyncio.sleep(0)
+        waiter.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            await waiter
+        self.assertTrue(lock.locked())
+        self.guild.fetch_member.assert_not_awaited()
+        self.cog.client.log.assert_not_called()
+        lock.release()
+        await asyncio.wait_for(
+            self.cog.handle_member_edit(
+                self.queued, [discord.Object(id=10), discord.Object(id=11)], [], []
+            ),
+            1,
+        )
+        self.guild.fetch_member.assert_awaited_once()
+        self.assertFalse(lock.locked())
+
     async def test_overlapping_bot_renames_apply_latest_channel_suffix(self):
         editing = asyncio.Event()
         release = asyncio.Event()
@@ -142,13 +169,13 @@ class MemberUpdateTests(unittest.IsolatedAsyncioTestCase):
         self.cog.edit_tasks = set()
         self.cog.member_queues = {
             1: [
-                (
+                QueuedMemberUpdate(
                     self.queued,
                     [],
                     [],
                     NicknameUpdate("Original", add_suffix="A", permanent_suffix="VIP"),
                 ),
-                (
+                QueuedMemberUpdate(
                     self.queued,
                     [],
                     [],
@@ -159,7 +186,9 @@ class MemberUpdateTests(unittest.IsolatedAsyncioTestCase):
                         permanent_suffix="VIP",
                     ),
                 ),
-                (self.queued, [], [], NicknameUpdate("Original", remove_suffix="B")),
+                QueuedMemberUpdate(
+                    self.queued, [], [], NicknameUpdate("Original", remove_suffix="B")
+                ),
             ]
         }
         await self.cog.process_queues()

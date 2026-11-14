@@ -14,6 +14,7 @@ from gtts import gTTSAsync
 
 from utils.checks import check_any, command_available, is_owner
 from utils.client import VCRolesClient
+from utils.telemetry import get_telemetry, observed
 from utils.types import LogLevel
 
 tts_langs = Literal[
@@ -52,6 +53,7 @@ class TTSAudioSource(discord.FFmpegOpusAudio):
         self.cleanup_lock = threading.Lock()
         self.cleaned = False
         self.log_context = log_context or {}
+        self.telemetry_context = get_telemetry().capture_context()
         self.buffer = io.BytesIO(audio_data)
         self.diagnostics = None
         try:
@@ -67,7 +69,12 @@ class TTSAudioSource(discord.FFmpegOpusAudio):
             raise
 
     def cleanup(self):
-        with self.cleanup_lock:
+        with (
+            get_telemetry().operation(
+                "tts", "audio_cleanup", links=[getattr(self, "telemetry_context", None)]
+            ),
+            self.cleanup_lock,
+        ):
             if self.cleaned:
                 return
             self.cleaned = True
@@ -89,7 +96,11 @@ class TTSAudioSource(discord.FFmpegOpusAudio):
                     super().cleanup()
                 finally:
                     if isinstance(process, subprocess.Popen):
-                        for stream in (process.stdin, process.stdout, process.stderr):
+                        for stream in (
+                            process.stdin,
+                            process.stdout,
+                            process.stderr,
+                        ):
                             if stream is not None:
                                 try:
                                     stream.close()
@@ -138,6 +149,7 @@ class TTS(commands.Cog):
         language="Enter the language you want to use (Default: English `en: English`)",
         leave="The bot leaves the voice channel after reading the message (Default: True)",
     )
+    @observed("command")
     async def play(
         self,
         interaction: discord.Interaction,
@@ -190,6 +202,7 @@ class TTS(commands.Cog):
             if self.playback_tasks.get(guild_id) is task:
                 del self.playback_tasks[guild_id]
 
+    @observed("tts")
     async def _prepare_play(
         self, interaction, channel, message: str, language: str, leave: bool
     ):
@@ -234,6 +247,7 @@ class TTS(commands.Cog):
             "voice_channel_id": channel.id,
         }
 
+    @observed("tts")
     async def _play(
         self, interaction, channel, message: str, language: str, leave: bool
     ):
@@ -265,9 +279,10 @@ class TTS(commands.Cog):
             loop.call_soon_threadsafe(finish, error)
 
         try:
-            audio_data = await asyncio.wait_for(
-                gTTSAsync(text=message, lang=language).get_audio_data(), timeout=30
-            )
+            with get_telemetry().operation("tts", "synthesis"):
+                audio_data = await asyncio.wait_for(
+                    gTTSAsync(text=message, lang=language).get_audio_data(), timeout=30
+                )
             if not interaction.user.voice or interaction.user.voice.channel != channel:
                 return await interaction.followup.send(
                     "You left the voice channel before playback started."
@@ -285,30 +300,32 @@ class TTS(commands.Cog):
                 )
             claimed_voice = True
             phase = "voice_connect"
-            if vc is None:
-                vc = await channel.connect()
-            elif vc.channel != channel:
-                await vc.move_to(channel)
+            with get_telemetry().operation("tts", "voice_connect"):
+                if vc is None:
+                    vc = await channel.connect()
+                elif vc.channel != channel:
+                    await vc.move_to(channel)
             if not interaction.user.voice or interaction.user.voice.channel != channel:
                 return await interaction.followup.send(
                     "You left the voice channel before playback started."
                 )
 
             phase = "playback"
-            source = TTSAudioSource(audio_data, log_context=context)
-            vc.play(source, after=after)
-            started = True
-            await interaction.followup.send(
-                embed=discord.Embed(
-                    color=discord.Color.green(),
-                    title="**Reading Message**",
-                    description=f"Reading the message sent by {interaction.user.mention} in {channel.mention}",
+            with get_telemetry().operation("tts", "playback"):
+                source = TTSAudioSource(audio_data, log_context=context)
+                vc.play(source, after=after)
+                started = True
+                await interaction.followup.send(
+                    embed=discord.Embed(
+                        color=discord.Color.green(),
+                        title="**Reading Message**",
+                        description=f"Reading the message sent by {interaction.user.mention} in {channel.mention}",
+                    )
                 )
-            )
-            error = await asyncio.shield(playback_done)
-            if error is not None:
-                raise error
-            completed = True
+                error = await asyncio.shield(playback_done)
+                if error is not None:
+                    raise error
+                completed = True
         except asyncio.CancelledError:
             self.client.log(
                 LogLevel.INFO,
@@ -362,17 +379,18 @@ class TTS(commands.Cog):
                     await voice_client.disconnect(force=True)
 
             async def logged_cleanup():
-                try:
-                    await cleanup()
-                except Exception as error:
-                    self.client.log(
-                        LogLevel.ERROR,
-                        "TTS cleanup failed",
-                        error=error,
-                        event="tts_cleanup_failed",
-                        **context,
-                    )
-                    raise
+                with get_telemetry().operation("tts", "cleanup"):
+                    try:
+                        await cleanup()
+                    except Exception as error:
+                        self.client.log(
+                            LogLevel.ERROR,
+                            "TTS cleanup failed",
+                            error=error,
+                            event="tts_cleanup_failed",
+                            **context,
+                        )
+                        raise
 
             cleanup_task = asyncio.create_task(logged_cleanup())
             try:
@@ -392,6 +410,7 @@ class TTS(commands.Cog):
         )
 
     @tts_commands.command()
+    @observed("command")
     async def stop(self, interaction: discord.Interaction):
         """Stops the current TTS message & makes the bot leave the voice channel"""
         if not interaction.guild:
@@ -445,6 +464,7 @@ class TTS(commands.Cog):
     )
     @check_any(command_available, is_owner)
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def setup(
         self,
         interaction: discord.Interaction,

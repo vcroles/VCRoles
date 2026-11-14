@@ -8,3 +8,8 @@ cachetools
 types-cachetools
 asyncache
 jishaku @ git+https://github.com/vcroles/jishaku
+opentelemetry-sdk==1.45.2
+opentelemetry-exporter-otlp-proto-http==1.45.2
+python-dotenv
+requests
+psutil==7.2.2

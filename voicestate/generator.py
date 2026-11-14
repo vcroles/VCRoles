@@ -10,6 +10,7 @@ from prisma.enums import VoiceGeneratorOption, VoiceGeneratorType
 
 from utils.client import VCRolesClient
 from utils.logging import audit_event
+from utils.telemetry import observed
 from utils.types import JoinableChannel, LogLevel
 
 
@@ -51,6 +52,7 @@ class Generator:
             self.locks[key] = lock
         return lock
 
+    @observed("generator")
     async def join(
         self,
         member: discord.Member,
@@ -99,6 +101,7 @@ class Generator:
             )
         return channel
 
+    @observed("generator")
     async def _create(self, member: discord.Member, user_channel: discord.VoiceChannel):
         gen_data = await self.client.db.get_generator(member.guild.id, user_channel.id)
 
@@ -359,6 +362,7 @@ class Generator:
             f"Generated c/{channel.id} m/{member.id} g/{member.guild.id}",
         )
 
+    @observed("generator")
     async def leave(
         self,
         member: discord.Member,
@@ -378,6 +382,7 @@ class Generator:
                 return
             await self._leave(member, voice_channel, data)
 
+    @observed("generator")
     async def _leave(self, member, voice_channel, data):
         if member.voice and member.voice.channel == voice_channel:
             # A delayed leave event must not revoke access after a rejoin.
@@ -432,6 +437,7 @@ class Generator:
             f"Generator left c/{voice_channel.id} m/{member.id} g/{member.guild.id}",
         )
 
+    @observed("generator")
     async def _delete_record(self, channel_id, guild, *, reason, operation_id):
         context = {
             "operation_id": operation_id,
@@ -449,6 +455,7 @@ class Generator:
         audit_event("generator_record_deleted", **context)
         self.empty_channels.pop(int(channel_id), None)
 
+    @observed("generator")
     async def _cleanup(
         self,
         voice_channel,
@@ -530,6 +537,7 @@ class Generator:
             )
         return success
 
+    @observed("generator")
     async def reconcile(self):
         """Recover recorded empty/missing channels after restarts or failed cleanup."""
         if not self.client.is_ready():

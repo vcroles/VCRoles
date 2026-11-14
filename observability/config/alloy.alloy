@@ -1,0 +1,127 @@
+logging {
+  level = "info"
+  format = "logfmt"
+}
+
+otelcol.auth.basic "applications" {
+  htpasswd { inline = sys.env("OTLP_HTPASSWD") }
+}
+
+// Native storage metrics stay on the private telemetry bridge. This listener
+// has no host port mapping and does not accept application logs or traces.
+otelcol.receiver.otlp "storage" {
+  http { endpoint = "storage-collector:14318" }
+  output { metrics = [otelcol.processor.transform.storage.input] }
+}
+otelcol.processor.transform "storage" {
+  error_mode = "propagate"
+  metric_statements {
+    context = "metric"
+    statements = [
+      `aggregate_on_attributes("sum", ["operation", "stage", "method", "status", "type", "state", "result"])`,
+    ]
+  }
+  output { metrics = [otelcol.processor.memory_limiter.applications.input] }
+}
+
+otelcol.receiver.otlp "applications" {
+  grpc {
+    endpoint = "0.0.0.0:4317"
+    auth = otelcol.auth.basic.applications.handler
+  }
+  http {
+    endpoint = "0.0.0.0:4318"
+    auth = otelcol.auth.basic.applications.handler
+    max_request_body_size = "2MiB"
+  }
+  output {
+    traces = [otelcol.processor.memory_limiter.applications.input]
+    metrics = [otelcol.processor.memory_limiter.applications.input]
+    logs = [otelcol.processor.memory_limiter.applications.input]
+  }
+}
+
+otelcol.processor.memory_limiter "applications" {
+  check_interval = "1s"
+  limit = "512MiB"
+  spike_limit = "128MiB"
+  output {
+    traces = [otelcol.processor.batch.applications.input, otelcol.connector.spanmetrics.applications.input, otelcol.connector.servicegraph.applications.input]
+    metrics = [otelcol.processor.batch.applications.input]
+    logs = [otelcol.processor.batch.applications.input]
+  }
+}
+
+// All traces are retained for initial measurement. Derived metrics see the
+// unsampled stream; a future trace sampler belongs only on the Tempo branch.
+otelcol.connector.spanmetrics "applications" {
+  namespace = "traces.spanmetrics"
+  aggregation_cardinality_limit = 10000
+  metrics_flush_interval = "15s"
+  histogram {
+    unit = "s"
+    explicit {
+      buckets = ["5ms", "10ms", "50ms", "100ms", "500ms", "1s", "5s", "10s", "30s"]
+    }
+  }
+  exemplars { enabled = true }
+  output { metrics = [otelcol.processor.batch.applications.input] }
+}
+
+otelcol.connector.servicegraph "applications" {
+  metrics_flush_interval = "15s"
+  virtual_node_peer_attributes = ["peer.service", "server.address", "db.system.name"]
+  store {
+    ttl = "10s"
+    max_items = 10000
+  }
+  output { metrics = [otelcol.processor.batch.applications.input] }
+}
+
+otelcol.processor.batch "applications" {
+  timeout = "1s"
+  send_batch_size = 256
+  send_batch_max_size = 512
+  output {
+    traces = [otelcol.exporter.otlphttp.tempo.input]
+    metrics = [otelcol.exporter.otlphttp.mimir.input]
+    logs = [otelcol.exporter.otlphttp.loki.input]
+  }
+}
+
+otelcol.exporter.otlphttp "tempo" {
+  client { endpoint = "http://tempo:4318" }
+  sending_queue { queue_size = 256 }
+  retry_on_failure { max_elapsed_time = "5m" }
+}
+otelcol.exporter.otlphttp "mimir" {
+  client { endpoint = "http://mimir:9009/otlp" }
+  sending_queue { queue_size = 256 }
+  retry_on_failure { max_elapsed_time = "5m" }
+}
+otelcol.exporter.otlphttp "loki" {
+  client { endpoint = "http://loki:3100/otlp" }
+  sending_queue { queue_size = 256 }
+  retry_on_failure { max_elapsed_time = "5m" }
+}
+
+prometheus.scrape "infrastructure" {
+  targets = [
+    {"__address__" = "127.0.0.1:12345", "job" = "alloy"},
+    {"__address__" = "loki:3100", "job" = "loki"},
+    {"__address__" = "tempo:3200", "job" = "tempo"},
+    {"__address__" = "mimir:9009", "job" = "mimir"},
+    {"__address__" = "grafana:3000", "job" = "grafana"},
+  ]
+  scrape_interval = "15s"
+  forward_to = [prometheus.remote_write.infrastructure.receiver]
+}
+
+prometheus.remote_write "infrastructure" {
+  endpoint { url = "http://mimir:9009/api/v1/push" }
+  wal {
+    truncate_frequency = "5m"
+    min_keepalive_time = "5m"
+    max_keepalive_time = "1h"
+  }
+}

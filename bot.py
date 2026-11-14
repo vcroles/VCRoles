@@ -9,11 +9,13 @@ from typing import Any
 import discord
 import redis.asyncio as aioredis
 from discord import app_commands
+from dotenv import load_dotenv
 
 import config
 from utils.client import VCRolesClient
 from utils.database import DatabaseUtils
 from utils.logging import setup_logging
+from utils.telemetry import start_telemetry
 from utils.types import LogLevel
 
 setup_logging()
@@ -74,7 +76,7 @@ async def on_command_error(
         )
 
 
-async def main():
+async def run_bot():
     logging.getLogger(__name__).info(
         "Starting bot process pid=%s, Python=%s, discord.py=%s",
         os.getpid(),
@@ -116,6 +118,15 @@ async def main():
             raise
         else:
             logging.getLogger(__name__).warning("Discord client.start() returned")
+
+
+async def main():
+    load_dotenv()
+    telemetry = start_telemetry()
+    try:
+        await run_bot()
+    finally:
+        await telemetry.close()
 
 
 if __name__ == "__main__":

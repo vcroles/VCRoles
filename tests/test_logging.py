@@ -21,6 +21,7 @@ from utils.logging import (
     audit_event,
     log_paths,
     setup_logging,
+    stream_supports_colour,
 )
 from utils.types import LogLevel
 from voicestate.generator import Generator
@@ -109,6 +110,41 @@ class PersistentLoggingTests(unittest.TestCase):
         client.log(LogLevel.DEBUG, "debug diagnostic")
         self.assertEqual(self.records()[-1]["message"], "debug diagnostic")
         self.assertNotIn("debug diagnostic", self.stderr.getvalue())
+
+    def test_coloured_console_does_not_contaminate_persisted_records(self):
+        with patch.dict(os.environ, {"FORCE_COLOR": "1"}, clear=True):
+            setup_logging(self.directory.name)
+        # Exercise a file handler running after the coloured formatter.
+        self.root.handlers.reverse()
+        try:
+            raise RuntimeError("colour isolation failure")
+        except RuntimeError as error:
+            audit_event("colour_isolation", error=error, guild_id=123)
+        console = self.stderr.getvalue()
+        self.assertIn("\x1b[31mERROR", console)
+        self.assertIn("\x1b[35mvcroles.audit\x1b[0m", console)
+        self.assertIn("\x1b[31mTraceback", console)
+        for path in (self.main_path, self.audit_path):
+            record = self.records(path)[-1]
+            self.assertEqual(record["level"], "ERROR")
+            self.assertEqual(record["logger"], "vcroles.audit")
+            self.assertIn("colour isolation failure", record["exception"]["traceback"])
+            self.assertNotIn("\x1b", str(record))
+
+    def test_colour_detection_supports_terminals_and_environment_overrides(self):
+        stream = Mock()
+        with patch.dict(os.environ, {}, clear=True):
+            stream.isatty.return_value = True
+            self.assertTrue(stream_supports_colour(stream))
+            stream.isatty.return_value = False
+            self.assertFalse(stream_supports_colour(stream))
+            os.environ["FORCE_COLOR"] = "1"
+            self.assertTrue(stream_supports_colour(stream))
+            os.environ["FORCE_COLOR"] = "0"
+            self.assertFalse(stream_supports_colour(stream))
+            os.environ["FORCE_COLOR"] = "1"
+            os.environ["NO_COLOR"] = "1"
+            self.assertFalse(stream_supports_colour(stream))
 
     def test_audit_records_sync_before_return_and_share_run_metadata(self):
         with patch("utils.logging.os.fsync", wraps=os.fsync) as sync:

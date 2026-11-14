@@ -13,6 +13,7 @@ from discord.ext import commands
 
 from utils.database import DatabaseUtils
 from utils.gateway import configure_gateway_compression
+from utils.telemetry import get_telemetry, observed
 from utils.types import LogLevel
 from views.interface import Interface
 
@@ -103,7 +104,9 @@ class VCRolesClient(commands.AutoShardedBot):
 
         print("------")
 
+    @observed("gateway")
     async def on_shard_disconnect(self, shard_id: int) -> None:
+        get_telemetry().gateway("disconnected", shard_id)
         logger.warning(
             "Shard %s disconnected (closing=%s, database_connected=%s)",
             shard_id,
@@ -119,14 +122,18 @@ class VCRolesClient(commands.AutoShardedBot):
             },
         )
 
+    @observed("gateway")
     async def on_shard_ready(self, shard_id: int) -> None:
+        get_telemetry().gateway("ready", shard_id)
         logger.info(
             "Shard %s ready with a new session",
             shard_id,
             extra={"event": "shard_ready", "context": {"shard_id": shard_id}},
         )
 
+    @observed("gateway")
     async def on_shard_resumed(self, shard_id: int) -> None:
+        get_telemetry().gateway("resumed", shard_id)
         logger.info(
             "Shard %s resumed its existing session",
             shard_id,
@@ -191,6 +198,7 @@ class VCRolesClient(commands.AutoShardedBot):
         logger.info("Bot resource cleanup finished")
 
     async def setup_hook(self) -> None:
+        get_telemetry().start_runtime(self)
         configure_gateway_compression()
         logger.info("Connecting to the Prisma query engine")
         await self.db.connect()
@@ -216,6 +224,8 @@ class VCRolesClient(commands.AutoShardedBot):
         }
         if error is None and level == LogLevel.ERROR:
             error = sys.exception()
+        if level == LogLevel.ERROR:
+            get_telemetry().failure(error)
         logging.getLogger("internal.bot").log(
             levels[level],
             message,

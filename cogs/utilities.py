@@ -6,6 +6,7 @@ from discord import Interaction, app_commands
 from discord.ext import commands
 
 from utils.client import VCRolesClient
+from utils.telemetry import observed
 from views.url import Combination, Discord, Invite, TopGG, Website
 
 
@@ -18,6 +19,7 @@ class Utils(commands.Cog):
         channel="Channel to mention:",
         message="Message to send using $name and $mention variables:",
     )
+    @observed("command")
     async def mention(
         self,
         interaction: Interaction,
@@ -32,6 +34,7 @@ class Utils(commands.Cog):
         )
 
     @app_commands.command(name="discord")
+    @observed("command")
     async def support_server(self, interaction: discord.Interaction):
         """Use to get an invite to the support server"""
         await interaction.response.send_message(
@@ -39,6 +42,7 @@ class Utils(commands.Cog):
         )
 
     @app_commands.command()
+    @observed("command")
     async def invite(self, interaction: Interaction):
         """Use to get an invite for the bot"""
         await interaction.response.send_message(
@@ -47,6 +51,7 @@ class Utils(commands.Cog):
         )
 
     @app_commands.command()
+    @observed("command")
     async def topgg(self, interaction: Interaction):
         """Use to get a link to the bot's Top.gg page"""
         await interaction.response.send_message(
@@ -54,6 +59,7 @@ class Utils(commands.Cog):
         )
 
     @app_commands.command()
+    @observed("command")
     async def about(self, interaction: Interaction):
         """Use to get info about the bot"""
         embed = discord.Embed(title="About:", colour=discord.Colour.blue())
@@ -108,6 +114,7 @@ class Utils(commands.Cog):
         await interaction.response.send_message(embed=embed, view=Combination())
 
     @app_commands.command()
+    @observed("command")
     async def help(self, interaction: Interaction):
         """Use to get help about the bot"""
         embed = discord.Embed(
@@ -119,6 +126,7 @@ class Utils(commands.Cog):
 
     @app_commands.command()
     @app_commands.checks.has_permissions(administrator=True)
+    @observed("command")
     async def update_channel(
         self, interaction: Interaction, channel: discord.TextChannel
     ):
