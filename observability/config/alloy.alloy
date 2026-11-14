@@ -7,6 +7,23 @@ otelcol.auth.basic "applications" {
   htpasswd { inline = sys.env("OTLP_HTPASSWD") }
 }
 
+// Native storage metrics stay on the private telemetry bridge. This listener
+// has no host port mapping and does not accept application logs or traces.
+otelcol.receiver.otlp "storage" {
+  http { endpoint = "storage-collector:14318" }
+  output { metrics = [otelcol.processor.transform.storage.input] }
+}
+otelcol.processor.transform "storage" {
+  error_mode = "propagate"
+  metric_statements {
+    context = "metric"
+    statements = [
+      `aggregate_on_attributes("sum", ["operation", "stage", "method", "status", "type", "state", "result"])`,
+    ]
+  }
+  output { metrics = [otelcol.processor.memory_limiter.applications.input] }
+}
+
 otelcol.receiver.otlp "applications" {
   grpc {
     endpoint = "0.0.0.0:4317"
@@ -94,6 +111,7 @@ prometheus.scrape "infrastructure" {
     {"__address__" = "loki:3100", "job" = "loki"},
     {"__address__" = "tempo:3200", "job" = "tempo"},
     {"__address__" = "mimir:9009", "job" = "mimir"},
+    {"__address__" = "grafana:3000", "job" = "grafana"},
   ]
   scrape_interval = "15s"
   forward_to = [prometheus.remote_write.infrastructure.receiver]

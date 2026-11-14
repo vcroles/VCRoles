@@ -286,6 +286,286 @@
             "service": "vcroles",
             "severity": "warning"
           }
+        },
+        {
+          "uid": "vcroles-host-disk-low",
+          "title": "Host root filesystem space is low",
+          "condition": "B",
+          "data": [
+            {
+              "refId": "A",
+              "relativeTimeRange": {
+                "from": 300,
+                "to": 0
+              },
+              "datasourceUid": "mimir",
+              "model": {
+                "refId": "A",
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "mimir"
+                },
+                "expr": "min(node_filesystem_avail_bytes{job=\"host\",mountpoint=\"/\"} / node_filesystem_size_bytes{job=\"host\",mountpoint=\"/\"})",
+                "instant": true,
+                "range": false,
+                "intervalMs": 15000,
+                "maxDataPoints": 43200
+              }
+            },
+            {
+              "refId": "B",
+              "relativeTimeRange": {
+                "from": 0,
+                "to": 0
+              },
+              "datasourceUid": "__expr__",
+              "model": {
+                "refId": "B",
+                "datasource": {
+                  "type": "__expr__",
+                  "uid": "__expr__"
+                },
+                "type": "math",
+                "expression": "$A < 0.1"
+              }
+            }
+          ],
+          "noDataState": "OK",
+          "execErrState": "Error",
+          "for": "5m",
+          "isPaused": true,
+          "annotations": {
+            "summary": "Host root filesystem space is low",
+            "description": "Paused until monitoring thresholds and notification routing are reviewed."
+          },
+          "labels": {
+            "service": "vcroles",
+            "severity": "warning"
+          }
+        },
+        {
+          "uid": "vcroles-host-memory-low",
+          "title": "Host available memory is low",
+          "condition": "B",
+          "data": [
+            {
+              "refId": "A",
+              "relativeTimeRange": {
+                "from": 300,
+                "to": 0
+              },
+              "datasourceUid": "mimir",
+              "model": {
+                "refId": "A",
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "mimir"
+                },
+                "expr": "node_memory_MemAvailable_bytes{job=\"host\"} / node_memory_MemTotal_bytes{job=\"host\"}",
+                "instant": true,
+                "range": false,
+                "intervalMs": 15000,
+                "maxDataPoints": 43200
+              }
+            },
+            {
+              "refId": "B",
+              "relativeTimeRange": {
+                "from": 0,
+                "to": 0
+              },
+              "datasourceUid": "__expr__",
+              "model": {
+                "refId": "B",
+                "datasource": {
+                  "type": "__expr__",
+                  "uid": "__expr__"
+                },
+                "type": "math",
+                "expression": "$A < 0.1"
+              }
+            }
+          ],
+          "noDataState": "OK",
+          "execErrState": "Error",
+          "for": "5m",
+          "isPaused": true,
+          "annotations": {
+            "summary": "Host available memory is low",
+            "description": "Paused until monitoring thresholds and notification routing are reviewed."
+          },
+          "labels": {
+            "service": "vcroles",
+            "severity": "warning"
+          }
+        },
+        {
+          "uid": "vcroles-postgres-down",
+          "title": "PostgreSQL statistics connection failed",
+          "condition": "B",
+          "data": [
+            {
+              "refId": "A",
+              "relativeTimeRange": {
+                "from": 300,
+                "to": 0
+              },
+              "datasourceUid": "mimir",
+              "model": {
+                "refId": "A",
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "mimir"
+                },
+                "expr": "pg_up{job=\"postgres\"}",
+                "instant": true,
+                "range": false,
+                "intervalMs": 15000,
+                "maxDataPoints": 43200
+              }
+            },
+            {
+              "refId": "B",
+              "relativeTimeRange": {
+                "from": 0,
+                "to": 0
+              },
+              "datasourceUid": "__expr__",
+              "model": {
+                "refId": "B",
+                "datasource": {
+                  "type": "__expr__",
+                  "uid": "__expr__"
+                },
+                "type": "math",
+                "expression": "$A < 1"
+              }
+            }
+          ],
+          "noDataState": "OK",
+          "execErrState": "Error",
+          "for": "2m",
+          "isPaused": true,
+          "annotations": {
+            "summary": "PostgreSQL statistics connection failed",
+            "description": "Paused until monitoring thresholds and notification routing are reviewed."
+          },
+          "labels": {
+            "service": "vcroles",
+            "severity": "warning"
+          }
+        },
+        {
+          "uid": "vcroles-redis-down",
+          "title": "Redis statistics connection failed",
+          "condition": "B",
+          "data": [
+            {
+              "refId": "A",
+              "relativeTimeRange": {
+                "from": 300,
+                "to": 0
+              },
+              "datasourceUid": "mimir",
+              "model": {
+                "refId": "A",
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "mimir"
+                },
+                "expr": "redis_up{job=\"redis\"}",
+                "instant": true,
+                "range": false,
+                "intervalMs": 15000,
+                "maxDataPoints": 43200
+              }
+            },
+            {
+              "refId": "B",
+              "relativeTimeRange": {
+                "from": 0,
+                "to": 0
+              },
+              "datasourceUid": "__expr__",
+              "model": {
+                "refId": "B",
+                "datasource": {
+                  "type": "__expr__",
+                  "uid": "__expr__"
+                },
+                "type": "math",
+                "expression": "$A < 1"
+              }
+            }
+          ],
+          "noDataState": "OK",
+          "execErrState": "Error",
+          "for": "2m",
+          "isPaused": true,
+          "annotations": {
+            "summary": "Redis statistics connection failed",
+            "description": "Paused until monitoring thresholds and notification routing are reviewed."
+          },
+          "labels": {
+            "service": "vcroles",
+            "severity": "warning"
+          }
+        },
+        {
+          "uid": "vcroles-host-metrics-missing",
+          "title": "Host monitoring is missing",
+          "condition": "B",
+          "data": [
+            {
+              "refId": "A",
+              "relativeTimeRange": {
+                "from": 300,
+                "to": 0
+              },
+              "datasourceUid": "mimir",
+              "model": {
+                "refId": "A",
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "mimir"
+                },
+                "expr": "absent_over_time(up{job=\"host\"}[3m])",
+                "instant": true,
+                "range": false,
+                "intervalMs": 15000,
+                "maxDataPoints": 43200
+              }
+            },
+            {
+              "refId": "B",
+              "relativeTimeRange": {
+                "from": 0,
+                "to": 0
+              },
+              "datasourceUid": "__expr__",
+              "model": {
+                "refId": "B",
+                "datasource": {
+                  "type": "__expr__",
+                  "uid": "__expr__"
+                },
+                "type": "math",
+                "expression": "$A > 0"
+              }
+            }
+          ],
+          "noDataState": "OK",
+          "execErrState": "Error",
+          "for": "1m",
+          "isPaused": true,
+          "annotations": {
+            "summary": "Host monitoring is missing",
+            "description": "Paused until monitoring thresholds and notification routing are reviewed."
+          },
+          "labels": {
+            "service": "vcroles",
+            "severity": "warning"
+          }
         }
       ]
     }

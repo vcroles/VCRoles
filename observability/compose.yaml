@@ -49,6 +49,13 @@ services:
       RUSTFS_OBS_LOG_KEEP_FILES: "3"
       RUSTFS_OBS_LOG_ROTATION_TIME: hourly
       RUSTFS_OBS_LOG_MAX_TOTAL_SIZE_BYTES: "67108864"
+      RUSTFS_OBS_ENDPOINT: http://storage-collector:14318
+      RUSTFS_OBS_SERVICE_NAME: vcroles-storage
+      RUSTFS_OBS_ENVIRONMENT: observability
+      RUSTFS_OBS_METRICS_EXPORT_ENABLED: "true"
+      RUSTFS_OBS_TRACES_EXPORT_ENABLED: "false"
+      RUSTFS_OBS_LOGS_EXPORT_ENABLED: "false"
+      RUSTFS_OBS_METER_INTERVAL: "30"
     volumes:
       - ${DATA_DIR:-./data}/s3:/data
       - ${DATA_DIR:-./data}/s3-logs:/logs
@@ -115,6 +122,7 @@ services:
       OTLP_HTPASSWD: ${OTLP_HTPASSWD:?Run scripts/init.py --upgrade-otlp-auth for an existing deployment}
     networks:
       telemetry:
+        aliases: [storage-collector]
       ingest:
         aliases: [vcroles-collector]
     command:

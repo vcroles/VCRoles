@@ -53,6 +53,10 @@ Loki 3.7.10, Tempo 3.1.1, Mimir 3.2.5, RustFS 1.0.5, and RustFS CLI 0.1.37.
 The CLI is a temporary bootstrap/verification job, not a seventh running service.
 Grafana's automatic plugin installation is disabled.
 
+For host/container CPU, memory, disk and network metrics, PostgreSQL and Redis
+statistics, RustFS telemetry and Grafana SQLite pools, see
+[the optional monitoring agent and dashboards](MONITORING.md).
+
 The six services have individual memory/CPU limits totaling 12 GiB RAM and
 4.25 logical CPU units. This is a ceiling, not a reservation or sizing forecast.
 They run as non-root users with dropped capabilities and no-new-privileges.
@@ -213,6 +217,10 @@ exclude `.env`, `data/`, and generated validation evidence.
 
 ## Bot instrumentation
 
+For durable Pelican connectivity and the production rollout sequence, see
+[the deployment guide](DEPLOYMENT.md). The preparation helper writes a private
+proposal only; it does not update or restart the bot.
+
 Instrumentation covers shard ready/disconnect/resume traces and
 counters, readiness and health-request outcomes, per-shard gateway latency,
 event-loop lag, task/guild counts, peak process RSS, database connection state,
@@ -236,8 +244,9 @@ active operations as containing an error; cancellation is recorded separately.
 Generator operation UUIDs are allowed in exported log metadata, never metric
 labels. No user-supplied command arguments, nicknames, or TTS text are exported.
 
-Five Grafana rules cover missing bot telemetry, readiness, database disconnection,
-event-loop delay, and SDK drops. They are provisioned **paused**: no notifications
+Grafana rules cover missing bot telemetry, readiness, database disconnection,
+event-loop delay, SDK drops, host capacity and application database availability.
+They are provisioned **paused**: no notifications
 are sent and no contact points or routing policies are created. Configure private
 notification routing and review thresholds after production telemetry is enabled,
 then change `isPaused` in the provisioning file and reload it. Do not treat the
@@ -258,8 +267,9 @@ During deployment, with `BOT_CONTAINER` set privately to the intended container:
 sudo -n docker network connect vcroles-observability_ingest "$BOT_CONTAINER"
 ```
 
-Make the network attachment persistent in the container-management workflow;
-manual Docker attachment does not survive replacement of a Pelican container.
+For this internal-network alternative, make the attachment persistent in the
+container-management workflow; manual attachment does not survive replacement.
+The Tailscale listener described in the deployment guide avoids that requirement.
 Enabling the SDK requires an approved bot rollout/restart. The stack helpers
 never perform that step. Set `VCROLES_OTEL_ENABLED=0` to disable it on a future
 restart; telemetry configuration errors also leave application work running and

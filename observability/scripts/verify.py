@@ -344,7 +344,13 @@ def verify(evidence, *, expect_exemplar=True):
         result = request(f"{grafana}/api/datasources/uid/{uid}/health", headers=headers)
         if result.get("status") != "OK":
             raise RuntimeError(f"Grafana {uid} datasource health check failed")
-    for uid in ("vcroles-telemetry", "vcroles-bot-health"):
+    for uid in (
+        "vcroles-telemetry",
+        "vcroles-bot-health",
+        "vcroles-runtime",
+        "vcroles-app-databases",
+        "vcroles-observability-databases",
+    ):
         eventually(
             f"Grafana dashboard {uid}",
             lambda uid=uid: (

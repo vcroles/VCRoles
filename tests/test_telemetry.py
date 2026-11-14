@@ -278,6 +278,49 @@ class TelemetryTests(unittest.IsolatedAsyncioTestCase):
         finally:
             await client.http.close()
 
+    async def test_process_samples_include_current_memory_and_cpu_without_double_counting(
+        self,
+    ):
+        telemetry = await self.configured()
+        telemetry.process = Mock()
+        telemetry.process.memory_info.return_value = SimpleNamespace(
+            rss=12345, vms=54321
+        )
+        telemetry.process.cpu_times.side_effect = [
+            SimpleNamespace(user=2, system=1),
+            SimpleNamespace(user=2.5, system=1.5),
+        ]
+        telemetry.process.num_threads.return_value = 4
+        telemetry.process.num_fds.return_value = 12
+        telemetry._sample_process()
+        telemetry._sample_process()
+        metrics = self.metrics()
+        self.assertEqual(
+            metrics["vcroles.process.cpu_time"].data.data_points[0].value, 4
+        )
+        self.assertEqual(
+            metrics["vcroles.process.rss"].data.data_points[0].value, 12345
+        )
+        self.assertEqual(
+            metrics["vcroles.process.open_fds"].data.data_points[0].value, 12
+        )
+
+    async def test_optional_process_collection_failure_preserves_readiness(self):
+        telemetry = await self.configured()
+        telemetry.process = Mock()
+        telemetry.process.memory_info.side_effect = OSError("unavailable")
+        client = SimpleNamespace(
+            is_ready=lambda: True,
+            db=SimpleNamespace(db=SimpleNamespace(is_connected=lambda: True)),
+            guilds=[],
+            shards={},
+        )
+        with self.assertLogs("utils.telemetry", level="WARNING"):
+            telemetry._sample_runtime(client, 0.01)
+        self.assertEqual(
+            self.metrics()["vcroles.bot.ready"].data.data_points[0].value, 1
+        )
+
     async def test_trace_context_failure_does_not_break_local_log_formatting(self):
         await self.configured()
         record = logging.makeLogRecord(

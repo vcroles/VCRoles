@@ -1,0 +1,142 @@
+logging { level = "warn" }
+
+prometheus.exporter.unix "host" {
+  rootfs_path = "/rootfs"
+  procfs_path = "/host/proc"
+  sysfs_path = "/sys"
+  udev_data_path = "/rootfs/run/udev/data"
+  set_collectors = ["cpu", "diskstats", "filesystem", "filefd", "loadavg", "meminfo", "netdev", "stat", "time", "vmstat", "pressure"]
+}
+
+prometheus.exporter.cadvisor "containers" {
+  docker_only = true
+  store_container_labels = false
+  housekeeping_interval = "30s"
+  enabled_metrics = ["cpu", "memory", "network", "diskIO"]
+}
+
+prometheus.exporter.postgres "application" {
+  data_source_names = [sys.env("POSTGRES_DSN")]
+  disable_settings_metrics = true
+  enabled_collectors = ["stat_database", "locks", "database", "stat_bgwriter", "process_idle", "postmaster"]
+}
+
+prometheus.exporter.redis "application" {
+  redis_addr = sys.env("REDIS_ADDR")
+  redis_password = sys.env("REDIS_PASSWORD")
+  config_command = "-"
+  connection_timeout = "3s"
+  export_key_values = false
+  export_client_list = false
+}
+
+prometheus.scrape "host" {
+  targets = prometheus.exporter.unix.host.targets
+  job_name = "host"
+  scrape_interval = "30s"
+  forward_to = [prometheus.relabel.host.receiver]
+}
+prometheus.relabel "host" {
+  rule {
+    target_label = "job"
+    replacement = "host"
+  }
+  rule {
+    target_label = "instance"
+    replacement = "local"
+  }
+  forward_to = [prometheus.remote_write.infrastructure.receiver]
+}
+
+prometheus.scrape "containers" {
+  targets = prometheus.exporter.cadvisor.containers.targets
+  job_name = "containers"
+  scrape_interval = "30s"
+  forward_to = [prometheus.relabel.containers.receiver]
+}
+prometheus.relabel "containers" {
+  rule {
+    target_label = "job"
+    replacement = "containers"
+  }
+  rule {
+    source_labels = ["name"]
+    regex = sys.env("BOT_CONTAINER_REGEX")
+    target_label = "service"
+    replacement = "bot"
+  }
+  rule {
+    source_labels = ["name"]
+    regex = sys.env("POSTGRES_CONTAINER_REGEX")
+    target_label = "service"
+    replacement = "postgres"
+  }
+  rule {
+    source_labels = ["name"]
+    regex = sys.env("REDIS_CONTAINER_REGEX")
+    target_label = "service"
+    replacement = "redis"
+  }
+  rule {
+    source_labels = ["name"]
+    regex = "vcroles-observability-(alloy|grafana|loki|tempo|mimir|s3|metrics-agent)-[0-9]+"
+    target_label = "service"
+    replacement = "$1"
+  }
+  rule {
+    source_labels = ["service", "__name__"]
+    regex = "(bot|postgres|redis|alloy|grafana|loki|tempo|mimir|s3|metrics-agent);.*|;(up|scrape_.*)"
+    action = "keep"
+  }
+  rule {
+    target_label = "instance"
+    replacement = "local"
+  }
+  rule {
+    action = "labeldrop"
+    regex = "id|name|image|container_label_.*"
+  }
+  forward_to = [prometheus.remote_write.infrastructure.receiver]
+}
+
+prometheus.scrape "postgres" {
+  targets = prometheus.exporter.postgres.application.targets
+  job_name = "postgres"
+  scrape_interval = "30s"
+  scrape_timeout = "10s"
+  forward_to = [prometheus.relabel.databases.receiver]
+}
+prometheus.scrape "redis" {
+  targets = prometheus.exporter.redis.application.targets
+  job_name = "redis"
+  scrape_interval = "30s"
+  scrape_timeout = "10s"
+  forward_to = [prometheus.relabel.databases.receiver]
+}
+prometheus.relabel "databases" {
+  rule {
+    source_labels = ["job"]
+    regex = "integrations/(postgres|redis)"
+    target_label = "job"
+    replacement = "$1"
+  }
+  rule {
+    target_label = "instance"
+    replacement = "application"
+  }
+  // The DSN's host/port does not need to be a stored metric dimension.
+  rule {
+    action = "labeldrop"
+    regex = "server|addr"
+  }
+  forward_to = [prometheus.remote_write.infrastructure.receiver]
+}
+
+prometheus.remote_write "infrastructure" {
+  endpoint { url = "http://127.0.0.1:19009/api/v1/push" }
+  wal {
+    truncate_frequency = "5m"
+    min_keepalive_time = "5m"
+    max_keepalive_time = "1h"
+  }
+}

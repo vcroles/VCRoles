@@ -135,6 +135,8 @@ protobuf==7.36.2
     # via
     #   googleapis-common-protos
     #   opentelemetry-proto
+psutil==7.2.2
+    # via -r requirements.in
 pycares==5.0.1
     # via aiodns
 pycparser==3.0

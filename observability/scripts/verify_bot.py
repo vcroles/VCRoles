@@ -37,8 +37,12 @@ async def emit(args):
             "VCROLES_OTEL_ENABLED": "1",
             "OTEL_SERVICE_NAME": SERVICE,
             "OTEL_EXPORTER_OTLP_ENDPOINT": args.endpoint,
-            "VCROLES_OTEL_USERNAME": config["OTLP_USERNAME"],
-            "VCROLES_OTEL_PASSWORD": config["OTLP_PASSWORD"],
+            "VCROLES_OTEL_USERNAME": config.get(
+                "OTLP_USERNAME", config.get("VCROLES_OTEL_USERNAME", "")
+            ),
+            "VCROLES_OTEL_PASSWORD": config.get(
+                "OTLP_PASSWORD", config.get("VCROLES_OTEL_PASSWORD", "")
+            ),
             "VCROLES_OTEL_ENVIRONMENT": "validation",
         }
     )
@@ -153,6 +157,10 @@ def verify(evidence):
         ("vcroles_member_edit_queue_wait_bucket", ""),
         ("vcroles_member_edit_queue_completion_bucket", 'outcome="success"'),
         ("vcroles_generator_events", 'event="generator_validation"'),
+        ("vcroles_process_rss", ""),
+        ("vcroles_process_cpu_time", ""),
+        ("vcroles_process_threads", ""),
+        ("vcroles_process_open_fds", ""),
     ):
         expression = f"{name}{{{identity}{',' + labels if labels else ''}}}"
         query = urllib.parse.urlencode(

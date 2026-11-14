@@ -198,6 +198,7 @@ class Telemetry:
         return result
 
     def _configure(self):
+        import psutil
         import requests
         from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
         from opentelemetry.exporter.otlp.proto.http.metric_exporter import (
@@ -359,6 +360,9 @@ class Telemetry:
         self.queue_events = meter.create_counter(
             "vcroles.member_edit.queue_events", unit="{update}"
         )
+        self.process = psutil.Process()
+        self.last_cpu_time = 0.0
+        self.cpu_time = meter.create_counter("vcroles.process.cpu_time", unit="s")
         self.gauges = {
             name: meter.create_gauge(f"vcroles.{name}", unit=unit)
             for name, unit in {
@@ -368,6 +372,10 @@ class Telemetry:
                 "runtime.tasks": "{task}",
                 "runtime.guilds": "{guild}",
                 "process.peak_rss": "By",
+                "process.rss": "By",
+                "process.vms": "By",
+                "process.threads": "{thread}",
+                "process.open_fds": "{file}",
                 "gateway.latency": "s",
                 "member_edit.queued": "{update}",
                 "member_edit.inflight": "{batch}",
@@ -546,6 +554,7 @@ class Telemetry:
                 self.gauges["gateway.latency"].set(
                     shard.latency, {"shard_id": shard_id}
                 )
+        self._attempt(self._sample_process)
         cog = getattr(client, "get_cog", lambda _: None)("VoiceState")
         queues = getattr(cog, "member_queues", None)
         if isinstance(queues, dict):
@@ -554,6 +563,20 @@ class Telemetry:
             )
             self.gauges["member_edit.inflight"].set(len(cog.edit_tasks))
             self.gauges["voice_state.inflight"].set(len(cog.event_tasks))
+
+    def _sample_process(self):
+        memory = self.process.memory_info()
+        cpu = self.process.cpu_times()
+        cpu_time = cpu.user + cpu.system
+        self.cpu_time.add(max(0, cpu_time - self.last_cpu_time))
+        self.last_cpu_time = cpu_time
+        for name, value in {
+            "process.rss": memory.rss,
+            "process.vms": memory.vms,
+            "process.threads": self.process.num_threads(),
+        }.items():
+            self.gauges[name].set(value)
+        self.gauges["process.open_fds"].set(self.process.num_fds())
 
     def _start_provider_shutdown(self):
         if self.shutdown_thread is not None:
