@@ -22,7 +22,3 @@ Make sure you have python installed as well as the [uv](https://github.com/astra
 -   Create a virtual environment `uv venv`
 -   Activate the virtual environment `.\.venv\Scripts\activate` or `source .venv/bin/activate`
 -   Install the project dependencies `uv pip install -r requirements.txt`
-
----
-
-[![Discord Bots](https://top.gg/api/widget/775025797034541107.svg)](https://top.gg/bot/775025797034541107)
