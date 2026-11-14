@@ -5,6 +5,7 @@ from discord.ext import commands
 
 from config import WEBSERVER_PORT
 from utils.client import VCRolesClient
+from utils.telemetry import get_telemetry
 
 
 class Status(commands.Cog):
@@ -16,6 +17,7 @@ class Status(commands.Cog):
 
         async def status(request):
             code = 200 if self.client.is_ready() else 503
+            get_telemetry().health(code)
             if code != self.last_status:
                 logging.getLogger(__name__).log(
                     logging.INFO if code == 200 else logging.WARNING,

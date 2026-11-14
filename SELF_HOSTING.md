@@ -118,3 +118,12 @@ records without discarding the existing history.
 Host-triggered restarts, out-of-memory kills, and `SIGKILL` still require the
 hosting panel's exit code and restart metadata; the process cannot log after it
 has been killed.
+
+## Optional OpenTelemetry
+
+The bot supports optional traces, metrics, and structured event export over
+authenticated OTLP/HTTP. It is disabled by default. See
+[the observability guide](observability/README.md#bot-instrumentation) for the
+private collector connection, environment variables, exported fields, resource
+limits, and shutdown behavior. Detailed local logs and generator audit records
+continue to work without a collector.

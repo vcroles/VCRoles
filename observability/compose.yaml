@@ -111,6 +111,12 @@ services:
     <<: *runtime
     image: grafana/alloy:v1.22.0@sha256:9acc2529bc1edb7f5b2bd801dd8334ebc80c158e3a9e5526ecd7c9a273d43189
     user: "10001:10001"
+    environment:
+      OTLP_HTPASSWD: ${OTLP_HTPASSWD:?Run scripts/init.py --upgrade-otlp-auth for an existing deployment}
+    networks:
+      telemetry:
+      ingest:
+        aliases: [vcroles-collector]
     command:
       - run
       - /etc/alloy/config.alloy
@@ -155,6 +161,9 @@ services:
     cpus: 0.5
 
 networks:
+  ingest:
+    # Attach only the bot at deployment time; the backends remain separate.
+    internal: true
   telemetry:
     # A private bridge, with host access restricted by each explicit bind above.
     # Docker's internal=true suppresses published ports, including loopback.

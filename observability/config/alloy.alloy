@@ -3,9 +3,20 @@ logging {
   format = "logfmt"
 }
 
+otelcol.auth.basic "applications" {
+  htpasswd { inline = sys.env("OTLP_HTPASSWD") }
+}
+
 otelcol.receiver.otlp "applications" {
-  grpc { endpoint = "0.0.0.0:4317" }
-  http { endpoint = "0.0.0.0:4318" }
+  grpc {
+    endpoint = "0.0.0.0:4317"
+    auth = otelcol.auth.basic.applications.handler
+  }
+  http {
+    endpoint = "0.0.0.0:4318"
+    auth = otelcol.auth.basic.applications.handler
+    max_request_body_size = "2MiB"
+  }
   output {
     traces = [otelcol.processor.memory_limiter.applications.input]
     metrics = [otelcol.processor.memory_limiter.applications.input]

@@ -1,6 +1,8 @@
 """Generate local credentials and data directories; never prints secrets."""
 
 import argparse
+import base64
+import hashlib
 import ipaddress
 import os
 import secrets
@@ -10,10 +12,27 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def collector_credentials():
+    password = secrets.token_urlsafe(32)
+    # htpasswd's SHA format hashes a high-entropy generated token, never a
+    # human-chosen password. The clear token remains in the private .env only.
+    digest = base64.b64encode(hashlib.sha1(password.encode()).digest()).decode()
+    return {
+        "OTLP_USERNAME": "vcroles",
+        "OTLP_PASSWORD": password,
+        "OTLP_HTPASSWD": f"vcroles:{{SHA}}{digest}",
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data-dir", type=Path, default=ROOT / "data")
     parser.add_argument("--grafana-bind", default="127.0.0.1")
+    parser.add_argument(
+        "--upgrade-otlp-auth",
+        action="store_true",
+        help="Add collector credentials to an existing .env without replacing other settings",
+    )
     args = parser.parse_args()
     address = ipaddress.ip_address(args.grafana_bind)
     if not isinstance(address, ipaddress.IPv4Address):
@@ -21,6 +40,30 @@ def main():
     if not (address.is_loopback or address in ipaddress.ip_network("100.64.0.0/10")):
         parser.error("Grafana must bind to loopback or a Tailscale IPv4 address")
     env_path = ROOT / ".env"
+    if args.upgrade_otlp_auth:
+        existing = dict(
+            line.split("=", 1)
+            for line in env_path.read_text().splitlines()
+            if line and not line.startswith("#")
+        )
+        credentials = collector_credentials()
+        present = credentials.keys() & existing.keys()
+        if present == credentials.keys():
+            print("Collector credentials already exist; preserved")
+            return
+        if present:
+            raise SystemExit(
+                "Incomplete collector credentials; resolve the private .env manually"
+            )
+        os.chmod(env_path, 0o600)
+        with env_path.open("a") as stream:
+            stream.write(
+                "\n" + "".join(f"{key}={value}\n" for key, value in credentials.items())
+            )
+            stream.flush()
+            os.fsync(stream.fileno())
+        print("Added collector credentials to existing private .env")
+        return
     data = args.data_dir.resolve()
     if any(char.isspace() for char in str(data)):
         parser.error("Use a data directory without whitespace")
@@ -36,6 +79,7 @@ def main():
         "LOKI_S3_SECRET_KEY": secrets.token_urlsafe(32),
         "TEMPO_S3_SECRET_KEY": secrets.token_urlsafe(32),
         "MIMIR_S3_SECRET_KEY": secrets.token_urlsafe(32),
+        **collector_credentials(),
     }
     # These commands are confined to the newly selected telemetry data path.
     # Docker's services use non-root UIDs and cannot initialize root-owned binds.

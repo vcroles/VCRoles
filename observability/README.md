@@ -3,7 +3,8 @@
 This is an independent Compose project containing Alloy, Grafana, Loki, Tempo,
 Mimir (classic monolithic), and RustFS. It does not load bot code, attach to the
 Pelican network, or restart the bot, PostgreSQL, Redis, Wings, or Portainer.
-The bot is not instrumented or connected to this collector yet.
+Bot instrumentation is optional and disabled by default; deploying this stack
+does not enable telemetry or change the running bot.
 
 ## Private access
 
@@ -37,9 +38,13 @@ All other published ports bind **127.0.0.1 only**:
 
 Each backend also uses its container hostname on a separate private Docker
 bridge. Explicit loopback/Tailscale host bindings restrict external access.
-The collector has no application authentication and accepts local traffic only.
-Before connecting the bot, choose and validate its restricted network path and
-authentication separately.
+Both OTLP protocols require generated Basic authentication credentials. A
+separate internal `vcroles-observability_ingest` network exposes the collector
+as `vcroles-collector`, without attaching the backends to that network. Attach
+the bot to this network only as part of an approved deployment. No extra host
+port needs to be exposed for bot ingestion. Basic authentication supplements
+network isolation; it does not provide encryption. Use TLS for any connection
+that leaves the local private Docker network or loopback.
 
 ## Versions and resources
 
@@ -79,6 +84,17 @@ services, and verifies synthetic OTLP data. Rerunning the helper preserves the
 generated credentials and data. Configuration changes can recreate only this
 project's services; never use it as a way to manage the Pelican bot.
 
+For a deployment initialized before OTLP authentication was added, first run:
+
+```sh
+python3 scripts/init.py --upgrade-otlp-auth
+sudo -n docker compose up -d --no-deps alloy
+```
+
+This adds collector credentials without replacing existing settings. Repeating
+the upgrade preserves the generated credentials. Keep `OTLP_PASSWORD` private;
+`OTLP_HTPASSWD` supplies Alloy with a hash of the generated random token.
+
 ## Pipelines and Grafana
 
 Alloy accepts native OTLP for logs, metrics, and traces. A memory limiter and
@@ -92,7 +108,8 @@ Do not simultaneously enable duplicate span-metrics generation in Tempo.
 
 Grafana provisions Metrics (`mimir`), Logs (`loki`), and Traces (`tempo`) data
 sources, exemplar/trace/log links, service-map configuration, and the
-**VCRoles / VCRoles telemetry pipeline** dashboard. Native OTLP metric names in
+**VCRoles / VCRoles telemetry pipeline** and **VCRoles / VCRoles bot health**
+dashboards. Native OTLP metric names in
 the pinned Mimir configuration are preserved; for example, the span counter is
 `traces_spanmetrics_calls`, not `traces_spanmetrics_calls_total`.
 
@@ -121,8 +138,10 @@ space for working data and compaction; monitor disk use and adjust sampling or
 ingestion before quotas fill.
 
 No remote backups or HA are configured. A host/disk failure may lose telemetry.
-Application OTLP queues are bounded in memory and retry for five minutes;
-restarting Alloy during a downstream outage can lose queued application data.
+Alloy's application OTLP queues are bounded in memory and retry downstream
+exports for five minutes; restarting Alloy during a downstream outage can lose
+queued application data. The Python SDK has separate, shorter export budgets
+described below.
 Prometheus remote-write uses its own persistent WAL. These limits are intentional
 for a disposable telemetry deployment, and do not replace the bot's local
 generator audit records.
@@ -143,6 +162,21 @@ queries all three backends, derived span/service-graph metrics, Grafana data
 source health, the dashboard, and rejection of anonymous Grafana access.
 `verify_storage.py` exercises each S3 user's read/write/delete permissions,
 cross-bucket denial, anonymous denial, and actual quota rejection.
+
+`verify_bot.py` exercises the actual Python SDK with synthetic operations, error
+classification, runtime metrics, correlated logs, histogram exemplars, and a
+redaction sentinel. It uses the separate `vcroles-sdk-validation` service identity
+and does not log into Discord or construct database/Redis clients. Run it with
+the bot dependencies installed and a local source checkout:
+
+```sh
+python3 scripts/verify_bot.py --source-root /path/to/source
+```
+
+For an isolated container on the ingestion network, use `--emit-only`,
+`--endpoint http://vcroles-collector:4318`, `--collector-env` for a read-only
+credentials file, and `--evidence` for a writable result path. Then run
+`--existing --evidence /path/to/result` on the host to verify through loopback.
 
 The following explicitly restarts **only the new observability stack** and
 briefly stops its three backends. Do not run it during an observability session
@@ -176,3 +210,55 @@ sudo -n docker compose start
 Keep credentials and data in place. Do not run global Docker prune commands or
 delete buckets/WAL directories to make space. When synchronizing configuration,
 exclude `.env`, `data/`, and generated validation evidence.
+
+## Bot instrumentation
+
+The first instrumentation stage covers shard ready/disconnect/resume traces and
+counters, readiness and health-request outcomes, per-shard gateway latency,
+event-loop lag, task/guild counts, peak process RSS, database connection state,
+and logical `DatabaseUtils` operation durations/outcomes. Database timing
+includes cache hits; it is not SQL execution timing and does not cover direct
+Prisma calls outside that utility. Span names and metric dimensions are static
+operation names, outcomes, and bounded shard/status values.
+
+Copy the collector's `OTLP_USERNAME` and `OTLP_PASSWORD` into the bot's private
+environment as `VCROLES_OTEL_USERNAME` and `VCROLES_OTEL_PASSWORD`. Set
+`OTEL_EXPORTER_OTLP_ENDPOINT=http://vcroles-collector:4318` and
+`VCROLES_OTEL_ENABLED=1`. The bot loads its local `.env` without overriding
+process environment variables. `VCROLES_OTEL_ENVIRONMENT` defaults to
+`development`; `OTEL_SERVICE_NAME` defaults to `vcroles`. Neither endpoint nor
+credentials are written into the public configuration.
+
+During deployment, with `BOT_CONTAINER` set privately to the intended container:
+
+```sh
+sudo -n docker network connect vcroles-observability_ingest "$BOT_CONTAINER"
+```
+
+Make the network attachment persistent in the container-management workflow;
+manual Docker attachment does not survive replacement of a Pelican container.
+Enabling the SDK requires an approved bot rollout/restart. The stack helpers
+never perform that step. Set `VCROLES_OTEL_ENABLED=0` to disable it on a future
+restart; telemetry configuration errors also leave application work running and
+produce a local warning without including credentials.
+
+The SDK exports at most 1 MiB per request with a two-second export budget,
+queues up to 1,024 spans and 512 logs, and exports metrics every 15 seconds.
+Metrics have an attribute allowlist and a 2,048-series limit per instrument.
+Telemetry is exported by SDK background threads. Shutdown waits at most five
+seconds for export cleanup, then permits process exit with potential telemetry
+loss. Queue saturation drops telemetry; SDK queue/drop metrics expose that loss,
+and repeated queue-full warnings are limited to one per signal per 30 seconds.
+SDK internal metrics can be disabled with
+`OTEL_PYTHON_SDK_INTERNAL_METRICS_ENABLED=false`.
+Collector requests use dedicated sessions that ignore environment proxies and
+`.netrc`, keeping private credentials on the configured direct connection.
+
+Only structured event names and allowlisted numeric/boolean context fields are
+exported as logs. Raw log messages, SQL/arguments/results, exception messages and
+tracebacks, tokens, user content, Discord IDs, host names, and command lines are
+excluded. Existing detailed local logs and generator audit persistence remain
+independent; local JSON records gain trace/span IDs when a span is active.
+Custom command, member-edit queue, generator, Redis/HTTP, and TTS instrumentation
+can build on this lifecycle without automatically exporting those libraries'
+request payloads.

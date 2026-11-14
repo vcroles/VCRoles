@@ -42,6 +42,27 @@ def request(url, payload=None, headers=None, *, method=None, timeout=10):
         return json.loads(body) if body.startswith(("{", "[")) else body
 
 
+def collector_headers():
+    config = settings()
+    token = base64.b64encode(
+        f"{config['OTLP_USERNAME']}:{config['OTLP_PASSWORD']}".encode()
+    ).decode()
+    return {"Authorization": f"Basic {token}"}
+
+
+def verify_collector_auth():
+    for signal in ("traces", "metrics", "logs"):
+        for headers in ({}, {"Authorization": "Basic aW52YWxpZDppbnZhbGlk"}):
+            try:
+                request(f"http://127.0.0.1:4318/v1/{signal}", {}, headers)
+            except urllib.error.HTTPError as error:
+                if error.code not in (401, 403):
+                    raise
+            else:
+                raise RuntimeError("OTLP receiver accepted missing/invalid credentials")
+    print("PASS all HTTP OTLP signals reject missing/invalid credentials", flush=True)
+
+
 def eventually(description, check, *, timeout=120):
     deadline = time.monotonic() + timeout
     error = None
@@ -215,7 +236,9 @@ def emit():
         }
     )
     for signal, payload in (("traces", traces), ("logs", logs), ("metrics", metrics)):
-        result = request(f"http://127.0.0.1:4318/v1/{signal}", payload)
+        result = request(
+            f"http://127.0.0.1:4318/v1/{signal}", payload, collector_headers()
+        )
         if isinstance(result, dict) and result.get("partialSuccess"):
             raise RuntimeError(f"OTLP {signal} was only partially accepted")
     return {"run": run, "trace_id": trace, "emitted_at_ns": now}
@@ -321,11 +344,15 @@ def verify(evidence, *, expect_exemplar=True):
         result = request(f"{grafana}/api/datasources/uid/{uid}/health", headers=headers)
         if result.get("status") != "OK":
             raise RuntimeError(f"Grafana {uid} datasource health check failed")
-    dashboard = request(
-        f"{grafana}/api/dashboards/uid/vcroles-telemetry", headers=headers
-    )
-    if not dashboard.get("dashboard", {}).get("panels"):
-        raise RuntimeError("Provisioned pipeline dashboard missing")
+    for uid in ("vcroles-telemetry", "vcroles-bot-health"):
+        eventually(
+            f"Grafana dashboard {uid}",
+            lambda uid=uid: (
+                request(f"{grafana}/api/dashboards/uid/{uid}", headers=headers)
+                .get("dashboard", {})
+                .get("panels")
+            ),
+        )
     print(
         "PASS authenticated Grafana data sources and dashboard; anonymous access rejected",
         flush=True,
@@ -359,6 +386,7 @@ def main():
             endpoints = {"Alloy": endpoints["Alloy"]}
         for name, url in endpoints.items():
             eventually(f"{name} ready", lambda url=url: request(url), timeout=180)
+        verify_collector_auth()
         evidence = emit()
         path.write_text(json.dumps(evidence, indent=2) + "\n")
         print(f"PASS emitted synthetic OTLP; trace={evidence['trace_id']}", flush=True)

@@ -13,6 +13,7 @@ from prisma.types import (
 )
 
 from prisma import Prisma
+from utils.telemetry import observed
 from utils.types import DiscordID
 
 
@@ -30,9 +31,11 @@ class DatabaseUtils:
         self.db = Prisma()
         self.analytic_guilds: list[Guild] = []
 
+    @observed("database")
     async def connect(self) -> None:
         await self.db.connect()
 
+    @observed("database")
     async def disconnect(self) -> None:
         if self.db.is_connected():
             await self.db.disconnect()
@@ -54,6 +57,7 @@ class DatabaseUtils:
             if key[0] is self and str(key[1]) == str(channel_id):
                 self.generated_channel_cache.pop(key, None)
 
+    @observed("database")
     async def guild_remove(self, guild_id: DiscordID) -> None:
         await self.db.guild.delete(where={"id": str(guild_id)})
 
@@ -63,9 +67,11 @@ class DatabaseUtils:
         except KeyError:
             pass
 
+    @observed("database")
     async def guild_add(self, guild_id: DiscordID) -> None:
         await self.db.guild.create({"id": str(guild_id)})
 
+    @observed("database")
     @cached(guild_cache)
     async def get_guild_data(self, guild_id: DiscordID) -> Guild:
         data = await self.db.guild.find_unique(where={"id": str(guild_id)})
@@ -73,6 +79,7 @@ class DatabaseUtils:
             data = await self.db.guild.create({"id": str(guild_id)})
         return data
 
+    @observed("database")
     async def update_guild_data(
         self,
         guild_id: DiscordID,
@@ -137,6 +144,7 @@ class DatabaseUtils:
         except KeyError:
             pass
 
+    @observed("database")
     @cached(linked_channel_cache)
     async def get_channel_linked(
         self,
@@ -154,6 +162,7 @@ class DatabaseUtils:
             )
         return data
 
+    @observed("database")
     async def update_channel_linked(  # TODO: Make cache work
         self,
         channel_id: DiscordID,
@@ -215,6 +224,7 @@ class DatabaseUtils:
         except KeyError:
             pass
 
+    @observed("database")
     @cached(all_links_cache)
     async def get_all_linked(self, guild_id: DiscordID) -> List[Link]:
         guild = await self.db.guild.find_unique(
@@ -227,6 +237,7 @@ class DatabaseUtils:
 
         return guild.links or []
 
+    @observed("database")
     @cached(get_generators_cache)
     async def get_generators(self, guild_id: DiscordID) -> list[VoiceGenerator]:
         data = await self.db.voicegenerator.find_many(
@@ -236,6 +247,7 @@ class DatabaseUtils:
             return []
         return data
 
+    @observed("database")
     @cached(generator_cache)
     async def get_generator(
         self, guild_id: DiscordID, generator_id: DiscordID
@@ -251,6 +263,7 @@ class DatabaseUtils:
         )
         return data
 
+    @observed("database")
     async def update_generator(
         self,
         guild_id: DiscordID,
@@ -325,6 +338,7 @@ class DatabaseUtils:
         # Child records embed the generator settings, including ownership rules.
         self.generated_channel_cache.clear()
 
+    @observed("database")
     @cached(generated_channel_cache)
     async def get_generated_channel(
         self, channel_id: DiscordID
@@ -334,6 +348,7 @@ class DatabaseUtils:
         )
         return data
 
+    @observed("database")
     async def delete_generated_channel(self, channel_id: DiscordID) -> None:
         data = await self.db.generatedchannel.find_unique(
             where={"channelId": str(channel_id)}, include={"VoiceGenerator": True}
@@ -345,6 +360,7 @@ class DatabaseUtils:
                 data.VoiceGenerator.guildId, data.VoiceGenerator.generatorId
             )
 
+    @observed("database")
     async def update_generated_channel(
         self,
         channel_id: DiscordID,
@@ -372,6 +388,7 @@ class DatabaseUtils:
 
         self.invalidate_generated_channel(channel_id)
 
+    @observed("database")
     async def create_generated_channel(
         self,
         guild_id: DiscordID,
@@ -403,6 +420,7 @@ class DatabaseUtils:
 
         return data
 
+    @observed("database")
     async def delete_generator(
         self, guild_id: DiscordID, generator_id: DiscordID
     ) -> None:
@@ -413,6 +431,7 @@ class DatabaseUtils:
         if deleted:
             self.generated_channel_cache.clear()
 
+    @observed("database")
     async def get_all_linked_channel(
         self,
         guild_id: DiscordID,

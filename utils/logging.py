@@ -14,6 +14,8 @@ import uuid
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
+from utils.telemetry import trace_context
+
 RUN_ID = uuid.uuid4().hex
 AUDIT_LOGGER = logging.getLogger("vcroles.audit")
 
@@ -151,6 +153,7 @@ class JSONFormatter(logging.Formatter):
             "run_id": record.run_id,
             "revision": record.revision,
             "context": record.context,
+            **trace_context(),
         }
         if record.exc_info and record.exc_info[1] is not None:
             error = record.exc_info[1]

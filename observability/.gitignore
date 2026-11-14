@@ -2,4 +2,5 @@
 data/
 validation-results.json
 recovery-results.json
+bot-validation-results.json
 __pycache__/
