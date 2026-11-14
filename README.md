@@ -1,8 +1,5 @@
 # VC Roles
 
-[![Discord Bots](https://top.gg/api/widget/status/775025797034541107.svg)](https://top.gg/bot/775025797034541107)
-[![Discord Bots](https://top.gg/api/widget/servers/775025797034541107.svg?noavatar=true)](https://top.gg/bot/775025797034541107)
-[![Discord Bots](https://top.gg/api/widget/owner/775025797034541107.svg?noavatar=true)](https://top.gg/bot/775025797034541107)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Pull Requests](https://img.shields.io/badge/Pull%20Requests-Welcome!-brightgreen)](https://github.com/CDESamBotDev/VCRoles/pulls)
 
