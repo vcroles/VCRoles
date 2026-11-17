@@ -21,6 +21,40 @@ Container CPU includes all processes, including Prisma and FFmpeg. A value of
 Python process metrics exclude subprocesses. Disk I/O counters reflect physical
 I/O charged to the container, rather than every application read or write.
 
+The memory comparison panel places Python RSS, container RSS and container working
+set together. These overlap and use different accounting; they are not additive,
+and their difference is not an exact measurement of Prisma or another child.
+
+Latency panels distinguish HTTP requests from Tempo's internal scheduler long
+polls. Backend HTTP percentiles exclude gRPC, scrape and readiness traffic and
+have a companion request-volume panel. RustFS uses mean request latency because
+its native histogram's first nonzero bucket spans 0–5 seconds; that histogram
+cannot resolve a useful p95 for normal requests. Histogram percentiles are
+estimates, especially for sparse command/TTS observations; the bot dashboard
+includes counts over the same rate window.
+
+Redis and PostgreSQL hit ratios have gaps when their denominator is zero.
+An idle window is not a 0% hit rate. Redis read rates and command breakdowns
+separate keyspace lookups from analytics increments and exporter traffic.
+
+The telemetry pipeline shows exports, failures, receiver outcomes and queue
+utilization for each configured signal. A missing exporter error counter becomes
+zero only while its sent counter is present and Alloy is being scraped
+successfully. SDK error counters similarly use the corresponding queue gauge as
+their presence check. Missing telemetry remains a gap. The service graph is
+explicitly labelled as synthetic validation traffic; production dependency edges
+require additional client/server instrumentation.
+
+The member-edit queue and active-batch panels remain instantaneous five-second
+samples. Because dispatch also runs every five seconds, timing drift can produce
+a slow sawtooth or periodic worker spikes. These panels do not measure interval
+peaks; use queue-wait/completion histograms and means to assess processing delay.
+
+Object-store quota utilization is a combined total, not proof that every bucket
+has headroom. The net-growth panel scales a six-hour usage trend to bytes/day;
+retention and compaction can make it negative. It is not an ingestion measure or
+a guarantee about future storage use.
+
 ## Private configuration
 
 Create `monitoring-targets.json` locally on the deployment host with mode `0600`.

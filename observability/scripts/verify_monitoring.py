@@ -66,14 +66,10 @@ def main():
         for panel in dashboard["panels"]:
             for target in panel.get("targets", []):
                 expression = target["expr"].replace("$__rate_interval", "2m")
-                if "vcroles_process_" in expression:
-                    query(expression)
-                else:
-                    eventually(
-                        panel["title"],
-                        lambda expression=expression: query(expression),
-                        timeout=150,
-                    )
+                # Idle ratios and percentiles legitimately have no observations,
+                # and Python SDK metrics are optional. Required metric presence
+                # is checked above; every panel must still execute successfully.
+                query(expression)
         print(f"PASS dashboard query execution: {dashboard['title']}", flush=True)
     sockets = subprocess.check_output(
         ["ss", "-H", "-ltn", "sport", "=", ":12346"], text=True
