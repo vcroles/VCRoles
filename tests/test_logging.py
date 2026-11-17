@@ -162,6 +162,7 @@ class PersistentLoggingTests(unittest.TestCase):
     def test_audit_sync_failure_prevents_discord_deletion(self):
         guild = Mock(id=1, shard_id=0, unavailable=False)
         voice = Mock(spec=discord.VoiceChannel, id=10, guild=guild)
+        voice.is_obfuscated.return_value = False
         voice.voice_states = {}
         voice.delete = AsyncMock()
         client = Mock()

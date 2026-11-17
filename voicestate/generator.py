@@ -27,6 +27,36 @@ class Generator:
             2**15, 15 * 60
         )
         self.shard_ready_after: dict[int, float] = {}
+        self.obfuscated_notices: TTLCache[int, bool] = TTLCache(2**15, 5 * 60)
+
+    def channel_visibility_changed(self, channel: discord.abc.GuildChannel) -> None:
+        # A hidden interval invalidates earlier evidence of vacancy, even if it
+        # begins and ends between two reconciliation passes.
+        self.empty_channels.pop(channel.id, None)
+        self.obfuscated_notices.pop(channel.id, None)
+
+    def defer_obfuscated(self, *channels, phase: str) -> bool:
+        hidden = False
+        for channel in channels:
+            if channel is None:
+                continue
+            if not channel.is_obfuscated():
+                self.obfuscated_notices.pop(channel.id, None)
+                continue
+            hidden = True
+            self.empty_channels.pop(channel.id, None)
+            if channel.id not in self.obfuscated_notices:
+                self.client.log(
+                    LogLevel.INFO,
+                    "Generator operation deferred until channel visibility returns",
+                    event="generator_channel_obfuscated",
+                    guild_id=channel.guild.id,
+                    shard_id=channel.guild.shard_id,
+                    channel_id=channel.id,
+                    phase=phase,
+                )
+                self.obfuscated_notices[channel.id] = True
+        return hidden
 
     def shard_disconnected(self, shard_id: int) -> None:
         self.shard_ready_after[shard_id] = float("inf")
@@ -63,6 +93,8 @@ class Generator:
 
         if not user_channel:
             return
+        if self.defer_obfuscated(user_channel, phase="join"):
+            return
 
         channel_data = await self.client.db.get_generated_channel(user_channel.id)
         generator_id = (
@@ -75,11 +107,17 @@ class Generator:
             # when this Member was copied before waiting for the lock.
             if not member.voice or member.voice.channel != user_channel:
                 return
+            if self.defer_obfuscated(user_channel, phase="join"):
+                return
             if channel_data and channel_data.textChannelId:
                 text_channel = await self.text_channel(member.guild, channel_data)
                 if not member.voice or member.voice.channel != user_channel:
                     return
                 if text_channel is not None:
+                    if self.defer_obfuscated(
+                        user_channel, text_channel, phase="text_join"
+                    ):
+                        return
                     overwrite = text_channel.overwrites_for(member)
                     overwrite.view_channel = True
                     overwrite.send_messages = True
@@ -103,9 +141,11 @@ class Generator:
 
     @observed("generator")
     async def _create(self, member: discord.Member, user_channel: discord.VoiceChannel):
+        if self.defer_obfuscated(user_channel, phase="voice_create"):
+            return
         gen_data = await self.client.db.get_generator(member.guild.id, user_channel.id)
 
-        if not gen_data:
+        if not gen_data or self.defer_obfuscated(user_channel, phase="voice_create"):
             return
 
         if gen_data.restrictRole:
@@ -179,6 +219,8 @@ class Generator:
 
         async def create_resources():
             nonlocal channel, text_channel, phase
+            if self.defer_obfuscated(user_channel, phase="voice_create"):
+                return
             audit_event("generator_create_requested", kind="voice", **context)
             if gen_data.type == VoiceGeneratorType.CLONED:
                 channel = await user_channel.clone(
@@ -243,6 +285,8 @@ class Generator:
 
             if VoiceGeneratorOption.TEXT in gen_data.defaultOptions:
                 phase = "text_create"
+                if self.defer_obfuscated(user_channel, channel, phase=phase):
+                    return
                 audit_event(
                     "generator_create_requested",
                     kind="text",
@@ -290,6 +334,8 @@ class Generator:
                     await creation
                 finally:
                     raise
+            if channel is None:
+                return
             audit_event(
                 "generator_resources_persisted",
                 voice_channel_id=channel.id,
@@ -298,6 +344,8 @@ class Generator:
             )
             if text_channel is not None:
                 phase = "text_notification"
+                if self.defer_obfuscated(channel, text_channel, phase=phase):
+                    return
                 await text_channel.send(
                     f"{member.mention} this is your generated text channel."
                 )
@@ -306,8 +354,10 @@ class Generator:
                     channel, text_channel, reason="member_left_before_move"
                 )
                 return
-            move_started = True
             phase = "member_move"
+            if self.defer_obfuscated(channel, phase=phase):
+                return
+            move_started = True
             await member.move_to(channel)
 
         except (Exception, asyncio.CancelledError) as error:
@@ -342,7 +392,9 @@ class Generator:
 
         if gen_data.hideAtLimit and count + 1 >= gen_data.channelLimit:
             gen_channel = member.guild.get_channel(int(gen_data.generatorId))
-            if gen_channel:
+            if gen_channel and not self.defer_obfuscated(
+                gen_channel, phase="hide_trigger"
+            ):
                 gen_overwrites = gen_channel.overwrites
                 try:
                     gen_overwrites[default_role].view_channel = False
@@ -384,6 +436,8 @@ class Generator:
 
     @observed("generator")
     async def _leave(self, member, voice_channel, data):
+        if self.defer_obfuscated(voice_channel, phase="leave"):
+            return
         if member.voice and member.voice.channel == voice_channel:
             # A delayed leave event must not revoke access after a rejoin.
             return
@@ -411,7 +465,9 @@ class Generator:
                     gen_channel = member.guild.get_channel(
                         int(data.VoiceGenerator.generatorId)
                     )
-                    if gen_channel:
+                    if gen_channel and not self.defer_obfuscated(
+                        gen_channel, phase="show_trigger"
+                    ):
                         overwrites = gen_channel.overwrites
 
                         try:
@@ -427,6 +483,10 @@ class Generator:
             if member.voice and member.voice.channel == voice_channel:
                 return
             if text_channel is not None:
+                if self.defer_obfuscated(
+                    voice_channel, text_channel, phase="text_leave"
+                ):
+                    return
                 overwrite = text_channel.overwrites_for(member)
                 overwrite.send_messages = False
                 overwrite.view_channel = False
@@ -466,6 +526,10 @@ class Generator:
         operation_id=None,
     ) -> bool:
         """Persist intents before deletes; keep records when any deletion fails."""
+        if self.defer_obfuscated(voice_channel, text_channel, phase="cleanup"):
+            if voice_channel is not None:
+                self.empty_channels.pop(voice_channel.id, None)
+            return False
         guild = (
             voice_channel.guild
             if voice_channel is not None
@@ -487,6 +551,10 @@ class Generator:
         for channel in (text_channel, voice_channel):
             if channel is None:
                 continue
+            if self.defer_obfuscated(voice_channel, text_channel, phase="cleanup"):
+                if voice_channel is not None:
+                    self.empty_channels.pop(voice_channel.id, None)
+                return False
             if (guild is not None and not self.can_cleanup(guild)) or (
                 voice_channel is not None and voice_channel.voice_states
             ):
@@ -572,6 +640,9 @@ class Generator:
                             stats["grace"] += 1
                             continue
                         channel = guild.get_channel(int(data.channelId))
+                        if self.defer_obfuscated(channel, phase="reconcile"):
+                            stats["unavailable"] += 1
+                            continue
                         if channel is not None and (
                             not isinstance(channel, discord.VoiceChannel)
                             or channel.voice_states
@@ -604,6 +675,12 @@ class Generator:
                         if not self.can_cleanup(guild):
                             continue
                         text_channel = await self.text_channel(guild, data)
+                        if self.defer_obfuscated(
+                            channel, text_channel, phase="reconcile"
+                        ):
+                            self.empty_channels.pop(int(data.channelId), None)
+                            stats["unavailable"] += 1
+                            continue
                         if not self.can_cleanup(guild):
                             continue
                         operation_id = uuid.uuid4().hex
@@ -633,7 +710,13 @@ class Generator:
                                     where={"voiceGeneratorId": data.voiceGeneratorId}
                                 )
                                 trigger = guild.get_channel(int(generator.generatorId))
-                                if trigger and count < generator.channelLimit:
+                                if (
+                                    trigger
+                                    and count < generator.channelLimit
+                                    and not self.defer_obfuscated(
+                                        trigger, phase="show_trigger"
+                                    )
+                                ):
                                     role = (
                                         guild.get_role(int(generator.defaultRole))
                                         if generator.defaultRole

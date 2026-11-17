@@ -16,15 +16,34 @@ class GeneratorUtils:
         self.editable_failure = "You are not allowed to edit this channel."
         self.owner_failure = "You must be the channel owner to edit."
 
+    @staticmethod
+    def channel_unavailable(user: discord.Member) -> bool:
+        channel = user.voice.channel if user.voice else None
+        return channel is None or channel.is_obfuscated()
+
+    def channel_failure_for(self, user: discord.Member) -> str:
+        channel = user.voice.channel if user.voice else None
+        if channel is not None and channel.is_obfuscated():
+            return (
+                "VC Roles cannot view this voice channel. Please ask a server "
+                "administrator to restore its View Channel permission."
+            )
+        return self.channel_failure
+
     async def in_voice_channel(self, user: discord.Member) -> bool:
+        if self.channel_unavailable(user):
+            return False
         data = await self.db.get_generators(user.guild.id)
 
-        if not user.voice or not user.voice.channel or not user.voice.channel.category:
+        if self.channel_unavailable(user):
+            return False
+        channel = user.voice.channel
+        if channel.category_id is None:
             return False
 
         return any(
-            str(user.voice.channel.category.id) == d.categoryId
-            and str(user.voice.channel.id) != d.generatorId
+            str(channel.category_id) == d.categoryId
+            and str(channel.id) != d.generatorId
             for d in data
         )
 
@@ -45,12 +64,12 @@ class GeneratorUtils:
             or not user.voice.channel
             or not await self.in_voice_channel(user)
         ):
-            return self.channel_failure
+            return self.channel_failure_for(user)
 
         gen_data = await self.db.get_generated_channel(user.voice.channel.id)
 
-        if not gen_data:
-            return self.channel_failure
+        if not gen_data or self.channel_unavailable(user):
+            return self.channel_failure_for(user)
         if not gen_data.userEditable:
             return self.editable_failure
         if not self.is_owner(user, gen_data):
@@ -83,12 +102,12 @@ class GeneratorUtils:
             or not user.voice.channel
             or not await self.in_voice_channel(user)
         ):
-            return self.channel_failure
+            return self.channel_failure_for(user)
 
         gen_data = await self.db.get_generated_channel(user.voice.channel.id)
 
-        if not gen_data:
-            return self.channel_failure
+        if not gen_data or self.channel_unavailable(user):
+            return self.channel_failure_for(user)
         if not gen_data.userEditable:
             return self.editable_failure
         if not self.is_owner(user, gen_data):
@@ -121,12 +140,12 @@ class GeneratorUtils:
             or not user.voice.channel
             or not await self.in_voice_channel(user)
         ):
-            return self.channel_failure
+            return self.channel_failure_for(user)
 
         gen_data = await self.db.get_generated_channel(user.voice.channel.id)
 
-        if not gen_data:
-            return self.channel_failure
+        if not gen_data or self.channel_unavailable(user):
+            return self.channel_failure_for(user)
         if not gen_data.userEditable:
             return self.editable_failure
         if not self.is_owner(user, gen_data):
@@ -159,12 +178,12 @@ class GeneratorUtils:
             or not user.voice.channel
             or not await self.in_voice_channel(user)
         ):
-            return self.channel_failure
+            return self.channel_failure_for(user)
 
         gen_data = await self.db.get_generated_channel(user.voice.channel.id)
 
-        if not gen_data:
-            return self.channel_failure
+        if not gen_data or self.channel_unavailable(user):
+            return self.channel_failure_for(user)
         if not gen_data.userEditable:
             return self.editable_failure
         if not self.is_owner(user, gen_data):
@@ -198,12 +217,12 @@ class GeneratorUtils:
             or not await self.in_voice_channel(user)
             or not isinstance(user.voice.channel, discord.VoiceChannel)
         ):
-            return self.channel_failure
+            return self.channel_failure_for(user)
 
         gen_data = await self.db.get_generated_channel(user.voice.channel.id)
 
-        if not gen_data:
-            return self.channel_failure
+        if not gen_data or self.channel_unavailable(user):
+            return self.channel_failure_for(user)
         if not gen_data.userEditable:
             return self.editable_failure
         if not self.is_owner(user, gen_data):
@@ -225,12 +244,12 @@ class GeneratorUtils:
             or not await self.in_voice_channel(user)
             or not isinstance(user.voice.channel, discord.VoiceChannel)
         ):
-            return self.channel_failure
+            return self.channel_failure_for(user)
 
         gen_data = await self.db.get_generated_channel(user.voice.channel.id)
 
-        if not gen_data:
-            return self.channel_failure
+        if not gen_data or self.channel_unavailable(user):
+            return self.channel_failure_for(user)
         if not gen_data.userEditable:
             return self.editable_failure
         if not self.is_owner(user, gen_data):
@@ -252,15 +271,15 @@ class GeneratorUtils:
             or not await self.in_voice_channel(user)
             or not isinstance(user.voice.channel, discord.VoiceChannel)
         ):
-            return self.channel_failure
+            return self.channel_failure_for(user)
 
         if user_limit < 0:
             return "Limit cannot be less than 0"
 
         gen_data = await self.db.get_generated_channel(user.voice.channel.id)
 
-        if not gen_data:
-            return self.channel_failure
+        if not gen_data or self.channel_unavailable(user):
+            return self.channel_failure_for(user)
         if not gen_data.userEditable:
             return self.editable_failure
         if not self.is_owner(user, gen_data):
@@ -279,12 +298,12 @@ class GeneratorUtils:
             or not user.voice.channel
             or not await self.in_voice_channel(user)
         ):
-            return self.channel_failure
+            return self.channel_failure_for(user)
 
         gen_data = await self.db.get_generated_channel(user.voice.channel.id)
 
-        if not gen_data:
-            return self.channel_failure
+        if not gen_data or self.channel_unavailable(user):
+            return self.channel_failure_for(user)
         if not gen_data.userEditable:
             return self.editable_failure
         if not self.is_owner(user, gen_data):
@@ -307,12 +326,12 @@ class GeneratorUtils:
             or not user.voice.channel
             or not await self.in_voice_channel(user)
         ):
-            return self.channel_failure
+            return self.channel_failure_for(user)
 
         gen_data = await self.db.get_generated_channel(user.voice.channel.id)
 
-        if not gen_data:
-            return self.channel_failure
+        if not gen_data or self.channel_unavailable(user):
+            return self.channel_failure_for(user)
         if not gen_data.userEditable:
             return self.editable_failure
         if not self.is_owner(user, gen_data):
@@ -341,12 +360,12 @@ class GeneratorUtils:
             or not user.voice.channel
             or not await self.in_voice_channel(user)
         ):
-            return self.channel_failure
+            return self.channel_failure_for(user)
 
         gen_data = await self.db.get_generated_channel(user.voice.channel.id)
 
-        if not gen_data:
-            return self.channel_failure
+        if not gen_data or self.channel_unavailable(user):
+            return self.channel_failure_for(user)
         if not gen_data.userEditable:
             return self.editable_failure
         if not self.is_owner(user, gen_data):
@@ -375,12 +394,16 @@ class GeneratorUtils:
             or not user.voice.channel
             or not await self.in_voice_channel(user)
         ):
-            return self.channel_failure
+            return self.channel_failure_for(user)
 
         gen_data = await self.db.get_generated_channel(user.voice.channel.id)
 
-        if not gen_data or not gen_data.VoiceGenerator:
-            return self.channel_failure
+        if (
+            not gen_data
+            or not gen_data.VoiceGenerator
+            or self.channel_unavailable(user)
+        ):
+            return self.channel_failure_for(user)
 
         if VoiceGeneratorOption.OWNER not in gen_data.VoiceGenerator.defaultOptions:
             return "Cannot claim unclaimable channel."

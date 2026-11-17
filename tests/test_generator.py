@@ -26,9 +26,11 @@ class GeneratorTests(unittest.IsolatedAsyncioTestCase):
         self.voice = Mock(spec=discord.VoiceChannel, id=10, guild=self.guild)
         self.voice.members = []
         self.voice.voice_states = {}
+        self.voice.is_obfuscated.return_value = False
         self.voice.delete = AsyncMock()
         self.text = Mock(spec=discord.TextChannel, id=20, guild=self.guild)
         self.text.delete = AsyncMock()
+        self.text.is_obfuscated.return_value = False
         self.text.send = AsyncMock()
         self.text.set_permissions = AsyncMock()
         self.text.overwrites_for.return_value = discord.PermissionOverwrite()
@@ -236,6 +238,7 @@ class GeneratorTests(unittest.IsolatedAsyncioTestCase):
 
     def member_and_trigger(self):
         trigger = Mock(spec=discord.VoiceChannel, id=2, guild=self.guild)
+        trigger.is_obfuscated.return_value = False
         member = Mock(id=3, guild=self.guild, display_name="Member")
         member.voice = SimpleNamespace(channel=trigger)
         member.move_to = AsyncMock()
@@ -449,3 +452,138 @@ class GeneratorTests(unittest.IsolatedAsyncioTestCase):
         await self.generator._leave(member, self.voice, self.record)
         self.text.set_permissions.assert_not_awaited()
         self.voice.delete.assert_not_awaited()
+
+    async def test_hidden_voice_channel_preserves_record_and_companion(self):
+        self.voice.is_obfuscated.return_value = True
+        await self.sweep_twice()
+        self.voice.delete.assert_not_awaited()
+        self.text.delete.assert_not_awaited()
+        self.guild.fetch_channel.assert_not_awaited()
+        self.db.delete_generated_channel.assert_not_awaited()
+        self.assertNotIn(self.voice.id, self.generator.empty_channels)
+        notices = [
+            call
+            for call in self.client.log.call_args_list
+            if call.kwargs.get("event") == "generator_channel_obfuscated"
+        ]
+        self.assertEqual(len(notices), 1)
+
+    async def test_hidden_companion_prevents_even_a_direct_cleanup(self):
+        self.text.is_obfuscated.return_value = True
+        self.generator.empty_channels[self.voice.id] = (0, self.now - 120)
+        self.assertFalse(await self.generator._cleanup(self.voice, self.text))
+        self.voice.delete.assert_not_awaited()
+        self.text.delete.assert_not_awaited()
+        self.db.delete_generated_channel.assert_not_awaited()
+        self.assertNotIn(self.voice.id, self.generator.empty_channels)
+        self.audit.assert_not_called()
+
+    async def test_visibility_loss_during_text_delete_preserves_voice_and_record(self):
+        async def hidden(**kwargs):
+            self.voice.is_obfuscated.return_value = True
+
+        self.text.delete.side_effect = hidden
+        self.assertFalse(await self.generator._cleanup(self.voice, self.text))
+        self.voice.delete.assert_not_awaited()
+        self.db.delete_generated_channel.assert_not_awaited()
+
+    async def test_visibility_recovery_requires_new_empty_observations(self):
+        await self.generator.reconcile()
+        self.voice.is_obfuscated.return_value = True
+        self.generator.channel_visibility_changed(self.voice)
+        self.now += 120
+        self.voice.is_obfuscated.return_value = False
+        self.generator.channel_visibility_changed(self.voice)
+        await self.generator.reconcile()
+        self.voice.delete.assert_not_awaited()
+        self.now += 61
+        await self.generator.reconcile()
+        self.voice.delete.assert_awaited_once()
+        self.db.delete_generated_channel.assert_awaited_once()
+
+    async def test_obfuscated_trigger_never_clones_or_creates_records(self):
+        member, trigger = self.member_and_trigger()
+        trigger.is_obfuscated.return_value = True
+        trigger.clone = AsyncMock()
+        self.settings.type = VoiceGeneratorType.CLONED
+        await self.generator.join(member, trigger)
+        trigger.clone.assert_not_awaited()
+        self.guild.create_voice_channel.assert_not_awaited()
+        self.db.get_generated_channel.assert_not_awaited()
+        self.db.create_generated_channel.assert_not_awaited()
+        member.move_to.assert_not_awaited()
+
+    async def test_trigger_hidden_while_reading_configuration_is_not_cloned(self):
+        member, trigger = self.member_and_trigger()
+        trigger.clone = AsyncMock()
+        self.settings.type = VoiceGeneratorType.CLONED
+
+        async def configuration(*args):
+            trigger.is_obfuscated.return_value = True
+            return self.settings
+
+        self.db.get_generator.side_effect = configuration
+        await self.generator.join(member, trigger)
+        trigger.clone.assert_not_awaited()
+        self.db.create_generated_channel.assert_not_awaited()
+        member.move_to.assert_not_awaited()
+
+    async def test_trigger_hidden_before_creation_task_runs_is_not_cloned(self):
+        member, trigger = self.member_and_trigger()
+        trigger.clone = AsyncMock()
+        self.settings.type = VoiceGeneratorType.CLONED
+
+        async def configuration(*args):
+            asyncio.get_running_loop().call_soon(
+                setattr, trigger.is_obfuscated, "return_value", True
+            )
+            return self.settings
+
+        self.db.get_generator.side_effect = configuration
+        await self.generator.join(member, trigger)
+        trigger.clone.assert_not_awaited()
+        self.db.create_generated_channel.assert_not_awaited()
+        member.move_to.assert_not_awaited()
+
+    async def test_voice_hidden_during_companion_fetch_does_not_edit_permissions(self):
+        member, _ = self.member_and_trigger()
+        member.voice.channel = self.voice
+        self.db.get_generated_channel.return_value = self.record
+        del self.channels[self.text.id]
+
+        async def fetched(*args):
+            self.voice.is_obfuscated.return_value = True
+            return self.text
+
+        self.guild.fetch_channel.side_effect = fetched
+        await self.generator.join(member, self.voice)
+        self.text.set_permissions.assert_not_awaited()
+        self.guild.create_voice_channel.assert_not_awaited()
+
+    async def test_new_voice_hidden_during_persistence_does_not_create_companion(self):
+        member, trigger = self.member_and_trigger()
+        self.settings.defaultOptions = [VoiceGeneratorOption.TEXT]
+
+        async def persisted(*args):
+            self.voice.is_obfuscated.return_value = True
+
+        self.db.create_generated_channel.side_effect = persisted
+        await self.generator.join(member, trigger)
+        self.db.create_generated_channel.assert_awaited_once()
+        self.guild.create_text_channel.assert_not_awaited()
+        self.voice.delete.assert_not_awaited()
+        self.db.delete_generated_channel.assert_not_awaited()
+        member.move_to.assert_not_awaited()
+
+    async def test_hidden_text_channel_is_not_edited_on_join_or_leave(self):
+        member, _ = self.member_and_trigger()
+        member.voice.channel = self.voice
+        self.text.is_obfuscated.return_value = True
+        self.db.get_generated_channel.return_value = self.record
+        await self.generator.join(member, self.voice)
+        self.text.set_permissions.assert_not_awaited()
+        member.voice = None
+        self.voice.voice_states = {99: Mock()}
+        await self.generator._leave(member, self.voice, self.record)
+        self.text.set_permissions.assert_not_awaited()
+        self.db.delete_generated_channel.assert_not_awaited()

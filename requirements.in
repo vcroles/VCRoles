@@ -1,5 +1,5 @@
 aiohttp[speedups]
-discord.py[voice,speed] @ git+https://github.com/vcroles/discord.py
+discord.py[voice,speed] @ git+https://github.com/vcroles/discord.py@580e2b0063014304a490ef316c6319a2c3dadec0
 gtts[async] @ git+https://github.com/vcroles/gTTS
 redis
 types-redis

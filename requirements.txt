@@ -60,7 +60,7 @@ cryptography==50.0.1
     #   types-redis
 davey==0.1.6
     # via discord-py
-discord-py[speed, voice] @ git+https://github.com/vcroles/discord.py@65232c38702be5844cf2ce865a4777eb1928b5d0
+discord-py[speed, voice] @ git+https://github.com/vcroles/discord.py@580e2b0063014304a490ef316c6319a2c3dadec0
     # via
     #   -r requirements.in
     #   jishaku

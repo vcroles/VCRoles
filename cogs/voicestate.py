@@ -161,6 +161,11 @@ class VoiceState(commands.Cog):
     async def on_shard_resumed(self, shard_id: int):
         self.generator.shard_available(shard_id)
 
+    @commands.Cog.listener()
+    async def on_guild_channel_update(self, before, after):
+        if before.is_obfuscated() != after.is_obfuscated():
+            self.generator.channel_visibility_changed(after)
+
     @tasks.loop(seconds=5)
     async def process_queues(self):
         start_time = time.perf_counter()
