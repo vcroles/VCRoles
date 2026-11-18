@@ -55,6 +55,35 @@ has headroom. The net-growth panel scales a six-hour usage trend to bytes/day;
 retention and compaction can make it negative. It is not an ingestion measure or
 a guarantee about future storage use.
 
+## Bot process freshness and permission retries
+
+The bot health dashboard includes a **Process instance** selector. All retains
+the selected service's process history across restarts. Health gauges select
+the newest process at each evaluation time and require both readiness telemetry
+and their own samples to be less than 60 seconds old. Readiness can be zero and
+still be fresh. Old process values therefore stop appearing as current health
+when the replacement starts reporting, rather than lingering through Mimir's
+default five-minute lookback. Missing telemetry remains a gap or unknown value.
+
+The same freshness handling applies to Python runtime gauges. Counter rates,
+observation windows and percentiles retain selected process history; earlier
+work should still contribute to the period being queried. The telemetry-age
+panels deliberately show aging readiness samples until query lookback expires.
+Their age measures export freshness, not an independent HTTP availability check
+or proof that the asynchronous runtime sampler is progressing.
+
+The bot dashboard's **Permission backoff** section shows cooldown scheduling,
+suppressed checks, clearances/rechecks, deferred queued entries, and scheduling
+reasons. A log panel exposes retry decisions and their correlated traces.
+Schedules include cached permission checks and do not imply an HTTP error;
+suppressed checks are not unique users or precise counts of avoided requests.
+There is no active-resource gauge, and event series that have never occurred
+can be absent. See [permission retry behavior](../PERMISSION_RETRIES.md).
+
+These dashboard JSON files are provisioned from a directory mount. Updating
+them requires no bot or backend restart; Grafana reloads the files. Alert pause
+states and notification routing are managed separately.
+
 ## Private configuration
 
 Create `monitoring-targets.json` locally on the deployment host with mode `0600`.

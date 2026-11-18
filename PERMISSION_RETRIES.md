@@ -69,10 +69,16 @@ identifiers remain in local diagnostic context, not metric labels or exported
 event attributes. A known deferral is recorded as `deferred` rather than a
 successful member update; an actual failed HTTP trial is still an error.
 
+The bot health dashboard's **Permission backoff** section shows scheduling and
+suppression rates, cleared cooldowns and rechecks, deferred queued work, reasons,
+and recent structured decisions. Use **Process instance** to inspect a run, or
+All for history across restarts. No active-resource count is inferred from these
+event counters. Expand a log entry for retry delay, failure counts and its trace.
+
 Example PromQL:
 
 ```promql
-sum by (operation, event) (rate(vcroles_permission_retry_events_total[15m]))
+sum by (operation, event) (rate(vcroles_permission_retry_events[15m]))
 ```
 
 Example LogQL (adjust the service selector to your deployment):

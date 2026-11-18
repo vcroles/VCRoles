@@ -2,7 +2,7 @@
   "uid": "vcroles-telemetry",
   "title": "VCRoles telemetry pipeline",
   "schemaVersion": 40,
-  "version": 2,
+  "version": 3,
   "editable": false,
   "tags": [
     "vcroles",
@@ -525,7 +525,7 @@
               },
               {
                 "color": "red",
-                "value": 90
+                "value": 60
               }
             ]
           },
@@ -545,7 +545,7 @@
           "sort": "desc"
         }
       },
-      "description": "Age of the latest production readiness sample, regardless of readiness value. Normal export interval is 15 seconds. If the series disappears beyond the query lookback, this panel also has no data."
+      "description": "Age of the latest production readiness sample, regardless of readiness value. Normal export interval is 15 seconds. If the series disappears beyond the query lookback, this panel also has no data. The bot health and Python runtime gauges reject samples once they reach 60 seconds old; this age panel deliberately continues to show aging data until query lookback expires. Export freshness alone cannot prove that the event loop is running."
     },
     {
       "id": 12,
