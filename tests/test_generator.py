@@ -216,6 +216,74 @@ class GeneratorTests(unittest.IsolatedAsyncioTestCase):
         await self.sweep_twice()
         self.db.delete_generated_channel.assert_not_awaited()
 
+    async def test_forbidden_cleanup_backs_off_then_recovers_without_cache_change(self):
+        self.text.delete.side_effect = http_error()
+        self.assertFalse(await self.generator._cleanup(self.voice, self.text))
+        for _ in range(20):
+            self.assertFalse(await self.generator._cleanup(self.voice, self.text))
+        self.text.delete.assert_awaited_once()
+        self.voice.delete.assert_not_awaited()
+        self.db.delete_generated_channel.assert_not_awaited()
+        self.text.delete.side_effect = None
+        self.now += 30
+        self.assertTrue(await self.generator._cleanup(self.voice, self.text))
+        self.assertEqual(self.text.delete.await_count, 2)
+        self.voice.delete.assert_awaited_once()
+        self.db.delete_generated_channel.assert_awaited_once()
+
+    async def test_connect_permission_repair_resumes_cleanup_before_deadline(self):
+        permissions = self.voice.permissions_for.return_value
+        permissions.value = 1
+        permissions.connect = False
+        self.assertFalse(await self.generator._cleanup(self.voice, self.text))
+        self.text.delete.assert_not_awaited()
+        self.voice.delete.assert_not_awaited()
+        permissions.connect = True
+        permissions.value = 2
+        self.assertTrue(await self.generator._cleanup(self.voice, self.text))
+        self.voice.delete.assert_awaited_once()
+
+    async def test_negative_channel_cache_does_not_prevent_due_http_trial(self):
+        self.voice.permissions_for.return_value.connect = False
+        self.assertFalse(await self.generator._cleanup(self.voice, self.text))
+        self.now += 30
+        self.assertTrue(await self.generator._cleanup(self.voice, self.text))
+        self.voice.delete.assert_awaited_once()
+
+    async def test_missing_voice_fetch_uses_a_scoped_cooldown(self):
+        del self.channels[10]
+        self.guild.fetch_channel.side_effect = http_error()
+        for _ in range(20):
+            await self.generator.reconcile()
+        self.guild.fetch_channel.assert_awaited_once_with(10)
+        self.db.delete_generated_channel.assert_not_awaited()
+        self.now += 30
+        self.guild.fetch_channel.side_effect = http_error(discord.NotFound)
+        await self.generator.reconcile()
+        self.now += 61
+        await self.generator.reconcile()
+        self.db.delete_generated_channel.assert_awaited_once_with("10")
+
+    async def test_one_failed_channel_does_not_block_another_cleanup(self):
+        self.text.delete.side_effect = http_error()
+        await self.generator._cleanup(self.voice, self.text)
+        other = Mock(spec=discord.VoiceChannel, id=30, guild=self.guild)
+        other.is_obfuscated.return_value = False
+        other.voice_states = {}
+        other.delete = AsyncMock()
+        self.assertTrue(await self.generator._cleanup(other, None))
+        other.delete.assert_awaited_once()
+
+    async def test_companion_fetch_failure_is_not_interpreted_as_absence(self):
+        del self.channels[20]
+        self.guild.fetch_channel.side_effect = http_error()
+        await self.sweep_twice()
+        for _ in range(10):
+            await self.generator.reconcile()
+        self.guild.fetch_channel.assert_awaited_once_with(20)
+        self.voice.delete.assert_not_awaited()
+        self.db.delete_generated_channel.assert_not_awaited()
+
     async def test_member_joining_during_text_delete_preserves_voice_and_record(self):
         async def joined(**kwargs):
             self.voice.voice_states = {99: Mock()}

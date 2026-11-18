@@ -10,6 +10,11 @@ from prisma.enums import VoiceGeneratorOption, VoiceGeneratorType
 
 from utils.client import VCRolesClient
 from utils.logging import audit_event
+from utils.permission_backoff import (
+    PermissionBackoff,
+    channel_permissions_signature,
+    guild_permissions_signature,
+)
 from utils.telemetry import observed
 from utils.types import JoinableChannel, LogLevel
 
@@ -19,6 +24,7 @@ class Generator:
 
     def __init__(self, client: VCRolesClient):
         self.client = client
+        self.permission_backoff = PermissionBackoff(client, clock=monotonic)
         self.locks: WeakValueDictionary[tuple[int, int], asyncio.Lock] = (
             WeakValueDictionary()
         )
@@ -526,10 +532,36 @@ class Generator:
         operation_id=None,
     ) -> bool:
         """Persist intents before deletes; keep records when any deletion fails."""
+        if voice_channel is not None and voice_channel.voice_states:
+            return False
         if self.defer_obfuscated(voice_channel, text_channel, phase="cleanup"):
             if voice_channel is not None:
                 self.empty_channels.pop(voice_channel.id, None)
             return False
+        # Check both resources before beginning a potentially partial cleanup.
+        unavailable_reasons = {}
+        for channel in (text_channel, voice_channel):
+            if channel is None:
+                continue
+            me = channel.guild.me
+            permissions = channel.permissions_for(me) if me is not None else None
+            unavailable = None
+            if permissions is None or not permissions.view_channel:
+                unavailable = "view_channel_missing"
+            elif isinstance(channel, discord.VoiceChannel) and not permissions.connect:
+                unavailable = "connect_missing"
+            elif not permissions.manage_channels:
+                unavailable = "manage_channels_missing"
+            signature = channel_permissions_signature(channel)
+            unavailable_reasons[channel.id] = unavailable
+            if not self.permission_backoff.ready(
+                "generator_delete",
+                channel.guild,
+                channel.id,
+                signature=signature,
+                unavailable=unavailable,
+            ):
+                return False
         guild = (
             voice_channel.guild
             if voice_channel is not None
@@ -565,38 +597,53 @@ class Generator:
                     **context,
                 )
                 return False
-            # This synchronous audit write/fsync must succeed before Discord is
-            # called. An absent outcome after an intent means the result is unknown.
-            audit_event(
-                "generator_channel_delete_requested",
-                channel_id=channel.id,
-                occupants=len(voice_channel.voice_states)
-                if voice_channel is not None
-                else None,
-                **context,
-            )
-            outcome = "deleted"
-            try:
-                await channel.delete(
-                    reason=f"Generated channel cleanup operation={operation_id}"
-                )
-            except discord.NotFound:
-                outcome = "already_missing"
-            except discord.HTTPException as error:
-                success = False
+
+            async def delete(channel=channel):
+                # Persist each actual attempt before calling Discord. Suppressed
+                # retries do not generate misleading deletion intents.
                 audit_event(
-                    "generator_channel_delete_failed",
-                    error=error,
+                    "generator_channel_delete_requested",
                     channel_id=channel.id,
+                    occupants=len(voice_channel.voice_states)
+                    if voice_channel is not None
+                    else None,
                     **context,
                 )
+                outcome = "deleted"
+                try:
+                    await channel.delete(
+                        reason=f"Generated channel cleanup operation={operation_id}"
+                    )
+                except discord.NotFound:
+                    outcome = "already_missing"
+                except discord.HTTPException as error:
+                    audit_event(
+                        "generator_channel_delete_failed",
+                        error=error,
+                        channel_id=channel.id,
+                        **context,
+                    )
+                    raise
+                audit_event(
+                    "generator_channel_delete_completed",
+                    channel_id=channel.id,
+                    outcome=outcome,
+                    **context,
+                )
+
+            try:
+                if not await self.permission_backoff.run(
+                    "generator_delete",
+                    channel.guild,
+                    channel.id,
+                    delete,
+                    signature=channel_permissions_signature(channel),
+                    unavailable=unavailable_reasons[channel.id],
+                ):
+                    return False
+            except discord.HTTPException:
+                success = False
                 continue
-            audit_event(
-                "generator_channel_delete_completed",
-                channel_id=channel.id,
-                outcome=outcome,
-                **context,
-            )
         if guild is not None and not self.can_cleanup(guild):
             return False
         if success and voice_channel is not None:
@@ -620,6 +667,7 @@ class Generator:
             "unavailable": 0,
             "grace": 0,
             "occupied_or_wrong_type": 0,
+            "deferred": 0,
         }
         try:
             for data in records:
@@ -653,10 +701,26 @@ class Generator:
                         # Cache misses are not proof of deletion. Confirm missing
                         # channels through REST before removing their database row.
                         if channel is None:
-                            try:
-                                channel = await guild.fetch_channel(int(data.channelId))
-                            except discord.NotFound:
-                                channel = None
+
+                            async def fetch_voice(
+                                guild=guild, channel_id=int(data.channelId)
+                            ):
+                                nonlocal channel
+                                try:
+                                    channel = await guild.fetch_channel(channel_id)
+                                except discord.NotFound:
+                                    channel = None
+
+                            if not await self.permission_backoff.run(
+                                "generator_fetch",
+                                guild,
+                                int(data.channelId),
+                                fetch_voice,
+                                signature=guild_permissions_signature(guild),
+                            ):
+                                self.empty_channels.pop(int(data.channelId), None)
+                                stats["deferred"] += 1
+                                continue
                             if channel is not None:
                                 # REST channel objects have no trustworthy voice
                                 # membership when absent from the gateway cache.
@@ -674,7 +738,31 @@ class Generator:
                             continue
                         if not self.can_cleanup(guild):
                             continue
-                        text_channel = await self.text_channel(guild, data)
+                        text_channel = None
+
+                        async def fetch_text(guild=guild, data=data):
+                            nonlocal text_channel
+                            text_channel = await self.text_channel(guild, data)
+
+                        cached_text = (
+                            guild.get_channel(int(data.textChannelId))
+                            if data.textChannelId
+                            else None
+                        )
+                        if not await self.permission_backoff.run(
+                            "generator_fetch",
+                            guild,
+                            int(data.textChannelId)
+                            if data.textChannelId
+                            else int(data.channelId),
+                            fetch_text,
+                            signature=channel_permissions_signature(cached_text)
+                            if cached_text
+                            else guild_permissions_signature(guild),
+                        ):
+                            self.empty_channels.pop(int(data.channelId), None)
+                            stats["deferred"] += 1
+                            continue
                         if self.defer_obfuscated(
                             channel, text_channel, phase="reconcile"
                         ):
@@ -728,6 +816,8 @@ class Generator:
                                     await trigger.set_permissions(
                                         role, overwrite=overwrite
                                     )
+                        else:
+                            stats["deferred"] += 1
                     except Exception as error:
                         stats["failed"] += 1
                         self.client.log(

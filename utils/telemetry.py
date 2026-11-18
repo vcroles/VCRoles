@@ -34,6 +34,10 @@ _LOG_FIELDS = {
     "edit_tasks",
     "count",
     "return_code",
+    "failures",
+    "suppressed",
+    "retry_after_seconds",
+    "discord_code",
 }
 _METRIC_FIELDS = {
     "component",
@@ -112,6 +116,35 @@ class EventLogHandler(logging.Handler):
             if record.name == "vcroles.audit":
                 telemetry.audit(event)
             context = getattr(record, "context", {})
+            if event.startswith("permission_retry_"):
+                for key, allowed in {
+                    "operation": {
+                        "guild_roles",
+                        "role_assignment",
+                        "guild_nicknames",
+                        "member_roles",
+                        "member_nickname",
+                        "member_fetch",
+                        "generator_delete",
+                        "generator_fetch",
+                    },
+                    "reason": {
+                        "success",
+                        "permissions_changed",
+                        "discord_forbidden",
+                        "manage_roles_missing",
+                        "role_not_assignable",
+                        "manage_nicknames_missing",
+                        "view_channel_missing",
+                        "connect_missing",
+                        "manage_channels_missing",
+                        "member_forbidden",
+                        "permission_probe_unavailable",
+                    },
+                }.items():
+                    value = context.get(key)
+                    if isinstance(value, str) and value in allowed:
+                        attributes[key] = value
             operation_id = context.get("operation_id")
             if isinstance(operation_id, str) and re.fullmatch(
                 r"[a-f0-9]{32}", operation_id
@@ -360,6 +393,9 @@ class Telemetry:
         self.queue_events = meter.create_counter(
             "vcroles.member_edit.queue_events", unit="{update}"
         )
+        self.permission_retries = meter.create_counter(
+            "vcroles.permission_retry.events", unit="{event}"
+        )
         self.process = psutil.Process()
         self.last_cpu_time = 0.0
         self.cpu_time = meter.create_counter("vcroles.process.cpu_time", unit="s")
@@ -448,6 +484,8 @@ class Telemetry:
             state.error_type = type(error).__name__[:128]
             raise
         finally:
+            if span is not None:
+                self._attempt(span.set_attribute, "outcome", state.outcome)
             if span is not None and state.error_type:
                 self._attempt(span.set_attribute, "error.type", state.error_type)
             if span is not None and state.outcome == "error":
@@ -472,6 +510,14 @@ class Telemetry:
             ):
                 parent.outcome = "error"
                 parent.error_type = state.error_type
+            elif (
+                not root
+                and state.outcome == "deferred"
+                and parent is not None
+                and parent.active
+                and parent.outcome == "success"
+            ):
+                parent.outcome = "deferred"
 
     def failure(self, error=None):
         state = _current_operation.get()
@@ -488,6 +534,19 @@ class Telemetry:
 
         context = self._attempt(lambda: get_current_span().get_span_context())
         return context if context is not None and context.is_valid else None
+
+    def deferred(self):
+        state = _current_operation.get()
+        if self.enabled and state is not None and state.outcome == "success":
+            state.outcome = "deferred"
+
+    def permission_retry(self, operation, event):
+        if self.enabled:
+            self._attempt(
+                self.permission_retries.add,
+                1,
+                {"operation": operation, "event": event},
+            )
 
     def audit(self, event):
         if self.enabled:

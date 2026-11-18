@@ -13,6 +13,7 @@ from opentelemetry.sdk.metrics.export import InMemoryMetricReader
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
 from utils.logging import JSONFormatter
+from utils.permission_backoff import PermissionBackoff
 from utils.telemetry import Telemetry, _endpoint, observed
 
 
@@ -74,6 +75,73 @@ class TelemetryTests(unittest.IsolatedAsyncioTestCase):
         with telemetry.operation("database", "get_guild_data"):
             pass
         await telemetry.close()
+
+    async def test_permission_retry_exports_bounded_counts_and_deferred_outcomes(self):
+        telemetry = await self.configured()
+        now = [0.0]
+        client = Mock()
+        logger = logging.getLogger("internal.bot")
+        previous_level = logger.level
+        logger.setLevel(logging.INFO)
+        self.addCleanup(logger.setLevel, previous_level)
+
+        def log(level, message, **context):
+            event = context.pop("event")
+            logging.getLogger("internal.bot").info(
+                message, extra={"event": event, "context": context}
+            )
+
+        client.log.side_effect = log
+        policy = PermissionBackoff(client, clock=lambda: now[0])
+        guild = SimpleNamespace(id=1234567890, shard_id=0)
+        callback = AsyncMock()
+        with telemetry.operation("member_edit", "batch") as parent:
+            with telemetry.operation("member_edit", "dispatch"):
+                for _ in range(2):
+                    self.assertFalse(
+                        await policy.run(
+                            "guild_roles",
+                            guild,
+                            guild.id,
+                            callback,
+                            unavailable="manage_roles_missing",
+                        )
+                    )
+            self.assertEqual(parent.outcome, "deferred")
+        callback.assert_not_awaited()
+        now[0] += 30
+        self.assertTrue(
+            await policy.run(
+                "guild_roles",
+                guild,
+                guild.id,
+                callback,
+                unavailable="manage_roles_missing",
+            )
+        )
+        telemetry.traces.force_flush()
+        telemetry.logs.force_flush()
+        records = self.logs.get_finished_logs()
+        self.assertEqual(len(records), 2)
+        scheduled = records[0].log_record.attributes
+        self.assertEqual(scheduled["operation"], "guild_roles")
+        self.assertEqual(scheduled["reason"], "manage_roles_missing")
+        self.assertEqual(scheduled["retry_after_seconds"], 30)
+        self.assertEqual(records[1].log_record.attributes["suppressed"], 1)
+        self.assertNotIn("1234567890", str(records))
+        points = self.metrics()["vcroles.permission_retry.events"].data.data_points
+        self.assertEqual(
+            {point.attributes["event"]: point.value for point in points},
+            {"failed": 1, "suppressed": 1, "recovered": 1},
+        )
+        self.assertTrue(
+            all(set(point.attributes) == {"operation", "event"} for point in points)
+        )
+        batch = next(
+            s for s in self.spans.get_finished_spans() if s.name == "member_edit.batch"
+        )
+        self.assertNotEqual(batch.status.status_code.name, "ERROR")
+        self.assertEqual(batch.attributes["outcome"], "deferred")
 
     async def test_invalid_configuration_fails_open_without_logging_secrets(self):
         secret = "private-password-sentinel"

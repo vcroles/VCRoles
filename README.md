@@ -17,6 +17,8 @@ Please note however that this code is intended for educational purposes only. Fo
 
 ## Development Environment
 
+See [permission retry behavior](PERMISSION_RETRIES.md) for cooldown and recovery details.
+
 Make sure you have python installed as well as the [uv](https://github.com/astral-sh/uv) package manager.
 
 -   Create a virtual environment `uv venv`

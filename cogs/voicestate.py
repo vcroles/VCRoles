@@ -13,6 +13,11 @@ from discord.object import Object
 from prisma.enums import LinkType
 
 from utils.client import VCRolesClient
+from utils.permission_backoff import (
+    PermissionBackoff,
+    RetryOutcome,
+    guild_permissions_signature,
+)
 from utils.telemetry import get_telemetry, observed
 from utils.types import (
     LogLevel,
@@ -69,6 +74,7 @@ class VoiceState(commands.Cog):
             WeakValueDictionary()
         )
         self.bot_nicknames: TTLCache[tuple[int, int], str] = TTLCache(2**15, 3600)
+        self.permission_backoff = PermissionBackoff(client)
         self.generator = Generator(client)
         self.logging = Logging(client)
         self.member_queues: dict[int, list[QueuedMemberUpdate]] = {}
@@ -500,6 +506,30 @@ class VoiceState(commands.Cog):
         finally:
             lock.release()
 
+    async def permitted_roles(self, member, roles):
+        guild = member.guild
+        signature = guild_permissions_signature(guild)
+        result = []
+        for role in roles:
+            current = guild.get_role(role.id)
+            if current is None:
+                continue
+            if not current.is_assignable():
+                await self.permission_backoff.run(
+                    "role_assignment",
+                    guild,
+                    role.id,
+                    None,
+                    signature=(signature, current.position, current.managed),
+                    unavailable="role_not_assignable",
+                )
+                continue
+            self.permission_backoff.clear(
+                "role_assignment", guild, role.id, reason="permissions_changed"
+            )
+            result.append(role)
+        return result
+
     @observed("member_edit")
     async def _handle_member_edit(
         self,
@@ -508,166 +538,123 @@ class VoiceState(commands.Cog):
         to_remove: Collection[discord.abc.Snowflake],
         nickname_updates: Collection[NicknameUpdate],
     ):
-        key = (member.guild.id, member.id)
+        guild = member.guild
+        signature = guild_permissions_signature(guild)
+        key = (guild.id, member.id)
+        role_details = {
+            "member_id": member.id,
+            "add_role_ids": [role.id for role in to_add],
+            "remove_role_ids": [role.id for role in to_remove],
+        }
+        if to_add or to_remove:
+            if not await self.permission_backoff.guild_permission(
+                guild, "manage_roles"
+            ):
+                to_add, to_remove = [], []
+            else:
+                to_add = await self.permitted_roles(member, to_add)
+                to_remove = await self.permitted_roles(member, to_remove)
+                if self.permission_backoff.blocked(
+                    "member_roles", guild, member.id, signature=signature
+                ):
+                    to_add, to_remove = [], []
+
         nickname_requested = any(
             update.remove_suffix or update.add_suffix or update.permanent_suffix
             for update in nickname_updates
         )
-        if len(to_add) + len(to_remove) > 1 or nickname_requested:
-            member = await member.guild.fetch_member(member.id)
+        if nickname_requested:
+            nickname_requested = await self.permission_backoff.guild_permission(
+                guild, "manage_nicknames"
+            ) and not self.permission_backoff.blocked(
+                "member_nickname", guild, member.id, signature=signature
+            )
+        if not (to_add or to_remove or nickname_requested):
+            return
 
-        expected_names = {update.expected_name for update in nickname_updates}
-        bot_name = self.bot_nicknames.get(key)
-        name_is_current = (
-            member.display_name in expected_names or member.display_name == bot_name
-        )
-        new_user_nickname = member.display_name
-        if nickname_requested and name_is_current:
-            for update in nickname_updates:
-                new_user_nickname = update.apply(new_user_nickname)
+        fetched = False
 
-        changing_username = (
-            nickname_requested
-            and name_is_current
-            and new_user_nickname != member.display_name
-            # The owner can't have their nickname changed
-            and member.guild.owner_id != member.id
-            # Check we have permission to change the nickname
-            and member.guild.me.guild_permissions.manage_nicknames
-            # Check that our role is above the member's role
-            and member.top_role.position < member.guild.me.top_role.position
-        )
+        async def fresh_member():
+            nonlocal fetched
+            if fetched:
+                return True
 
-        new_roles = disutils.MISSING
+            async def fetch():
+                nonlocal member, fetched
+                member = await guild.fetch_member(member.id)
+                fetched = True
 
-        if to_add or to_remove:
-            new_roles = disutils._unique(
-                Object(id=r.id)
-                for s in (member.roles[1:], to_add)  # remove @everyone
-                for r in s
+            return await self.permission_backoff.run(
+                "member_fetch", guild, member.id, fetch, signature=signature
             )
 
-            for remove_role in to_remove:
-                try:
-                    new_roles.remove(Object(id=remove_role.id))
-                except ValueError:
-                    pass
+        # Capabilities have separate retry scopes: a denied nickname must not
+        # suppress otherwise healthy role updates (or the reverse).
+        if to_add or to_remove:
 
-        new_nick = disutils.MISSING
-
-        if changing_username:
-            new_nick = new_user_nickname
-
-        if changing_username and (to_add or to_remove):
-            # Use the member edit endpoint to update the user
-            try:
-                await member.edit(
-                    nick=new_nick,
-                    roles=new_roles,
-                    reason="Joined Voice Channel",
-                )
-                self.bot_nicknames[key] = new_nick
-            except Exception as e:
-                get_telemetry().failure(e)
-                self.client.log(
-                    LogLevel.ERROR,
-                    "Member update failed",
-                    error=e,
-                    event="member_update_failed",
-                    guild_id=member.guild.id,
-                    shard_id=member.guild.shard_id,
-                    member_id=member.id,
-                    action="username+-roles",
-                    add_role_ids=[role.id for role in to_add],
-                    remove_role_ids=[role.id for role in to_remove],
-                )
-        elif changing_username:
-            # Use the member edit endpoint to update the nickname
-            try:
-                await member.edit(
-                    nick=new_nick,
-                    reason="Joined Voice Channel",
-                )
-                self.bot_nicknames[key] = new_nick
-            except Exception as e:
-                get_telemetry().failure(e)
-                self.client.log(
-                    LogLevel.ERROR,
-                    "Member update failed",
-                    error=e,
-                    event="member_update_failed",
-                    guild_id=member.guild.id,
-                    shard_id=member.guild.shard_id,
-                    member_id=member.id,
-                    action="username",
-                    add_role_ids=[role.id for role in to_add],
-                    remove_role_ids=[role.id for role in to_remove],
-                )
-        elif to_add or to_remove:
-            if len(to_add) + len(to_remove) > 1:
-                # Use the member edit endpoint to update the roles (multiple changes)
-                try:
+            async def edit_roles():
+                if len(to_add) + len(to_remove) > 1:
+                    if not await fresh_member():
+                        return RetryOutcome.DEFERRED
+                    new_roles = disutils._unique(
+                        Object(id=role.id)
+                        for roles in (member.roles[1:], to_add)
+                        for role in roles
+                    )
+                    remove_ids = {role.id for role in to_remove}
                     await member.edit(
-                        roles=new_roles,
+                        roles=[role for role in new_roles if role.id not in remove_ids],
                         reason="Joined Voice Channel",
                     )
-                except Exception as e:
-                    get_telemetry().failure(e)
-                    self.client.log(
-                        LogLevel.ERROR,
-                        "Member update failed",
-                        error=e,
-                        event="member_update_failed",
-                        guild_id=member.guild.id,
-                        shard_id=member.guild.shard_id,
-                        member_id=member.id,
-                        action="+-roles",
-                        add_role_ids=[role.id for role in to_add],
-                        remove_role_ids=[role.id for role in to_remove],
-                    )
-            elif len(to_add) == 1:
-                # Use the add member role endpoint to add roles
-                try:
+                elif to_add:
                     await member.add_roles(*to_add, reason="Joined Voice Channel")
-                except Exception as e:
-                    get_telemetry().failure(e)
-                    self.client.log(
-                        LogLevel.ERROR,
-                        "Member update failed",
-                        error=e,
-                        event="member_update_failed",
-                        guild_id=member.guild.id,
-                        shard_id=member.guild.shard_id,
-                        member_id=member.id,
-                        action="+roles",
-                        add_role_ids=[role.id for role in to_add],
-                        remove_role_ids=[role.id for role in to_remove],
-                    )
-            elif len(to_remove) == 1:
-                # Use the remove member role endpoint to remove roles
-                try:
+                else:
                     await member.remove_roles(*to_remove, reason="Joined Voice Channel")
-                except Exception as e:
-                    get_telemetry().failure(e)
-                    self.client.log(
-                        LogLevel.ERROR,
-                        "Member update failed",
-                        error=e,
-                        event="member_update_failed",
-                        guild_id=member.guild.id,
-                        shard_id=member.guild.shard_id,
-                        member_id=member.id,
-                        action="-roles",
-                        add_role_ids=[role.id for role in to_add],
-                        remove_role_ids=[role.id for role in to_remove],
-                    )
-        else:
-            # No changes needed
-            # self.client.log(
-            #     LogLevel.DEBUG,
-            #     f"No changes required for member {member.id} ({member.display_name})",
-            # )
-            pass
+
+            await self.permission_backoff.run(
+                "member_roles",
+                guild,
+                member.id,
+                edit_roles,
+                signature=signature,
+                details=role_details,
+            )
+            # A moderator may have renamed the member while the role request
+            # was pending. Do not reuse its earlier snapshot for a nickname edit.
+            fetched = False
+
+        if nickname_requested:
+
+            async def edit_nickname():
+                if not await fresh_member():
+                    return RetryOutcome.DEFERRED
+                expected_names = {update.expected_name for update in nickname_updates}
+                bot_name = self.bot_nicknames.get(key)
+                if (
+                    member.display_name not in expected_names
+                    and member.display_name != bot_name
+                ):
+                    return RetryOutcome.NOOP
+                new_user_nickname = member.display_name
+                for update in nickname_updates:
+                    new_user_nickname = update.apply(new_user_nickname)
+                if (
+                    new_user_nickname == member.display_name
+                    or guild.owner_id == member.id
+                    or guild.me is None
+                    or member.top_role.position >= guild.me.top_role.position
+                ):
+                    return RetryOutcome.NOOP
+                await member.edit(nick=new_user_nickname, reason="Joined Voice Channel")
+                self.bot_nicknames[key] = new_user_nickname
+
+            await self.permission_backoff.run(
+                "member_nickname",
+                guild,
+                member.id,
+                edit_nickname,
+                signature=signature,
+            )
 
     async def join(
         self,
@@ -810,11 +797,6 @@ class VoiceState(commands.Cog):
 
         failed_roles: list[discord.Role] = []
 
-        try:
-            fetched_member = await before.channel.guild.fetch_member(member.id)
-        except Exception:
-            fetched_member = member
-
         to_add: list[discord.Role] = []
         to_remove: list[discord.Role] = []
 
@@ -841,12 +823,10 @@ class VoiceState(commands.Cog):
             to_remove.append(role)
 
         await self.queue_member_update(
-            fetched_member,
+            member,
             to_add,
             to_remove,
-            NicknameUpdate(
-                fetched_member.display_name, remove_suffix=suffix_data.suffix
-            ),
+            NicknameUpdate(member.display_name, remove_suffix=suffix_data.suffix),
         )
 
         self.client.incr_role_counter("added", len(addable_roles))
@@ -933,11 +913,6 @@ class VoiceState(commands.Cog):
 
         failed_roles: list[discord.Role] = []
 
-        try:
-            fetched_member = await before.channel.guild.fetch_member(member.id)
-        except Exception:
-            fetched_member = member
-
         to_add: list[discord.Role] = []
         to_remove: list[discord.Role] = []
 
@@ -964,11 +939,11 @@ class VoiceState(commands.Cog):
             to_remove.append(role)
 
         await self.queue_member_update(
-            fetched_member,
+            member,
             to_add,
             to_remove,
             NicknameUpdate(
-                fetched_member.display_name,
+                member.display_name,
                 remove_suffix=leave_suffix_data.suffix,
                 add_suffix=join_suffix_data.suffix,
                 permanent_suffix=join_suffix_data.permanent_suffix,
