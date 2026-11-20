@@ -1,6 +1,0 @@
-# An authenticated OTLP/HTTP listener on the configured Tailscale address.
-# Allows the existing application bridge to reach Alloy after container replacement.
-services:
-  alloy:
-    ports:
-      - "${GRAFANA_BIND_IP:?Initialize the stack with its Tailscale IPv4 address}:4318:4318"

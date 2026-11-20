@@ -123,7 +123,7 @@ has been killed.
 
 The bot supports optional traces, metrics, and structured event export over
 authenticated OTLP/HTTP. It is disabled by default. See
-[the observability guide](observability/README.md#bot-instrumentation) for the
-private collector connection, environment variables, exported fields, resource
-limits, and shutdown behavior. Detailed local logs and generator audit records
+[OBSERVABILITY.md](OBSERVABILITY.md) for the
+environment variables, exported fields, resource limits, and shutdown
+behavior. Detailed local logs and generator audit records
 continue to work without a collector.
